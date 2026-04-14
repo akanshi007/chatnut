@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>chatNut | Messenger</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="chat.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <header class="sidebar-header">
+                <div class="user-profile">
+                    <h3>chatNut</h3>
+                </div>
+                <div class="header-actions">
+                    <button id="settings-toggle" class="icon-btn" title="Profile Settings">⚙️</button>
+                </div>
+            </header>
+
+            <div id="sidebar-main">
+                <div class="sidebar-search">
+                    <div class="search-container">
+                        <input type="text" id="user-search" placeholder="Search or start new chat">
+                    </div>
+                </div>
+                <div id="user-list" class="user-list"></div>
+            </div>
+
+            <div id="settings-panel" class="settings-view" style="display: none;">
+                <div class="settings-nav">
+                    <button id="close-settings" class="back-btn">&larr; Profile Settings</button>
+                </div>
+                <div class="settings-content">
+                    <div class="profile-pic-section">
+                        <div class="avatar-container">
+                            <img id="settings-avatar-preview" src="/uploads/default-avatar.png" alt="Avatar">
+                            <div class="overlay" onclick="document.getElementById('profile-input').click()">
+                                <span>📸</span>
+                            </div>
+                        </div>
+                        <input type="file" id="profile-input" accept="image/*" hidden>
+                    </div>
+                    <div class="profile-info">
+                        <h4 id="profile-username-display">Username</h4>
+                        <p id="profile-email-display">email@example.com</p>
+                    </div>
+                    <button id="logout-btn" class="danger-btn">Logout</button>
+                </div>
+            </div>
+        </aside>
+
+        <div class="chat-container">
+            <header class="chat-header">
+                <a href="#" id="back-btn" class="back-btn">&larr;</a>
+                <div class="header-info">
+                    <h2 id="chat-target-name">Select a Chat</h2>
+                    <span id="typing-status">Online</span>
+                </div>
+            </header>
+
+            <div id="messages">
+                <div class="welcome-screen">
+                    <h3>Welcome to chatNut!</h3>
+                    <p>Select a friend from the sidebar to start chatting.</p>
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <input type="file" id="media-input" accept="image/*" style="display: none;">
+                <button type="button" id="media-btn" class="icon-btn" title="Send Image">➕</button>
+
+                <form id="chat-form">
+                    <input id="msg" placeholder="Type a message..." autocomplete="off">
+                    <button type="submit" id="send-btn">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="white">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="chat.js"></script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+/* Ensure the page takes up the full height of the browser */
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden; /* Prevents any horizontal scrolling */
+}
+
+.hero {
+    /* Full screen dimensions */
+    width: 100%;
+    height: 100vh; 
+    
+    /* Center everything inside */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    
+    /* Background Gradient */
+    background: linear-gradient(135deg, #075e54 0%, #128c7e 100%);
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+.hero h1 {
+    font-size: 3.5rem; /* Larger, more impactful heading */
+    margin-bottom: 15px;
+    font-weight: 700;
+}
+
+.hero p {
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+    opacity: 0.9;
+}
+
+/* Container for buttons to keep them side-by-side */
+.hero-btn-container {
+    display: flex;
+    gap: 20px;
+}
+
+.hero-btn {
+    padding: 15px 35px;
+    text-decoration: none;
+    border-radius: 30px;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.signup-btn-hero {
+    background: #222;
+    color: white;
+}
+
+.login-btn-hero {
+    background: white;
+    color: #075e54;
+}
+
+.hero-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+@media (max-width: 480px) {
+    .hero-btn-container {
+        flex-direction: column; /* Stacks buttons on top of each other */
+        width: 100%;
+        padding: 0 40px;
+    }
+    .hero h1 {
+        font-size: 2.5rem; /* Shrinks text slightly for mobile */
+    }
+}

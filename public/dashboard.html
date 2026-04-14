@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>chatNut - Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2 class="logo">chatNut</h2>
+            <button onclick="openModal()" class="add-contact-btn">+</button>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="userSearch" placeholder="Search contacts..." onkeyup="filterUsers()">
+        </div>
+
+        <div id="contact-list" class="sidebar-contacts">
+        </div>
+
+        <button onclick="logout()" class="btn-logout">Logout</button>
+    </div>
+
+    <section class="main-content">
+        <div class="dashboard-header">
+            <div>
+                <h3 id="welcome">Welcome back,</h3>
+                <strong id="current-username">User</strong>
+            </div>
+            <p>Online</p>
+        </div>
+
+        <div class="welcome-screen">
+            <img src="https://cdn-icons-png.flaticon.com/512/9374/9374919.png" alt="Chat Icon">
+            <h2>Select a contact to start messaging</h2>
+            <p>All your conversations are end-to-end encrypted.</p>
+        </div>
+    </section>
+
+    <div id="addContactModal" class="modal">
+        <div class="modal-content">
+            <h3>Add New Contact</h3>
+
+            <div class="modal-input-wrapper">
+                <label style="font-size: 12px; color: #888; text-align: left; font-weight: 500;">Username</label>
+                <input type="text" id="newContactUsername" placeholder="Enter username..." autocomplete="off"
+                    style="border:none; outline:none; padding: 5px 0; font-size: 16px;">
+            </div>
+
+            <div id="searchError" style="color: #c62828; font-size: 12px; margin-top: 5px; display: none;">
+                User not found!
+            </div>
+
+            <div class="modal-actions">
+                <button onclick="closeModal()" class="btn-cancel">Cancel</button>
+                <button onclick="searchAndAddContact()" class="btn-add">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+
+</html>

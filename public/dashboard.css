@@ -1,0 +1,253 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* 1. FIX: Ensure body doesn't treat the modal as a flex-item */
+body {
+    background-color: #f0f2f5;
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    overflow: hidden; /* Prevents unwanted scrollbars */
+}
+
+/* SIDEBAR */
+.sidebar {
+    width: 350px;
+    min-width: 350px; /* Prevents sidebar from shrinking */
+    background-color: #075e54;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    z-index: 10;
+}
+
+.sidebar-header {
+    padding: 20px;
+    background-color: #128c7e;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.add-contact-btn {
+    background: #25d366;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    cursor: pointer;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.3s;
+}
+
+.add-contact-btn:hover {
+    background: #1ebe5d;
+    transform: scale(1.1);
+}
+
+.search-box {
+    padding: 15px;
+    background-color: #075e54;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 20px;
+    border: none;
+    background: #ffffff;
+    color: #333;
+    outline: none;
+}
+
+.sidebar-contacts {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.contact-item {
+    padding: 15px;
+    background: #128c7e;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.3s;
+    display: block; /* Ensures links take full width */
+    color: white;
+    text-decoration: none;
+}
+
+.contact-item:hover {
+    background: #25d366;
+}
+
+/* MAIN CONTENT */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: #f0f2f5;
+}
+
+.dashboard-header {
+    width: 100%;
+    height: 70px;
+    padding: 0 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    border-bottom: 1px solid #ddd;
+}
+
+.welcome-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+}
+
+.welcome-screen img {
+    width: 220px;
+    margin-bottom: 25px;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+}
+
+.welcome-screen h2 {
+    color: #444;
+    margin-bottom: 10px;
+}
+
+.btn-logout {
+    padding: 8px 15px;
+    background: #ff4b2b;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+/* 2. FIX: MODAL OVERLAY (Must be fixed/absolute) */
+/* The Background Overlay */
+.modal {
+    display: none; 
+    position: fixed;
+    z-index: 10000;
+    left: 0; 
+    top: 0; 
+    width: 100%; 
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4); /* Darkens the background slightly */
+    backdrop-filter: blur(3px); /* Makes the dashboard blurry for focus */
+    align-items: center; 
+    justify-content: center;
+}
+
+/* The Wrapper - Styled like your Signup box */
+.modal-content {
+    width: 400px;
+    background: #ffffff;
+    padding: 30px 35px;
+    border-radius: 20px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+    animation: modalPop 0.3s ease-out;
+}
+
+@keyframes modalPop {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.modal-content h3 {
+    font-size: 24px;
+    color: #222;
+    font-weight: 600;
+}
+
+/* Input Card Style - Matches your Signup inputs */
+.modal-input-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: #ffffff;
+    padding: 15px 20px;
+    border-radius: 15px;
+    border: 1px solid #ddd;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.modal-input-wrapper:focus-within {
+    transform: translateY(-3px);
+    border: 1px solid #128c7e; /* Using your brand green */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.modal-input-wrapper input {
+    width: 100%;
+    padding: 10px;
+    font-size: 15px;
+    border: 1px solid #c8c8c8;
+    border-radius: 8px;
+    outline: none;
+}
+
+/* Buttons - Matches your Signup buttons */
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.btn-add {
+    flex: 1;
+    padding: 14px;
+    font-size: 16px;
+    border: none;
+    border-radius: 12px;
+    background: #075e54; /* Brand Green */
+    color: white;
+    cursor: pointer;
+    font-weight: 500;
+    transition: 0.3s;
+}
+
+.btn-add:hover {
+    background: #128c7e;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.btn-cancel {
+    flex: 1;
+    padding: 14px;
+    font-size: 16px;
+    border: none;
+    border-radius: 12px;
+    background: #f1f1f1;
+    color: #555;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-cancel:hover {
+    background: #e0e0e0;
+}

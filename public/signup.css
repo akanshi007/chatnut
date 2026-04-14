@@ -1,0 +1,241 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+
+body {
+  background: #f8f9fa;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+  margin: 0;
+}
+
+.signup-hero {
+  width:100%;
+  max-width: 500px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  text-align: center;
+}
+
+.signup-hero h1 {
+  font-size: 36px;
+  color: rgba(34, 34, 34, 1);
+}
+
+.signup-hero p {
+  font-size: 18px;
+  color: rgba(85, 85, 85, 1);
+}
+
+.signup-wrapper {
+  width: 400px;
+  background: rgba(255, 255, 255, 1);
+  padding: 30px 35px;
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.signup-wrapper:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+}
+
+.input-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(255, 255, 255, 1);
+  padding: 15px 20px;
+  border-radius: 15px;
+  border: 1px solid rgba(221, 221, 221, 1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border 0.3s ease;
+}
+
+.input-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 136, 0, 1);
+}
+
+.input-card label {
+  font-size: 14px;
+  color: rgba(85, 85, 85, 1);
+  font-weight: 500;
+}
+
+.input-card input {
+  width: 100%;
+  padding: 12px;
+  font-size: 15px;
+  border: 1px solid rgba(200, 200, 200, 1);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.input-card input:focus {
+  border-color: rgba(255, 136, 0, 1);
+  box-shadow: 0 0 5px rgba(255, 136, 0, 0.5);
+}
+
+.signup-btn {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(34, 34, 34, 1);
+  color: white;
+  cursor: pointer;
+  transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+  font-weight: 500;
+}
+
+.signup-btn:hover {
+  background: rgba(85, 85, 85, 1);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.login-text {
+  font-size: 14px;
+  color: rgba(85, 85, 85, 1);
+  text-align: center;
+}
+
+.login-text a {
+  text-decoration: none;
+  color: #128c7e;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .signup-wrapper {
+    width: 90%;
+  }
+
+  .signup-hero h1 {
+    font-size: 30px;
+  }
+
+  .signup-hero p {
+    font-size: 16px;
+  }
+}
+.form-btn { padding: 10px; border-radius: 5px; } /* Shared styles */
+.signup-style { background: black; }            /* Unique to signup */
+/* Specific color for Login */
+.login-style {
+  background: #075e54 !important; /* WhatsApp Green */
+}
+
+.login-style:hover {
+  background: #128c7e !important;
+}         /* Unique to login */
+
+/* Add this to stop the browser from turning inputs blue/yellow on auto-fill */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px white inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+.password-field {
+  position: relative;
+  width: 100%;
+}
+
+.password-field i {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #888;
+  transition: 0.2s;
+}
+
+.password-field i:hover {
+  color: #128c7e; /* Matches your brand green */
+}
+
+/* Ensure the input has some padding on the right so text doesn't go under the eye */
+.password-field input {
+  padding-right: 45px !important;
+}
+
+/* The Spinner Animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loader {
+  display: none; /* Hidden by default */
+  width: 18px;
+  height: 18px;
+  border: 2px solid #ffffff;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+  vertical-align: middle;
+  margin-right: 10px;
+  margin: 12px;
+}
+
+/* Class to show the loader when the button is clicked */
+.is-loading .loader {
+  display: inline-block;
+}
+
+.is-loading .btn-text {
+  opacity: 0.7;
+}
+
+/* Ensure the button content stays centered */
+.signup-btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+/* Disable button while loading to prevent double clicks */
+.signup-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+.error-msg {
+    display: none; /* Hidden by default */
+    background: #ffebee;
+    color: #c62828;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ef9a9a;
+    font-size: 14px;
+    margin-bottom: 15px;
+    text-align: center;
+    animation: shake 0.5s ease;
+}
+
+/* A small shake animation to grab attention */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
