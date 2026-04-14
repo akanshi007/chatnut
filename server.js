@@ -7,7 +7,7 @@ const bcrypt = require('bcryptjs');
 const { Server } = require("socket.io");
 
 const User = require("./models/User");
-const Message = require("./models/message");
+const Message = require("./models/Message");
 
 const app = express();
 const server = http.createServer(app);
