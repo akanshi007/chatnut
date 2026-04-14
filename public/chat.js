@@ -133,6 +133,29 @@ document.addEventListener("DOMContentLoaded", () => {
     socket.on("chat message", (data) => displayMessage(data));
     socket.on("load messages", (msgs) => { messagesDiv.innerHTML = ""; msgs.forEach(m => displayMessage(m, true)); });
 
+    //
+    const mediaBtn = document.getElementById('media-btn');
+const mediaInput = document.getElementById('media-input');
+
+// When the + button is clicked, trigger the hidden file input
+mediaBtn.addEventListener('click', () => {
+    mediaInput.click();
+});
+
+// Detect when the user selects an image
+mediaInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        console.log("Selected file:", file.name);
+        
+        // Optional: Show a quick alert or preview before uploading
+        if (confirm(`Do you want to send ${file.name}?`)) {
+            // This is where we will add the upload logic next!
+            uploadMedia(file); 
+        }
+    }
+});
+
     // 6. Typing Indicators
     msgInput.addEventListener('input', () => {
         if (!currentRoom) return;
