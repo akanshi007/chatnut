@@ -133,6 +133,14 @@ body {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    /* The Background Pattern */
+    
+    background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+    background-repeat: repeat;
+    background-size: 400px; /* Adjust size of the icons */
+    background-blend-mode: overlay; /* Makes the icons subtle */
+    opacity: 0.9;
+
 }
 
 /* CENTER WELCOME */
@@ -155,11 +163,19 @@ body {
     background: #075e54;
     color: white;
     align-self: flex-end;
+    border-radius: 8px;
+    border-top-left-radius: 0; /* WhatsApp style */
+    box-shadow: 0 1px 0.5px rgba(0,0,0,0.13); /* Critical for depth */
+    margin-left: 5px;
 }
 
 .message.them {
     background: white;
     align-self: flex-start;
+    border-radius: 8px;
+    border-top-left-radius: 0; /* WhatsApp style */
+    box-shadow: 0 1px 0.5px rgba(0,0,0,0.13); /* Critical for depth */
+    margin-left: 5px;
 }
 
 /* --- INPUT BAR --- */
@@ -204,33 +220,49 @@ body {
 }
 
 /* --- SETTINGS (FULL SCREEN FIX) --- */
+/* --- SETTINGS PANEL FIX --- */
 #settings-panel {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
+    width: 320px; /* Match your sidebar width */
     height: 100vh;
     background: #f0f2f5;
-    z-index: 999;
+    z-index: 1000;
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* Stacks nav on top of content */
+    border-right: 1px solid #ddd;
 }
 
 .settings-nav {
     background: #075e54;
     color: white;
-    height: 60px;
+    height: 60px; /* Match the main header height */
     display: flex;
     align-items: center;
     padding: 0 15px;
+    flex-shrink: 0;
+}
+
+.settings-nav .back-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-weight: 600;
+    text-decoration: none;
 }
 
 .settings-content {
-    flex: 1;
+    flex: 1; /* Takes up remaining space */
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
+    padding-top: 40px; /* Gives some space from the top */
 }
 
 /* PROFILE */
@@ -304,4 +336,13 @@ body {
     .message {
         max-width: 90%;
     }
+}
+.date-separator {
+    align-self: center;
+    background: rgba(0,0,0,0.1);
+    color: #555;
+    padding: 4px 12px;
+    border-radius: 10px;
+    font-size: 12px;
+    margin: 10px 0;
 }
