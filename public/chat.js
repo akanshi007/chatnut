@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let typingTimer;
 
     // UI Selectors
+    const inputArea = document.querySelector(".chat-input-area");
     const userList = document.getElementById("user-list");
     const messagesDiv = document.getElementById("messages");
     const chatForm = document.getElementById("chat-form");
@@ -63,6 +64,14 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("chat-target-name").innerText = targetUser;
         statusSpan.innerText = "Online";
 
+        inputArea.classList.remove("hidden");
+        // ✅ SHOW BACK BUTTON (mobile only)
+        if (window.innerWidth <= 768) {
+            backBtn.style.display = "block";
+            document.querySelector(".sidebar").classList.add("hide");
+        }
+
+
         socket.emit("join room", { senderId: myUsername, receiverId: targetUser });
 
         // Mobile: Show chat, hide sidebar
@@ -84,9 +93,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     <p>Select a friend from the sidebar to start chatting.</p>
                 </div>`;
 
+            inputArea.classList.add("hidden");
             // Mobile: Show sidebar, hide chat
             if (window.innerWidth <= 768) {
-                document.querySelector(".sidebar").style.display = "flex";
+                document.querySelector(".sidebar").style.display = "none";
                 document.querySelector(".chat-container").style.display = "none";
             }
             document.querySelectorAll('.user-item').forEach(item => item.classList.remove('active'));
@@ -135,26 +145,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
     //
     const mediaBtn = document.getElementById('media-btn');
-const mediaInput = document.getElementById('media-input');
+    const mediaInput = document.getElementById('media-input');
 
-// When the + button is clicked, trigger the hidden file input
-mediaBtn.addEventListener('click', () => {
-    mediaInput.click();
-});
+    // When the + button is clicked, trigger the hidden file input
+    mediaBtn.addEventListener('click', () => {
+        mediaInput.click();
+    });
 
-// Detect when the user selects an image
-mediaInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        console.log("Selected file:", file.name);
-        
-        // Optional: Show a quick alert or preview before uploading
-        if (confirm(`Do you want to send ${file.name}?`)) {
-            // This is where we will add the upload logic next!
-            uploadMedia(file); 
+    // Detect when the user selects an image
+    mediaInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            console.log("Selected file:", file.name);
+
+            // Optional: Show a quick alert or preview before uploading
+            if (confirm(`Do you want to send ${file.name}?`)) {
+                // This is where we will add the upload logic next!
+                uploadMedia(file);
+            }
         }
-    }
-});
+    });
 
     // 6. Typing Indicators
     msgInput.addEventListener('input', () => {
