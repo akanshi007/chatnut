@@ -338,11 +338,15 @@ body {
     }
 }
 .date-separator {
-    align-self: center;
-    background: rgba(0,0,0,0.1);
+    display: block; /* Ensure it's not hidden by flex logic */
+    margin: 15px auto; /* Centers it horizontally */
+    background: rgba(255, 255, 255, 0.9); /* Slightly more opaque for mobile visibility */
     color: #555;
-    padding: 4px 12px;
+    padding: 5px 15px;
     border-radius: 10px;
     font-size: 12px;
-    margin: 10px 0;
+    font-weight: 600;
+    width: fit-content; /* Critical for mobile centering */
+    box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+    z-index: 5; /* Keep it above the background image */
 }
