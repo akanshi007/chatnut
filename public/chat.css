@@ -12,7 +12,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
+    overflow-x: hidden;
 }
 
 /* Main Wrapper */
@@ -377,9 +377,91 @@ body {
     transform: scale(1.02);
 }
 
-/* --- 7. RESPONSIVE DESIGN --- */
+/* --- 7. RESPONSIVE DESIGN (IMPROVED) --- */
+
+/* Tablet */
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 35%;
+        min-width: 260px;
+    }
+
+    .message {
+        max-width: 75%;
+    }
+}
+
+/* Mobile */
 @media (max-width: 768px) {
-    .sidebar { width: 80px; min-width: 80px; }
-    .sidebar-search, .user-info-text, .profile-info { display: none; }
-    .user-item { justify-content: center; }
+
+    body {
+        overflow: auto; /* allow scroll */
+    }
+
+    .app-container {
+        flex-direction: column;
+        height: 100vh;
+    }
+
+    /* Sidebar becomes full screen (hidden by default via JS class) */
+    .sidebar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 200;
+        transform: translateX(0);
+        transition: transform 0.3s ease;
+    }
+
+    /* Hidden state (used by your JS) */
+    .sidebar.hide {
+        transform: translateX(-100%);
+    }
+
+    /* Chat takes full screen */
+    .chat-container {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Show back button */
+    .back-btn {
+        display: flex;
+    }
+
+    /* Improve spacing */
+    #messages {
+        padding: 15px;
+    }
+
+    .message {
+        max-width: 85%;
+        font-size: 13px;
+    }
+
+    /* Input adjustments */
+    #msg {
+        font-size: 14px;
+        padding: 8px 14px;
+    }
+}
+
+/* Small phones */
+@media (max-width: 480px) {
+
+    .chat-header {
+        padding: 0 10px;
+    }
+
+    .user-avatar-container {
+        width: 40px;
+        height: 40px;
+    }
+
+    .message {
+        max-width: 90%;
+        font-size: 12px;
+    }
 }
