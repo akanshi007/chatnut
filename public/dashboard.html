@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>chatNut - Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+
+    <div class="main-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2 class="logo">chatNut</h2>
+            </div>
+            
+            <div class="contacts-container">
+                <p class="section-title">CHATS</p>
+                <div id="contact-list" class="sidebar-contacts">
+                    <div class="loader-placeholder">Loading friends...</div>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <button onclick="logout()" class="btn-logout">Logout</button>
+            </div>
+        </aside>
+
+        <section class="main-content">
+            <header class="dashboard-header">
+                <div class="user-greeting">
+                    <span>Welcome back, </span>
+                    <strong id="current-username">User</strong>
+                </div>
+                <div class="header-actions">
+                    <div class="status-indicator"></div>
+                    <span>Online</span>
+                </div>
+            </header>
+
+            <div class="welcome-screen">
+                <div class="illustration-box">
+                    <img src="https://cdn-icons-png.flaticon.com/512/9374/9374919.png" alt="Chat Icon" class="welcome-icon">
+                </div>
+                <h2>Select a contact to start messaging</h2>
+                <p>All your conversations are end-to-end encrypted and stored in MongoDB.</p>
+            </div>
+        </section>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="dashboard.js"></script>
+
+</body>
+</html>

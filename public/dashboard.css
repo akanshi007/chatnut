@@ -1,0 +1,65 @@
+.sidebar-contacts {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.contact-card {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.contact-card:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.user-avatar {
+    width: 35px;
+    height: 35px;
+    background: #128c7e;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    margin-right: 12px;
+    font-size: 14px;
+}
+
+.user-details h3 {
+    font-size: 1rem;
+    margin: 0;
+}
+
+.user-details p {
+    font-size: 0.75rem;
+    margin: 0;
+    opacity: 0.8;
+}
+.main-layout { display: flex; height: 100vh; }
+
+.sidebar {
+    width: 300px;
+    background-color: #075e54;
+    color: white;
+    padding: 20px;
+}
+
+.contact-card {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    margin-top: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.contact-card:hover {
+    background: rgba(255, 255, 255, 0.2);
+}

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>chatNut Chat</title>
+
+<link rel="stylesheet" href="chat.css">
+
+</head>
+
+<body>
+
+<div class="chat-container">
+
+    <header>
+        <h2>chatNut</h2>
+    </header>
+
+    <div id="messages"></div>
+
+    <form id="chat-form">
+        <input id="msg" placeholder="Type a message..." autocomplete="off">
+        <button type="submit">Send</button>
+    </form>
+
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="chat.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,35 @@
+
+
+.hero {
+  padding: 100px 40px 40px;
+  text-align: center;
+}
+
+.hero h1 {
+  font-size: 32px;
+  margin-bottom: 10px;
+  color: rgba(34,34,34,1);
+}
+
+.hero p {
+  font-size: 16px;
+  color: rgba(85,85,85,1);
+}
+
+.hero-btn {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 12px 25px;
+  background: rgba(34,34,34,1);
+  color: rgba(255,255,255,1);
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 16px;
+  transition: background 0.3s, transform 0.3s;
+}
+
+.hero-btn:hover {
+  background: rgba(85,85,85,1);
+  transform: translateY(-3px);
+}
+

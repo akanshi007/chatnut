@@ -1,0 +1,134 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #ece5dd;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.chat-container {
+    width: 450px; /* Slightly wider for better readability */
+    height: 90vh; /* Responsive height */
+    max-height: 700px;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+header {
+    background: #075e54;
+    color: white;
+    padding: 15px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+#messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* Consistent spacing between bubbles */
+    background: #e5ddd5; /* Classic chat background feel */
+}
+
+/* Base message styling */
+.message {
+    background: #ffffff;
+    padding: 8px 12px;
+    border-radius: 12px;
+    border-top-left-radius: 2px; /* Speech bubble effect */
+    max-width: 75%;
+    position: relative;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* Styling for messages sent by the current user */
+.message.me {
+    background: #dcf8c6;
+    align-self: flex-end;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 2px;
+}
+
+/* User Name Styling */
+.message strong {
+    font-size: 0.75rem;
+    color: #075e54;
+    display: block;
+    margin-bottom: 3px;
+}
+
+.message.me strong {
+    color: #128c7e;
+    text-align: right;
+}
+
+/* Text Content - matches the JS structure */
+.text-content {
+    font-size: 0.95rem;
+    color: #333;
+    word-wrap: break-word;
+}
+
+.time {
+    display: block;
+    font-size: 0.7rem;
+    color: #888;
+    margin-top: 4px;
+    text-align: right;
+}
+
+/* Input Form Area */
+form {
+    display: flex;
+    padding: 10px;
+    background: #f0f0f0;
+    border-top: 1px solid #ddd;
+}
+
+#msg {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 25px; /* Rounded pill shape */
+    outline: none;
+    background: white;
+    margin-right: 8px;
+    font-size: 0.9rem;
+}
+
+#msg:focus {
+    border-color: #075e54;
+}
+
+button {
+    background: #075e54;
+    color: white;
+    border: none;
+    padding: 0 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+button:hover {
+    background: #128c7e;
+}
+
+/* Scrollbar Styling for a cleaner look */
+#messages::-webkit-scrollbar {
+    width: 6px;
+}
+#messages::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+}

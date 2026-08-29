@@ -1,0 +1,177 @@
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:"Poppins",sans-serif;
+}
+
+body{
+background:#f8f9fa;
+}
+
+
+/* HEADER */
+
+header{
+width:100%;
+height:60px;
+background:white;
+box-shadow:0 2px 4px rgba(0,0,0,0.1);
+display:flex;
+align-items:center;
+padding:0 60px;
+position:fixed;
+top:0;
+z-index:500;
+}
+
+.header_logo a{
+text-decoration:none;
+font-size:22px;
+font-weight:600;
+color:#222;
+}
+
+
+/* MENU BUTTON */
+
+.btn_one i{
+color:#333;
+font-size:28px;
+position:fixed;
+top:15px;
+left:15px;
+cursor:pointer;
+z-index:1000;
+}
+
+
+/* SIDEBAR */
+
+.sidebar_menu{
+position:fixed;
+left:-300px;
+top:0;
+height:100vh;
+width:300px;
+background:#222;
+transition:0.3s;
+z-index:600;
+}
+
+.logo{
+height:60px;
+line-height:60px;
+padding-left:60px;
+font-size:22px;
+}
+
+.logo a{
+color:white;
+text-decoration:none;
+}
+
+.btn_two{
+position:absolute;
+right:15px;
+top:15px;
+color:white;
+font-size:22px;
+opacity:0;
+cursor:pointer;
+}
+
+.menu{
+margin-top:80px;
+}
+
+.menu ul li{
+padding:15px 20px;
+}
+
+.menu i{
+margin-right:10px;
+}
+
+.menu i,
+.menu a{
+color:white;
+text-decoration:none;
+font-size:18px;
+}
+
+.menu li:hover{
+background:rgba(255,255,255,0.1);
+}
+
+
+/* SOCIAL */
+
+.social_media{
+position:absolute;
+bottom:25px;
+left:25%;
+}
+
+.social_media i{
+color:white;
+padding:0 6px;
+}
+
+
+/* SIDEBAR TOGGLE */
+
+#check{
+display:none;
+}
+
+#check:checked ~ .sidebar_menu{
+left:0;
+}
+
+#check:checked ~ .btn_one{
+display:none;
+}
+
+#check:checked ~ .sidebar_menu .btn_two{
+opacity:1;
+}
+
+
+/* CONTACT LIST */
+
+.blogs{
+padding:40px;
+margin-top:80px;
+}
+
+.blogs h2{
+margin-bottom:20px;
+font-size:26px;
+color:#222;
+}
+
+.blog-card{
+background:white;
+padding:20px;
+margin-bottom:15px;
+border-radius:8px;
+border:1px solid #ddd;
+cursor:pointer;
+transition:0.3s;
+}
+
+.blog-card:hover{
+transform:translateY(-5px);
+box-shadow:0 10px 20px rgba(0,0,0,0.1);
+}
+
+.blog-card h3{
+font-size:20px;
+margin-bottom:8px;
+}
+
+.blog-card p{
+font-size:14px;
+color:#555;
+}
