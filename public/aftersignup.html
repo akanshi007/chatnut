@@ -123,7 +123,7 @@
         <div style="display: flex; gap: 14px; align-items: center;">
           <i class="fa-solid fa-circle-notch" onclick="openCreateStatusModal()" style="cursor: pointer; color: var(--primary-accent); font-size: 16px;" title="New Status"></i>
           <i class="fa-solid fa-users" onclick="openNewGroupModal()" style="cursor: pointer; color: var(--primary-accent); font-size: 16px;" title="New Group"></i>
-          <i class="fa-solid fa-user-plus" onclick="openContactModal()" style="cursor: pointer; color: var(--primary-accent); font-size: 16px;" title="New Contact"></i>
+          <i class="fa-solid fa-user-plus" onclick="openContactModal()" style="cursor: pointer; color: var(--primary-accent); font-size: 16px;" title="Choose to Chat"></i>
         </div>
       </div>
       <div class="chat-type-tabs">
@@ -168,7 +168,12 @@
         <i class="fa-solid fa-comments"></i>
       </div>
       <h3>Welcome to chatNut</h3>
-      <p>Select any contact or group from the left panel to instantly start chatting in real time.</p>
+      <p>Choose a contact below or pick from the left panel to start chatting in real time.</p>
+      <button type="button" class="choose-chat-main-btn" onclick="openContactModal()" title="Choose to Chat">
+        <i class="fa-solid fa-comment-dots"></i>
+        <span>Choose to Chat</span>
+      </button>
+      <div class="quick-contacts-container" id="quickContactsCenter"></div>
     </div>
 
     <div class="active-chat-wrapper" id="activeChatWrapper" style="display: none;">
@@ -497,10 +502,10 @@
 <div id="contactModal" class="modal-overlay">
   <div class="modal-box">
     <div class="modal-header">
-      <h3>New Contact</h3>
+      <h3>Choose to Chat</h3>
       <button class="modal-close" onclick="closeModals()">&times;</button>
     </div>
-    <input type="text" id="userSearchInput" class="modal-input" placeholder="Type a name or username..." oninput="filterUsers()">
+    <input type="text" id="userSearchInput" class="modal-input" placeholder="Search or choose a contact to chat with..." oninput="filterUsers()">
     <div id="searchResults" class="search-results"></div>
   </div>
 </div>
@@ -1046,6 +1051,43 @@ function renderContacts() {
             container.appendChild(card);
         });
     }
+
+    renderQuickCenterContacts();
+}
+
+function renderQuickCenterContacts() {
+    const container = document.getElementById("quickContactsCenter");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const deletedContacts = JSON.parse(localStorage.getItem("deletedContacts_" + me) || "[]");
+    const others = (allUsers || []).filter(u => u && u.username && u.username.toLowerCase() !== me.toLowerCase() && !deletedContacts.includes(u.username.toLowerCase()));
+
+    if (others.length === 0) return;
+
+    const grid = document.createElement("div");
+    grid.className = "quick-contacts-grid";
+
+    others.slice(0, 4).forEach(u => {
+        const item = document.createElement("div");
+        item.className = "quick-contact-card";
+        const displayName = u.fullname || u.username;
+        const initial = displayName.charAt(0).toUpperCase();
+
+        item.innerHTML = `
+            <div class="avatar-badge" style="width: 44px; height: 44px; font-size: 16px; background: ${getAvatarGradient(u.username)}; margin: 0 auto 8px auto;">
+                ${u.avatarUrl ? `<img src="${u.avatarUrl}" class="avatar-img" alt="avatar">` : initial}
+            </div>
+            <strong class="quick-contact-name">${escapeHtml(displayName)}</strong>
+            <span class="quick-contact-bio">${escapeHtml(u.bio || '@' + u.username)}</span>
+            <button type="button" class="quick-contact-btn"><i class="fa-solid fa-comment"></i> Chat</button>
+        `;
+
+        item.onclick = () => selectContact(u.username, displayName, u.avatarUrl);
+        grid.appendChild(item);
+    });
+
+    container.appendChild(grid);
 }
 
 function handleContactSearch() {
@@ -2394,17 +2436,20 @@ function playChime() {
 
 // Contact search
 function filterUsers() {
-    const val = (document.getElementById("userSearchInput").value || "").trim().toLowerCase();
+    const val = (document.getElementById("userSearchInput")?.value || "").trim().toLowerCase();
     const results = document.getElementById("searchResults");
+    if (!results) return;
     results.innerHTML = "";
 
-    const matches = allUsers.filter(u => 
-        u.username.toLowerCase() !== me.toLowerCase() &&
-        (u.username.toLowerCase().includes(val) || (u.fullname && u.fullname.toLowerCase().includes(val)))
+    const deletedContacts = JSON.parse(localStorage.getItem("deletedContacts_" + me) || "[]");
+    const matches = (allUsers || []).filter(u => 
+        u && u.username && u.username.toLowerCase() !== me.toLowerCase() &&
+        !deletedContacts.includes(u.username.toLowerCase()) &&
+        ((u.username || "").toLowerCase().includes(val) || (u.fullname && u.fullname.toLowerCase().includes(val)))
     );
 
     if (matches.length === 0) {
-        results.innerHTML = "<p style='padding: 10px; color: #888; text-align: center;'>No matching users found</p>";
+        results.innerHTML = "<p style='padding: 16px; color: var(--text-secondary); text-align: center;'>No matching contacts found</p>";
         return;
     }
 
@@ -2412,12 +2457,18 @@ function filterUsers() {
         const div = document.createElement("div");
         div.className = "search-item";
         const displayName = u.fullname || u.username;
+        const initial = displayName.charAt(0).toUpperCase();
         div.innerHTML = `
-            <div>
-              <strong>${escapeHtml(displayName)}</strong>
-              <small style="color: #777; display: block;">@${escapeHtml(u.username)}</small>
+            <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+              <div class="avatar-badge" style="width: 38px; height: 38px; font-size: 14px; background: ${getAvatarGradient(u.username)}; flex-shrink: 0;">
+                ${u.avatarUrl ? `<img src="${u.avatarUrl}" class="avatar-img" alt="avatar">` : initial}
+              </div>
+              <div style="text-align: left; overflow: hidden;">
+                <strong style="display: block; font-size: 14px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(displayName)}</strong>
+                <small style="color: var(--text-secondary); font-size: 12px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(u.bio || '@' + u.username)}</small>
+              </div>
             </div>
-            <i class="fa-solid fa-comment" style="color: var(--primary-accent);"></i>
+            <button type="button" class="choose-chat-pill-btn"><i class="fa-solid fa-comment"></i> Chat</button>
         `;
         div.onclick = () => {
             closeModals();
