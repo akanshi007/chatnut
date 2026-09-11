@@ -57,6 +57,29 @@ const groups = loadLocalJson("groups.json", []);
 const memoryStatuses = loadLocalJson("statuses.json", []);
 const onlineUsers = new Map();
 const otpStore = new Map();
+const persistentOtps = loadLocalJson("otps.json", {});
+
+function getOtpRecord(key) {
+    if (otpStore.has(key)) return otpStore.get(key);
+    if (persistentOtps && persistentOtps[key]) return persistentOtps[key];
+    return null;
+}
+
+function setOtpRecord(key, data) {
+    otpStore.set(key, data);
+    if (persistentOtps) {
+        persistentOtps[key] = data;
+        saveLocalJson("otps.json", persistentOtps);
+    }
+}
+
+function deleteOtpRecord(key) {
+    otpStore.delete(key);
+    if (persistentOtps && persistentOtps[key]) {
+        delete persistentOtps[key];
+        saveLocalJson("otps.json", persistentOtps);
+    }
+}
 
 function generateOtp() {
     return Math.floor(100000 + Math.random() * 900000).toString();
@@ -165,7 +188,7 @@ app.post("/api/send-signup-otp", async (req, res) => {
         const otp = generateOtp();
         const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-        otpStore.set(`signup:${cleanEmail}`, {
+        setOtpRecord(`signup:${cleanEmail}`, {
             otp,
             expiresAt,
             payload: {
@@ -207,7 +230,7 @@ app.post("/api/verify-signup-otp", async (req, res) => {
         }
 
         const cleanEmail = email.trim().toLowerCase();
-        const record = otpStore.get(`signup:${cleanEmail}`);
+        const record = getOtpRecord(`signup:${cleanEmail}`);
 
         if (!record) {
             return res.status(400).json({
@@ -217,7 +240,7 @@ app.post("/api/verify-signup-otp", async (req, res) => {
         }
 
         if (Date.now() > record.expiresAt) {
-            otpStore.delete(`signup:${cleanEmail}`);
+            deleteOtpRecord(`signup:${cleanEmail}`);
             return res.status(400).json({
                 success: false,
                 message: "Verification code has expired. Please request a new code."
@@ -256,7 +279,7 @@ app.post("/api/verify-signup-otp", async (req, res) => {
         }
 
         // Clean up OTP store
-        otpStore.delete(`signup:${cleanEmail}`);
+        deleteOtpRecord(`signup:${cleanEmail}`);
 
         res.json({
             success: true,
@@ -309,7 +332,7 @@ app.post("/api/send-reset-otp", async (req, res) => {
         const otp = generateOtp();
         const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-        otpStore.set(`reset:${targetEmail}`, {
+        setOtpRecord(`reset:${targetEmail}`, {
             otp,
             expiresAt,
             username: user.username
@@ -352,7 +375,7 @@ app.post("/api/reset-password", async (req, res) => {
         }
 
         const cleanEmail = email.trim().toLowerCase();
-        const record = otpStore.get(`reset:${cleanEmail}`);
+        const record = getOtpRecord(`reset:${cleanEmail}`);
 
         if (!record) {
             return res.status(400).json({
@@ -362,7 +385,7 @@ app.post("/api/reset-password", async (req, res) => {
         }
 
         if (Date.now() > record.expiresAt) {
-            otpStore.delete(`reset:${cleanEmail}`);
+            deleteOtpRecord(`reset:${cleanEmail}`);
             return res.status(400).json({
                 success: false,
                 message: "Reset code has expired. Please request a new code."
@@ -388,7 +411,7 @@ app.post("/api/reset-password", async (req, res) => {
             }
         }
 
-        otpStore.delete(`reset:${cleanEmail}`);
+        deleteOtpRecord(`reset:${cleanEmail}`);
 
         res.json({
             success: true,

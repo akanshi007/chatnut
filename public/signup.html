@@ -223,6 +223,7 @@
 
         if (res.ok && data.success) {
           registeredEmail = email;
+          sessionStorage.setItem("pendingSignup", JSON.stringify({ fullname, username, email, password }));
           document.getElementById("otpEmailDisplay").textContent = email;
 
           signupForm.style.display = "none";
@@ -249,7 +250,7 @@
         }
       } catch (err) {
         console.error("Signup OTP error:", err);
-        showAlert("Failed to connect to server. Please verify the server is running on port 8000.");
+        showAlert("Failed to connect to server. Please verify the server is running.");
         submitBtn.classList.remove("btn-disabled");
         submitBtn.textContent = "Verify Email & Sign Up";
       }
@@ -261,6 +262,12 @@
       alertBox.style.display = "none";
 
       const otp = document.getElementById("otpInput").value.trim();
+      const emailToVerify = registeredEmail || (document.getElementById("otpEmailDisplay") ? document.getElementById("otpEmailDisplay").textContent.trim() : "");
+
+      if (!emailToVerify) {
+        showAlert("Email not found. Please click Edit Details to try again.");
+        return;
+      }
 
       if (!otp || otp.length < 6) {
         showAlert("Please enter the complete 6-digit verification code.");
@@ -274,12 +281,13 @@
         const res = await fetch(`${API_BASE}/api/verify-signup-otp`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: registeredEmail, otp })
+          body: JSON.stringify({ email: emailToVerify, otp })
         });
 
         const data = await res.json();
 
         if (res.ok && data.success) {
+          sessionStorage.removeItem("pendingSignup");
           localStorage.setItem("chatUser", data.username);
           if (data.fullname) localStorage.setItem("chatFullName", data.fullname);
           if (data.email) localStorage.setItem("chatEmail", data.email);
@@ -308,20 +316,34 @@
       resendBtn.disabled = true;
       resendBtn.textContent = "Sending...";
 
-      const fullname = document.getElementById("fullname").value.trim();
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value;
+      let pending = null;
+      try {
+        pending = JSON.parse(sessionStorage.getItem("pendingSignup") || "{}");
+      } catch (e) {}
+
+      const fullname = document.getElementById("fullname").value.trim() || (pending ? pending.fullname : "");
+      const username = document.getElementById("username").value.trim() || (pending ? pending.username : "");
+      const email = registeredEmail || (document.getElementById("otpEmailDisplay") ? document.getElementById("otpEmailDisplay").textContent.trim() : "") || (pending ? pending.email : "");
+      const password = document.getElementById("password").value || (pending ? pending.password : "");
+
+      if (!email) {
+        showAlert("Email not found. Please click Edit Details to re-enter your info.");
+        resendBtn.disabled = false;
+        resendBtn.textContent = "Resend Code";
+        return;
+      }
 
       try {
         const res = await fetch(`${API_BASE}/api/send-signup-otp`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fullname, username, email: registeredEmail, password })
+          body: JSON.stringify({ fullname, username, email, password })
         });
 
         const data = await res.json();
 
         if (res.ok && data.success) {
+          registeredEmail = email;
           showAlert("A fresh verification code has been sent!", false);
           if (data.devOtp) {
             devOtpCode.textContent = data.devOtp;
@@ -371,6 +393,19 @@
       document.getElementById("pageSubtitle").textContent = "Join chatNut to connect with friends";
       submitBtn.classList.remove("btn-disabled");
       submitBtn.textContent = "Verify Email & Sign Up";
+
+      let pending = null;
+      try {
+        pending = JSON.parse(sessionStorage.getItem("pendingSignup") || "{}");
+      } catch (e) {}
+
+      if (pending) {
+        if (!document.getElementById("fullname").value && pending.fullname) document.getElementById("fullname").value = pending.fullname;
+        if (!document.getElementById("username").value && pending.username) document.getElementById("username").value = pending.username;
+        if (!document.getElementById("email").value && pending.email) document.getElementById("email").value = pending.email;
+        if (!document.getElementById("password").value && pending.password) document.getElementById("password").value = pending.password;
+        if (!document.getElementById("confirmpassword").value && pending.password) document.getElementById("confirmpassword").value = pending.password;
+      }
     }
 
     // Forgot password modal
