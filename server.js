@@ -54,6 +54,36 @@ function saveLocalJson(filename, data) {
 const memoryUsers = loadLocalJson("users.json", []);
 const memoryMessages = loadLocalJson("messages.json", []);
 const groups = loadLocalJson("groups.json", []);
+const defaultSeedGroups = [
+    {
+        id: "group-cst-official-2024-28",
+        name: "CST OFFICIAL Batch of 2024-28",
+        sublabel: "CST Batch Of 2024-28",
+        createdBy: "sujoy",
+        members: ["sujoy", "akanshi", "hitesh", "bhumika", "you"],
+        pinned: true,
+        lastMsgSnippet: "~~Sujoy: Everyone selected for Round ...",
+        lastMsgTime: "10:01 am",
+        createdAt: new Date("2026-09-11T00:00:00Z")
+    },
+    {
+        id: "group-lt-williams-hall-2026-27",
+        name: "Lt Williams Hall 2026-2027",
+        sublabel: "Lt Williams announcement 26-27",
+        createdBy: "akriti",
+        members: ["akriti", "akanshi", "hitesh", "you"],
+        muted: true,
+        lastMsgSnippet: "Akriti (CST): Chhole bhature",
+        lastMsgTime: "8:24 pm",
+        createdAt: new Date("2026-09-11T00:00:00Z")
+    }
+];
+defaultSeedGroups.forEach(seedG => {
+    if (!groups.some(g => g.id === seedG.id)) {
+        groups.push(seedG);
+    }
+});
+saveLocalJson("groups.json", groups);
 const memoryStatuses = loadLocalJson("statuses.json", []);
 const onlineUsers = new Map();
 const otpStore = new Map();
@@ -607,14 +637,57 @@ app.post("/login", async (req, res) => {
     }
 });
 
-// Demo seed contacts
+// Demo seed contacts matching WhatsApp interface
 const defaultSeedUsers = [
     {
+        username: "hitesh",
+        fullname: "Hitesh 🐝🐝",
+        email: "hitesh@chatnut.local",
+        avatarUrl: null,
+        bio: "2 min ruko",
+        pinned: false,
+        lastMsgTime: "9:23 pm",
+        createdAt: new Date()
+    },
+    {
+        username: "you",
+        fullname: "+91 90452 48418 (You)",
+        email: "you@chatnut.local",
+        avatarUrl: null,
+        bio: "akanshi_sharma_assignment.pdf",
+        pinned: true,
+        hasDoc: true,
+        lastMsgTime: "Yesterday",
+        createdAt: new Date()
+    },
+    {
+        username: "maa",
+        fullname: "Maa 💕⭐",
+        email: "maa@chatnut.local",
+        avatarUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+        bio: "Ho Gaya gudiya",
+        pinned: true,
+        lastMsgTime: "Wednesday",
+        createdAt: new Date()
+    },
+    {
+        username: "bhumika",
+        fullname: "Bhumika ⭐",
+        email: "bhumika@chatnut.local",
+        avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+        bio: "Login to ho rha hai",
+        pinned: false,
+        lastMsgTime: "9:24 pm",
+        createdAt: new Date()
+    },
+    {
         username: "chatnut",
-        fullname: "chatNut Bot",
+        fullname: "chatNut Bot 🤖",
         email: "bot@chatnut.local",
         avatarUrl: "https://cdn-icons-png.flaticon.com/512/8943/8943377.png",
         bio: "Official assistant. Chat with me anytime!",
+        pinned: true,
+        lastMsgTime: "Yesterday",
         createdAt: new Date()
     },
     {
@@ -623,6 +696,8 @@ const defaultSeedUsers = [
         email: "alex@chatnut.local",
         avatarUrl: null,
         bio: "Hey there! I am using chatNut.",
+        pinned: false,
+        lastMsgTime: "Yesterday",
         createdAt: new Date()
     },
     {
@@ -631,13 +706,15 @@ const defaultSeedUsers = [
         email: "priya@chatnut.local",
         avatarUrl: null,
         bio: "Working on the project demo!",
+        pinned: false,
+        lastMsgTime: "8:45 pm",
         createdAt: new Date()
     }
 ];
 
 // Seed demo users in memory
 defaultSeedUsers.forEach(seed => {
-    if (!memoryUsers.some(u => u.username === seed.username)) {
+    if (!memoryUsers.some(u => (u.username || "").toLowerCase() === seed.username.toLowerCase())) {
         memoryUsers.push(seed);
     }
 });

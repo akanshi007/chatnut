@@ -1,10 +1,48 @@
 [
   {
+    "username": "hitesh",
+    "fullname": "Hitesh 🐝🐝",
+    "email": "hitesh@chatnut.local",
+    "avatarUrl": null,
+    "bio": "2 min ruko",
+    "pinned": false,
+    "createdAt": "2026-09-11T00:00:00.000Z"
+  },
+  {
+    "username": "you",
+    "fullname": "+91 90452 48418 (You)",
+    "email": "you@chatnut.local",
+    "avatarUrl": null,
+    "bio": "akanshi_sharma_assignment.pdf",
+    "pinned": true,
+    "hasDoc": true,
+    "createdAt": "2026-09-11T00:00:00.000Z"
+  },
+  {
+    "username": "maa",
+    "fullname": "Maa 💕⭐",
+    "email": "maa@chatnut.local",
+    "avatarUrl": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+    "bio": "Ho Gaya gudiya",
+    "pinned": true,
+    "createdAt": "2026-09-11T00:00:00.000Z"
+  },
+  {
+    "username": "bhumika",
+    "fullname": "Bhumika ⭐",
+    "email": "bhumika@chatnut.local",
+    "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    "bio": "Login to ho rha hai",
+    "pinned": false,
+    "createdAt": "2026-09-11T00:00:00.000Z"
+  },
+  {
     "username": "chatnut",
-    "fullname": "chatNut Bot",
+    "fullname": "chatNut Bot 🤖",
     "email": "bot@chatnut.local",
     "avatarUrl": "https://cdn-icons-png.flaticon.com/512/8943/8943377.png",
     "bio": "Official assistant. Chat with me anytime!",
+    "pinned": true,
     "createdAt": "2026-09-11T00:00:00.000Z"
   },
   {
@@ -13,6 +51,7 @@
     "email": "alex@chatnut.local",
     "avatarUrl": null,
     "bio": "Hey there! I am using chatNut.",
+    "pinned": false,
     "createdAt": "2026-09-11T00:00:00.000Z"
   },
   {
@@ -21,6 +60,7 @@
     "email": "priya@chatnut.local",
     "avatarUrl": null,
     "bio": "Working on the project demo!",
+    "pinned": false,
     "createdAt": "2026-09-11T00:00:00.000Z"
   }
 ]
