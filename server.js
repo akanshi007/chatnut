@@ -559,6 +559,15 @@ app.get("/api/last-messages", async (req, res) => {
             }
         }
 
+
+            res.json(lastMessages);
+
+} catch (err) {
+    console.error("Error fetching last messages:", err);
+    res.json({});
+}
+});  
+
 // ---------------- DELETE CONVERSATION API ----------------
 app.post("/api/delete-conversation", async (req, res) => {
     try {
