@@ -42,7 +42,6 @@
     <div class="signup-wrapper">
       <div id="alertBox" class="alert-box"></div>
 
-      <!-- STEP 1: Registration Details Form -->
       <form id="signupForm" class="signup-form">
         <div class="input-card">
           <label for="fullname">Full Name</label>
@@ -69,18 +68,19 @@
           <input type="password" id="confirmpassword" name="confirmpassword" placeholder="Re-enter password" required autocomplete="new-password">
         </div>
 
+        <a href="javascript:void(0)" class="forgot-password-link" onclick="openForgotPasswordModal()">Forgot Password?</a>
+
         <button type="submit" id="submitBtn" class="signup-btn">Verify Email & Sign Up</button>
         <p class="login-text">Already have an account? <a href="login.html">Log In</a></p>
       </form>
 
-      <!-- STEP 2: Email OTP Verification Card -->
       <form id="otpForm" class="signup-form" style="display: none;">
         <div class="otp-meta-info">
           We've sent a 6-digit verification code to:
-          <strong id="otpEmailDisplay" style="display: block; margin-top: 4px; color: #ff8800;">user@example.com</strong>
+          <strong id="otpEmailDisplay" style="display: block; margin-top: 4px; color: #00a884;">user@example.com</strong>
         </div>
 
-        <div id="devOtpBanner" style="display: none; background: #fff8f0; border: 1px dashed #ff8800; border-radius: 8px; padding: 8px; font-size: 13px; color: #d97706; text-align: center; margin-bottom: 6px;">
+        <div id="devOtpBanner" style="display: none; background: #f0fdf4; border: 1px dashed #00a884; border-radius: 8px; padding: 8px; font-size: 13px; color: #00a884; text-align: center; margin-bottom: 6px;">
           🔑 Verification code: <strong id="devOtpCode">-</strong>
         </div>
 
@@ -100,6 +100,62 @@
 
     </div>
   </section>
+
+  <div id="forgotPasswordModal" class="fp-modal-overlay">
+    <div class="fp-modal-content">
+      <div class="fp-modal-header">
+        <h3 id="fpModalTitle">Reset Password</h3>
+        <button class="fp-close-btn" onclick="closeForgotPasswordModal()">&times;</button>
+      </div>
+
+      <div id="fpAlertBox" class="alert-box"></div>
+
+      <form id="fpStep1Form" onsubmit="handleSendResetOtp(event)">
+        <p class="otp-meta-info">Enter your registered email address to receive a 6-digit password reset code.</p>
+
+        <div class="input-card" style="margin-top: 10px;">
+          <label for="fpEmailInput">Registered Email</label>
+          <input type="email" id="fpEmailInput" placeholder="name@example.com" required autocomplete="email">
+        </div>
+
+        <button type="submit" id="fpStep1Btn" class="signup-btn" style="margin-top: 14px;">Send Reset Code</button>
+      </form>
+
+      <form id="fpStep2Form" style="display: none;" onsubmit="handleResetPassword(event)">
+        <div class="otp-meta-info">
+          Enter the 6-digit code sent to:
+          <strong id="fpTargetEmailDisplay" style="display: block; color: #00a884; margin-top: 2px;">email@example.com</strong>
+        </div>
+
+        <div id="fpDevOtpBanner" style="display: none; background: #f0fdf4; border: 1px dashed #00a884; border-radius: 8px; padding: 8px; font-size: 13px; color: #00a884; text-align: center; margin-bottom: 6px;">
+          🔑 Reset Code: <strong id="fpDevOtpCode">-</strong>
+        </div>
+
+        <div class="input-card">
+          <label for="fpOtpInput">6-Digit Reset Code</label>
+          <input type="text" id="fpOtpInput" class="otp-display-code" placeholder="------" maxlength="6" pattern="[0-9]{6}" required>
+        </div>
+
+        <div class="input-card">
+          <label for="fpNewPassword">New Password</label>
+          <input type="password" id="fpNewPassword" placeholder="At least 6 characters" required autocomplete="new-password">
+        </div>
+
+        <div class="input-card">
+          <label for="fpConfirmPassword">Confirm New Password</label>
+          <input type="password" id="fpConfirmPassword" placeholder="Re-enter new password" required autocomplete="new-password">
+        </div>
+
+        <div class="resend-row">
+          <span id="fpCountdownText">Resend code in <strong id="fpTimerVal">60</strong>s</span>
+          <button type="button" id="fpResendBtn" class="resend-btn" disabled onclick="handleResendResetOtp()">Resend Code</button>
+        </div>
+
+        <button type="submit" id="fpStep2Btn" class="signup-btn" style="margin-top: 10px;">Reset Password</button>
+        <button type="button" class="signup-btn btn-secondary" onclick="backToFpStep1()">Change Email</button>
+      </form>
+    </div>
+  </div>
 
   <script>
     const API_BASE = (window.location.protocol === 'file:' || (window.location.port && window.location.port !== '8000'))
@@ -127,7 +183,7 @@
       alertBox.style.display = "block";
     }
 
-    // Step 1: Request Signup OTP
+    // Request signup OTP
     signupForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       alertBox.style.display = "none";
@@ -169,7 +225,6 @@
           registeredEmail = email;
           document.getElementById("otpEmailDisplay").textContent = email;
 
-          // Switch view to Step 2 OTP
           signupForm.style.display = "none";
           otpForm.style.display = "flex";
           document.getElementById("pageTitle").textContent = "Verify Your Email";
@@ -199,7 +254,7 @@
       }
     });
 
-    // Step 2: Verify OTP and Register
+    // Verify OTP and complete registration
     otpForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       alertBox.style.display = "none";
@@ -314,6 +369,220 @@
       document.getElementById("pageSubtitle").textContent = "Join chatNut to connect with friends";
       submitBtn.classList.remove("btn-disabled");
       submitBtn.textContent = "Verify Email & Sign Up";
+    }
+
+    // Forgot password modal
+    const fpModal = document.getElementById("forgotPasswordModal");
+    const fpAlertBox = document.getElementById("fpAlertBox");
+    const fpStep1Form = document.getElementById("fpStep1Form");
+    const fpStep2Form = document.getElementById("fpStep2Form");
+    const fpStep1Btn = document.getElementById("fpStep1Btn");
+    const fpStep2Btn = document.getElementById("fpStep2Btn");
+    const fpResendBtn = document.getElementById("fpResendBtn");
+    const fpTimerVal = document.getElementById("fpTimerVal");
+    const fpCountdownText = document.getElementById("fpCountdownText");
+    const fpDevOtpBanner = document.getElementById("fpDevOtpBanner");
+    const fpDevOtpCode = document.getElementById("fpDevOtpCode");
+
+    let resetTargetEmail = "";
+    let fpTimer = null;
+    let fpSecondsLeft = 60;
+
+    function openForgotPasswordModal() {
+      fpModal.style.display = "flex";
+      fpAlertBox.style.display = "none";
+      fpStep1Form.style.display = "block";
+      fpStep2Form.style.display = "none";
+      document.getElementById("fpEmailInput").value = document.getElementById("email").value || "";
+      document.getElementById("fpEmailInput").focus();
+    }
+
+    function closeForgotPasswordModal() {
+      fpModal.style.display = "none";
+      clearInterval(fpTimer);
+    }
+
+    function showFpAlert(msg, isError = true) {
+      fpAlertBox.textContent = msg;
+      fpAlertBox.className = "alert-box " + (isError ? "alert-error" : "alert-success");
+      fpAlertBox.style.display = "block";
+    }
+
+    function startFpCountdown() {
+      clearInterval(fpTimer);
+      fpSecondsLeft = 60;
+      fpResendBtn.disabled = true;
+      fpCountdownText.style.display = "inline";
+      fpTimerVal.textContent = fpSecondsLeft;
+
+      fpTimer = setInterval(() => {
+        fpSecondsLeft--;
+        if (fpSecondsLeft <= 0) {
+          clearInterval(fpTimer);
+          fpCountdownText.style.display = "none";
+          fpResendBtn.disabled = false;
+        } else {
+          fpTimerVal.textContent = fpSecondsLeft;
+        }
+      }, 1000);
+    }
+
+    function backToFpStep1() {
+      clearInterval(fpTimer);
+      fpAlertBox.style.display = "none";
+      fpStep2Form.style.display = "none";
+      fpStep1Form.style.display = "block";
+      fpStep1Btn.classList.remove("btn-disabled");
+      fpStep1Btn.textContent = "Send Reset Code";
+    }
+
+    // Send reset OTP
+    async function handleSendResetOtp(e) {
+      e.preventDefault();
+      fpAlertBox.style.display = "none";
+
+      const email = document.getElementById("fpEmailInput").value.trim();
+      if (!email) {
+        showFpAlert("Please enter your registered email address.");
+        return;
+      }
+
+      fpStep1Btn.classList.add("btn-disabled");
+      fpStep1Btn.textContent = "Sending reset code...";
+
+      try {
+        const res = await fetch(`${API_BASE}/api/send-reset-otp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          resetTargetEmail = data.email || email;
+          document.getElementById("fpTargetEmailDisplay").textContent = resetTargetEmail;
+
+          fpStep1Form.style.display = "none";
+          fpStep2Form.style.display = "block";
+
+          if (data.devOtp) {
+            fpDevOtpCode.textContent = data.devOtp;
+            fpDevOtpBanner.style.display = "block";
+            document.getElementById("fpOtpInput").value = data.devOtp;
+          } else {
+            fpDevOtpBanner.style.display = "none";
+          }
+
+          startFpCountdown();
+          document.getElementById("fpOtpInput").focus();
+          showFpAlert(data.message || "Reset code sent!", false);
+        } else {
+          showFpAlert(data.message || "Failed to send reset code.");
+          fpStep1Btn.classList.remove("btn-disabled");
+          fpStep1Btn.textContent = "Send Reset Code";
+        }
+      } catch (err) {
+        console.error("Forgot password error:", err);
+        showFpAlert("Connection error. Please ensure server is running.");
+        fpStep1Btn.classList.remove("btn-disabled");
+        fpStep1Btn.textContent = "Send Reset Code";
+      }
+    }
+
+    // Reset password
+    async function handleResetPassword(e) {
+      e.preventDefault();
+      fpAlertBox.style.display = "none";
+
+      const otp = document.getElementById("fpOtpInput").value.trim();
+      const newPassword = document.getElementById("fpNewPassword").value;
+      const confirmPassword = document.getElementById("fpConfirmPassword").value;
+
+      if (!otp || otp.length < 6) {
+        showFpAlert("Please enter the 6-digit code.");
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        showFpAlert("Password must be at least 6 characters long.");
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        showFpAlert("Passwords do not match.");
+        return;
+      }
+
+      fpStep2Btn.classList.add("btn-disabled");
+      fpStep2Btn.textContent = "Resetting password...";
+
+      try {
+        const res = await fetch(`${API_BASE}/api/reset-password`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: resetTargetEmail,
+            otp,
+            newPassword
+          })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          showFpAlert(data.message || "Password reset successfully!", false);
+          setTimeout(() => {
+            closeForgotPasswordModal();
+            showAlert("Password reset successfully! You can now log in.", false);
+            window.location.href = "login.html";
+          }, 1200);
+        } else {
+          showFpAlert(data.message || "Password reset failed.");
+          fpStep2Btn.classList.remove("btn-disabled");
+          fpStep2Btn.textContent = "Reset Password";
+        }
+      } catch (err) {
+        console.error("Reset submit error:", err);
+        showFpAlert("Connection error. Please try again.");
+        fpStep2Btn.classList.remove("btn-disabled");
+        fpStep2Btn.textContent = "Reset Password";
+      }
+    }
+
+    async function handleResendResetOtp() {
+      if (fpResendBtn.disabled) return;
+
+      fpResendBtn.disabled = true;
+      fpResendBtn.textContent = "Sending...";
+
+      try {
+        const res = await fetch(`${API_BASE}/api/send-reset-otp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: resetTargetEmail })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          showFpAlert("A fresh reset code has been sent!", false);
+          if (data.devOtp) {
+            fpDevOtpCode.textContent = data.devOtp;
+            fpDevOtpBanner.style.display = "block";
+            document.getElementById("fpOtpInput").value = data.devOtp;
+          }
+          startFpCountdown();
+        } else {
+          showFpAlert(data.message || "Failed to resend code.");
+          fpResendBtn.disabled = false;
+          fpResendBtn.textContent = "Resend Code";
+        }
+      } catch (err) {
+        showFpAlert("Connection error. Please try again.");
+        fpResendBtn.disabled = false;
+        fpResendBtn.textContent = "Resend Code";
+      }
     }
   </script>
 </body>

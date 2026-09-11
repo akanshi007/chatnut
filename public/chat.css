@@ -27,8 +27,7 @@ body {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
     border: 1px solid rgba(0, 0, 0, 0.08);
 }
-
-/* ---------------- HEADER ---------------- */
+/* Header */
 .chat-header {
     background: #075e54;
     color: white;
@@ -133,7 +132,7 @@ body {
     50% { opacity: 0.55; }
 }
 
-/* ---------------- MESSAGES CONTAINER ---------------- */
+/* Messages container */
 #messages {
     flex: 1;
     padding: 16px 16px 8px 16px;
@@ -143,7 +142,6 @@ body {
     gap: 8px;
     background: #efeae2;
     background-image: radial-gradient(rgba(0, 0, 0, 0.035) 1px, transparent 0);
-    background-size: 20px 20px;
 }
 
 /* Empty Prompt */
@@ -158,31 +156,29 @@ body {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-/* Base message bubble */
 .message {
+    max-width: 65%;
+    padding: 7px 12px 6px 12px;
+    border-radius: 8px 8px 8px 2px;
     background: #ffffff;
-    padding: 8px 12px 6px 12px;
-    border-radius: 12px;
-    border-top-left-radius: 3px;
-    max-width: 78%;
+    color: #111b21;
+    font-size: 0.92rem;
+    box-shadow: 0 1px 1.5px rgba(11, 20, 26, 0.13);
     position: relative;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+    word-break: break-word;
     align-self: flex-start;
-    word-wrap: break-word;
 }
 
-/* Sent message bubble (me) */
 .message.me {
     background: #d9fdd3;
+    border-radius: 8px 8px 2px 8px;
     align-self: flex-end;
-    border-top-left-radius: 12px;
-    border-top-right-radius: 3px;
 }
 
-.sender-name {
-    font-size: 0.72rem;
-    color: #075e54;
+.message .sender-name {
+    font-size: 0.76rem;
     font-weight: 600;
+    color: #008069;
     margin-bottom: 2px;
     display: block;
 }
@@ -191,12 +187,9 @@ body {
     display: none;
 }
 
-.text-content {
-    font-size: 0.92rem;
-    color: #111b21;
-    line-height: 1.4;
-    word-break: break-word;
+.message .text-content {
     margin: 0;
+    line-height: 1.35;
 }
 
 .message-meta {
@@ -205,6 +198,9 @@ body {
     justify-content: flex-end;
     gap: 4px;
     margin-top: 3px;
+}
+
+.message-meta .time {
     font-size: 0.68rem;
     color: #667781;
 }
@@ -214,7 +210,7 @@ body {
     font-size: 0.72rem;
 }
 
-/* ---------------- INPUT FORM ---------------- */
+/* Input form */
 form#chat-form {
     display: flex;
     align-items: center;

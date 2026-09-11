@@ -24,7 +24,7 @@ function logout() {
 const socket = io();
 
 socket.on("connect", () => {
-    console.log("✅ Dashboard Socket Connected:", socket.id);
+    console.log("Dashboard socket connected:", socket.id);
 });
 
 socket.on("connect_error", (err) => {

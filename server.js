@@ -1,6 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
+const fs = require("fs");
 const http = require("http");
 const bcrypt = require("bcrypt");
 const { Server } = require("socket.io");
@@ -12,7 +13,7 @@ const { sendOtpEmail } = require("./mailer");
 const app = express();
 const server = http.createServer(app);
 
-// ---------------- SOCKET.IO ----------------
+// Socket.io configuration
 const io = new Server(server, {
     cors: {
         origin: "*",
@@ -21,20 +22,47 @@ const io = new Server(server, {
     maxHttpBufferSize: 1e8 // 100 MB for photos & attachments
 });
 
-// ---------------- IN-MEMORY FALLBACK & APP STATE ----------------
+// Local file storage fallback when MongoDB is offline
 let isMongoConnected = false;
-const memoryUsers = [];
-const memoryMessages = [];
-const groups = [];
-const onlineUsers = new Map(); // username -> Set of socket IDs
-const otpStore = new Map(); // key: `${type}:${cleanEmail}` -> { otp, expiresAt, payload }
+const DATA_DIR = path.join(__dirname, "local_data");
+if (!fs.existsSync(DATA_DIR)) {
+    try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch (e) {}
+}
+
+function loadLocalJson(filename, defaultValue = []) {
+    try {
+        const filePath = path.join(DATA_DIR, filename);
+        if (fs.existsSync(filePath)) {
+            const content = fs.readFileSync(filePath, "utf8");
+            return JSON.parse(content);
+        }
+    } catch (e) {
+        console.warn(`Could not read ${filename}:`, e.message);
+    }
+    return defaultValue;
+}
+
+function saveLocalJson(filename, data) {
+    try {
+        const filePath = path.join(DATA_DIR, filename);
+        fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
+    } catch (e) {
+        console.warn(`Could not save ${filename}:`, e.message);
+    }
+}
+
+const memoryUsers = loadLocalJson("users.json", []);
+const memoryMessages = loadLocalJson("messages.json", []);
+const groups = loadLocalJson("groups.json", []);
+const memoryStatuses = loadLocalJson("statuses.json", []);
+const onlineUsers = new Map();
+const otpStore = new Map();
 
 function generateOtp() {
     return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// ---------------- MIDDLEWARE ----------------
-// Enable CORS for all requests (supports Live Server on port 5500, etc.)
+// Middleware
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
@@ -49,22 +77,23 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
-// ---------------- MONGODB ----------------
-mongoose.connect("mongodb://127.0.0.1:27017/chatApp", {
+// MongoDB connection
+const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/chatApp";
+mongoose.connect(MONGO_URI, {
     serverSelectionTimeoutMS: 2500
 }).then(() => {
     isMongoConnected = true;
-    console.log("✅ MongoDB Connected");
+    console.log("Connected to MongoDB");
 }).catch(err => {
     isMongoConnected = false;
-    console.warn("⚠️ MongoDB offline on 127.0.0.1:27017. Running in in-memory fallback mode so all features work!");
+    console.log("MongoDB unavailable, running in local storage fallback mode");
 });
 
 mongoose.connection.on("connected", () => { isMongoConnected = true; });
 mongoose.connection.on("disconnected", () => { isMongoConnected = false; });
 mongoose.connection.on("error", () => { isMongoConnected = false; });
 
-// ---------------- PAGE ROUTES ----------------
+// Page routes
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
@@ -89,7 +118,7 @@ app.get("/chat", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "aftersignup.html"));
 });
 
-// ---------------- OTP & REAL-TIME EMAIL REGISTRATION ----------------
+// Signup & OTP verification
 app.post("/api/send-signup-otp", async (req, res) => {
     try {
         const { fullname, username, email, password } = req.body;
@@ -223,6 +252,7 @@ app.post("/api/verify-signup-otp", async (req, res) => {
                 password: hashedPassword,
                 createdAt: new Date()
             });
+            saveLocalJson("users.json", memoryUsers);
         }
 
         // Clean up OTP store
@@ -245,7 +275,7 @@ app.post("/api/verify-signup-otp", async (req, res) => {
     }
 });
 
-// ---------------- FORGOT PASSWORD & RESET OTP ----------------
+// Password reset OTP
 app.post("/api/send-reset-otp", async (req, res) => {
     try {
         const { email } = req.body;
@@ -354,6 +384,7 @@ app.post("/api/reset-password", async (req, res) => {
             const u = memoryUsers.find(user => user.email === cleanEmail);
             if (u) {
                 u.password = hashedPassword;
+                saveLocalJson("users.json", memoryUsers);
             }
         }
 
@@ -373,7 +404,7 @@ app.post("/api/reset-password", async (req, res) => {
     }
 });
 
-// ---------------- DIRECT SIGNUP (BACKWARD COMPATIBLE) ----------------
+// Direct signup endpoint
 app.post("/signup", async (req, res) => {
     try {
         const { fullname, username, email, password } = req.body;
@@ -434,6 +465,7 @@ app.post("/signup", async (req, res) => {
                 password: hashedPassword,
                 createdAt: new Date()
             });
+            saveLocalJson("users.json", memoryUsers);
         }
 
         res.json({
@@ -453,7 +485,7 @@ app.post("/signup", async (req, res) => {
     }
 });
 
-// ---------------- LOGIN ----------------
+// User login
 app.post("/login", async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -477,9 +509,42 @@ app.post("/login", async (req, res) => {
         }
 
         if (!user) {
-            return res.status(400).json({
-                success: false,
-                message: "User not found with this username or email."
+            if (password.length < 4) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Password must be at least 4 characters."
+                });
+            }
+
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const cleanName = cleanLogin.split("@")[0];
+            const formattedName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+            const userEmail = cleanLogin.includes("@") ? cleanLogin : `${cleanName}@chatnut.local`;
+
+            const newUserObj = {
+                fullname: formattedName,
+                username: cleanName,
+                email: userEmail,
+                password: hashedPassword,
+                createdAt: new Date()
+            };
+
+            if (isMongoConnected) {
+                const dbUser = new User(newUserObj);
+                await dbUser.save();
+                user = dbUser;
+            } else {
+                memoryUsers.push(newUserObj);
+                saveLocalJson("users.json", memoryUsers);
+                user = newUserObj;
+            }
+
+            return res.json({
+                success: true,
+                message: "Account created successfully.",
+                username: user.username,
+                fullname: user.fullname,
+                email: user.email
             });
         }
 
@@ -508,30 +573,29 @@ app.post("/login", async (req, res) => {
     }
 });
 
-// ---------------- USERS LIST ----------------
+// Users API
 app.get("/api/users", async (req, res) => {
     try {
         if (isMongoConnected) {
-            const users = await User.find({}, "username fullname email createdAt").sort({ username: 1 });
+            const users = await User.find({}, "username fullname email avatarUrl bio createdAt").sort({ username: 1 });
             return res.json(users);
         }
-        res.json(memoryUsers.map(u => ({ username: u.username, fullname: u.fullname, email: u.email, createdAt: u.createdAt })));
+        res.json(memoryUsers.map(u => ({ username: u.username, fullname: u.fullname, email: u.email, avatarUrl: u.avatarUrl || null, bio: u.bio || "Hey there! I am using chatNut.", createdAt: u.createdAt })));
     } catch (err) {
         console.error("Error fetching users:", err);
         res.json([]);
     }
 });
 
-// ---------------- LAST MESSAGES API ----------------
+// Last messages API
 app.get("/api/last-messages", async (req, res) => {
     try {
         const currentUser = (req.query.user || "").trim().toLowerCase();
         if (!currentUser) return res.json({});
 
-        const lastMessages = {}; // room -> { message, time, username }
+        const lastMessages = {};
 
         if (isMongoConnected) {
-            // Find messages from rooms involving this user
             const regex = new RegExp(`(^|--)(${currentUser})($|--)`, "i");
             const msgs = await Message.find({ room: regex }).sort({ time: -1 });
 
@@ -559,16 +623,14 @@ app.get("/api/last-messages", async (req, res) => {
             }
         }
 
+        res.json(lastMessages);
+    } catch (err) {
+        console.error("Last messages error:", err);
+        res.json({});
+    }
+});
 
-            res.json(lastMessages);
-
-} catch (err) {
-    console.error("Error fetching last messages:", err);
-    res.json({});
-}
-});  
-
-// ---------------- DELETE CONVERSATION API ----------------
+// Delete conversation API
 app.post("/api/delete-conversation", async (req, res) => {
     try {
         const { user, contact } = req.body;
@@ -590,7 +652,6 @@ app.post("/api/delete-conversation", async (req, res) => {
             }
         }
 
-        // Notify room members in real-time
         io.to(room).emit("conversation deleted", { room, user: cleanUser, contact: cleanContact });
 
         res.json({
@@ -604,35 +665,118 @@ app.post("/api/delete-conversation", async (req, res) => {
     }
 });
 
-// ---------------- GROUPS API ----------------
+// Groups API
 app.get("/api/groups", (req, res) => {
     res.json(groups);
 });
 
 app.post("/api/groups", (req, res) => {
-    const { name, createdBy } = req.body;
-    if (!name || !name.trim()) {
-        return res.status(400).json({ success: false, message: "Group name is required." });
+    try {
+        const { name, createdBy, members } = req.body;
+        if (!name || !name.trim()) {
+            return res.status(400).json({ success: false, message: "Group name is required." });
+        }
+
+        const id = "group-" + name.trim().toLowerCase().replace(/[^a-z0-9]/g, "-") + "-" + Math.floor(100 + Math.random() * 900);
+        const membersList = Array.isArray(members) ? members.map(m => m.toLowerCase()) : [];
+        if (createdBy && !membersList.includes(createdBy.toLowerCase())) {
+            membersList.push(createdBy.toLowerCase());
+        }
+
+        const newGroup = {
+            id,
+            name: name.trim(),
+            createdBy: createdBy || "anonymous",
+            members: membersList,
+            createdAt: new Date()
+        };
+        groups.push(newGroup);
+        saveLocalJson("groups.json", groups);
+
+        io.emit("group created", newGroup);
+        res.json({ success: true, group: newGroup });
+    } catch (err) {
+        console.error("Create group error:", err);
+        res.status(500).json({ success: false, message: "Failed to create group." });
     }
-
-    const id = name.trim().toLowerCase().replace(/\s+/g, "-") + "-" + Math.floor(100 + Math.random() * 900);
-    const newGroup = {
-        id,
-        name: name.trim(),
-        createdBy: createdBy || "anonymous",
-        createdAt: new Date()
-    };
-    groups.push(newGroup);
-
-    res.json({ success: true, group: newGroup });
 });
 
-// ---------------- ONLINE USERS API ----------------
+// Statuses API
+app.get("/api/statuses", (req, res) => {
+    const now = Date.now();
+    // Return active statuses within 24 hours
+    const active = memoryStatuses.filter(s => (now - new Date(s.createdAt).getTime()) < 24 * 60 * 60 * 1000);
+    res.json(active);
+});
+
+app.post("/api/statuses", (req, res) => {
+    try {
+        const { username, fullName, avatarUrl, text, mediaUrl, bgColor, fontStyle } = req.body;
+        if (!username || (!text && !mediaUrl)) {
+            return res.status(400).json({ success: false, message: "Status text or media is required." });
+        }
+
+        const newStatus = {
+            id: "status-" + Date.now() + "-" + Math.random().toString(36).substr(2, 5),
+            username: username.trim().toLowerCase(),
+            fullName: fullName || username,
+            avatarUrl: avatarUrl || null,
+            text: text || "",
+            mediaUrl: mediaUrl || null,
+            bgColor: bgColor || "#00a884",
+            fontStyle: fontStyle || "sans-serif",
+            createdAt: new Date()
+        };
+
+        memoryStatuses.unshift(newStatus);
+        saveLocalJson("statuses.json", memoryStatuses);
+        io.emit("new status", newStatus);
+
+        res.json({ success: true, status: newStatus });
+    } catch (err) {
+        console.error("Post status error:", err);
+        res.status(500).json({ success: false, message: "Failed to post status." });
+    }
+});
+
+// Profile update API (avatar & bio)
+app.post("/api/update-profile", async (req, res) => {
+    try {
+        const { username, avatarUrl, bio, fullname } = req.body;
+        if (!username) return res.status(400).json({ success: false, message: "Username is required." });
+
+        const clean = username.trim().toLowerCase();
+        const updateFields = {};
+        if (avatarUrl !== undefined) updateFields.avatarUrl = avatarUrl;
+        if (bio !== undefined) updateFields.bio = bio;
+        if (fullname) updateFields.fullname = fullname;
+
+        if (isMongoConnected) {
+            await User.updateOne({ username: clean }, { $set: updateFields });
+        }
+
+        const u = memoryUsers.find(user => user.username === clean);
+        if (u) {
+            if (avatarUrl !== undefined) u.avatarUrl = avatarUrl;
+            if (bio !== undefined) u.bio = bio;
+            if (fullname) u.fullname = fullname;
+            saveLocalJson("users.json", memoryUsers);
+        }
+
+        io.emit("user profile updated", { username: clean, avatarUrl, bio, fullname });
+        res.json({ success: true, message: "Profile updated successfully.", avatarUrl, bio });
+    } catch (err) {
+        console.error("Profile update error:", err);
+        res.status(500).json({ success: false, message: "Failed to update profile." });
+    }
+});
+
+// Online users API
 app.get("/api/online-users", (req, res) => {
     res.json(Array.from(onlineUsers.keys()));
 });
 
-// ---------------- SOCKET CHAT ----------------
+// Socket.IO events
 io.on("connection", (socket) => {
     let currentSocketUser = null;
 
@@ -681,6 +825,8 @@ io.on("connection", (socket) => {
             const msgData = {
                 id: "msg-" + Date.now() + "-" + Math.random().toString(36).substr(2, 6),
                 username: data.username,
+                senderFullName: data.senderFullName || data.username,
+                avatarUrl: data.avatarUrl || null,
                 message: data.message || "",
                 room: data.room,
                 mediaUrl: data.mediaUrl || null,
@@ -698,6 +844,7 @@ io.on("connection", (socket) => {
                 io.to(data.room).emit("chat message", saved);
             } else {
                 memoryMessages.push(msgData);
+                saveLocalJson("messages.json", memoryMessages);
                 io.to(data.room).emit("chat message", msgData);
             }
         } catch (err) {
@@ -725,6 +872,7 @@ io.on("connection", (socket) => {
                     memMsg.isDeleted = true;
                     memMsg.message = "This message was deleted";
                     memMsg.mediaUrl = null;
+                    saveLocalJson("messages.json", memoryMessages);
                 }
                 io.to(room).emit("message deleted", { messageId, deleteType: "everyone" });
             } else if (deleteType === "me") {
@@ -739,7 +887,10 @@ io.on("connection", (socket) => {
                     const memMsg = memoryMessages.find(m => m.id === messageId || m._id == messageId);
                     if (memMsg) {
                         if (!memMsg.deletedFor) memMsg.deletedFor = [];
-                        memMsg.deletedFor.push(cleanUser);
+                        if (!memMsg.deletedFor.includes(cleanUser)) {
+                            memMsg.deletedFor.push(cleanUser);
+                            saveLocalJson("messages.json", memoryMessages);
+                        }
                     }
                     socket.emit("message deleted", { messageId, deleteType: "me" });
                 }
@@ -775,9 +926,9 @@ io.on("connection", (socket) => {
     });
 });
 
-// ---------------- SERVER ----------------
+// Server start
 const PORT = process.env.PORT || 8000;
 
-server.listen(PORT, () => {
-    console.log(`🚀 Server running at http://localhost:${PORT}`);
+server.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on port ${PORT}`);
 });

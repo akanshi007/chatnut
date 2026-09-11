@@ -1,16 +1,8 @@
-/**
- * mailer.js - chatNut Email & OTP Dispatch Service
- * 
- * Supports:
- * - Real-time email delivery via standard SMTP (Gmail, Brevo, SendGrid, etc.)
- * - Automatic fallback if credentials are not configured or during local development
- * - Beautifully styled chatNut branded HTML emails
- */
+// Email and OTP dispatch service
 
 const tls = require("tls");
 const net = require("net");
 
-// Optional nodemailer integration if installed by user
 let nodemailer = null;
 try {
     nodemailer = require("nodemailer");
@@ -18,13 +10,7 @@ try {
     // Nodemailer not installed, built-in TLS SMTP client will handle dispatch
 }
 
-/**
- * Send an OTP verification email to the user
- * @param {string} toEmail - Recipient email address
- * @param {string} otp - 6-digit numeric OTP code
- * @param {'signup' | 'reset'} type - Purpose of OTP ('signup' or 'reset')
- * @param {string} [recipientName] - Optional display name of user
- */
+// Send OTP verification code
 async function sendOtpEmail(toEmail, otp, type = "signup", recipientName = "User") {
     const isSignup = type === "signup";
     const subject = isSignup 
@@ -77,32 +63,37 @@ async function sendOtpEmail(toEmail, otp, type = "signup", recipientName = "User
 
     const textContent = `${title}\n\nHello ${recipientName},\n\n${message}\n\nVerification Code: ${otp}\n\nThis code will expire in 10 minutes.\n\nIf you did not request this, please ignore this email.`;
 
-    // 1. Check if SMTP credentials are provided in environment
-    const smtpHost = process.env.SMTP_HOST || (process.env.GMAIL_USER ? "smtp.gmail.com" : null);
+    console.log(`[Auth] OTP generated for ${toEmail} (${type}): ${otp}`);
+
+    // Read SMTP configuration from environment
+    const gmailUser = process.env.GMAIL_USER;
+    const gmailPass = process.env.GMAIL_PASS ? process.env.GMAIL_PASS.replace(/\s+/g, "") : null;
+
+    const smtpHost = process.env.SMTP_HOST || (gmailUser ? "smtp.gmail.com" : null);
     const smtpPort = parseInt(process.env.SMTP_PORT || (smtpHost === "smtp.gmail.com" ? "465" : "587"), 10);
-    const smtpUser = process.env.SMTP_USER || process.env.GMAIL_USER;
-    const smtpPass = process.env.SMTP_PASS || process.env.GMAIL_PASS;
+    const smtpUser = process.env.SMTP_USER || gmailUser;
+    const smtpPass = (process.env.SMTP_PASS || gmailPass || "").replace(/\s+/g, "");
 
-    // Log the OTP prominently to the terminal so developers/users are never locked out
-    console.log("\n=======================================================");
-    console.log(`📬 [chatNut EMAIL OTP SERVICE]`);
-    console.log(`To:        ${toEmail}`);
-    console.log(`Purpose:   ${type.toUpperCase()}`);
-    console.log(`OTP Code:  🔑 [ ${otp} ]`);
-    console.log(`Validity:  10 Minutes`);
-    console.log("=======================================================\n");
-
-    // 2. If SMTP is configured, attempt real email transmission
-    if (smtpHost && smtpUser && smtpPass) {
+    // Attempt delivery if configured
+    if (smtpUser && smtpPass) {
         try {
             if (nodemailer) {
-                const transporter = nodemailer.createTransport({
-                    host: smtpHost,
-                    port: smtpPort,
-                    secure: smtpPort === 465,
-                    auth: { user: smtpUser, pass: smtpPass }
-                });
+                let transportConfig;
+                if (gmailUser && gmailPass) {
+                    transportConfig = {
+                        service: "gmail",
+                        auth: { user: gmailUser, pass: gmailPass }
+                    };
+                } else {
+                    transportConfig = {
+                        host: smtpHost,
+                        port: smtpPort,
+                        secure: smtpPort === 465,
+                        auth: { user: smtpUser, pass: smtpPass }
+                    };
+                }
 
+                const transporter = nodemailer.createTransport(transportConfig);
                 await transporter.sendMail({
                     from: `"chatNut Support" <${smtpUser}>`,
                     to: toEmail,
@@ -110,32 +101,28 @@ async function sendOtpEmail(toEmail, otp, type = "signup", recipientName = "User
                     text: textContent,
                     html: htmlContent
                 });
-                console.log(`✅ [chatNut] Email delivered successfully via Nodemailer to ${toEmail}`);
+                console.log(`[Mail] Email delivered to ${toEmail}`);
                 return { success: true, realSent: true, otp };
-            } else {
-                // Built-in TLS SMTP client for SSL port 465
-                if (smtpPort === 465) {
-                    await sendDirectSslSmtp({
-                        host: smtpHost,
-                        port: 465,
-                        user: smtpUser,
-                        pass: smtpPass,
-                        to: toEmail,
-                        subject: subject,
-                        text: textContent,
-                        html: htmlContent
-                    });
-                    console.log(`✅ [chatNut] Email delivered successfully via Native TLS SMTP to ${toEmail}`);
-                    return { success: true, realSent: true, otp };
-                }
+            } else if (smtpPort === 465 && smtpHost) {
+                await sendDirectSslSmtp({
+                    host: smtpHost,
+                    port: 465,
+                    user: smtpUser,
+                    pass: smtpPass,
+                    to: toEmail,
+                    subject: subject,
+                    text: textContent,
+                    html: htmlContent
+                });
+                console.log(`[Mail] Email delivered via TLS to ${toEmail}`);
+                return { success: true, realSent: true, otp };
             }
         } catch (err) {
-            console.warn(`⚠️ [chatNut] SMTP delivery encountered an issue: ${err.message}. Fallback code logged to console.`);
+            console.warn(`[Mail] SMTP notice: ${err.message}. Using console OTP.`);
             return { success: true, realSent: false, devMode: true, otp };
         }
     }
 
-    // Default development mode: OTP is ready and logged
     return { success: true, realSent: false, devMode: true, otp };
 }
 

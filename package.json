@@ -15,6 +15,10 @@
     "bcrypt": "^6.0.0",
     "express": "^5.2.1",
     "mongoose": "^9.3.1",
+    "nodemailer": "^6.9.16",
     "socket.io": "^4.8.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

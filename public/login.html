@@ -60,7 +60,6 @@
     </div>
   </section>
 
-  <!-- FORGOT PASSWORD MODAL -->
   <div id="forgotPasswordModal" class="fp-modal-overlay">
     <div class="fp-modal-content">
       <div class="fp-modal-header">
@@ -70,7 +69,6 @@
 
       <div id="fpAlertBox" class="alert-box"></div>
 
-      <!-- Step 1: Request Reset Code -->
       <form id="fpStep1Form" onsubmit="handleSendResetOtp(event)">
         <p class="otp-meta-info">Enter your registered email address to receive a 6-digit password reset code.</p>
 
@@ -82,14 +80,13 @@
         <button type="submit" id="fpStep1Btn" class="signup-btn" style="margin-top: 14px;">Send Reset Code</button>
       </form>
 
-      <!-- Step 2: Verify Code & Set New Password -->
       <form id="fpStep2Form" style="display: none;" onsubmit="handleResetPassword(event)">
         <div class="otp-meta-info">
           Enter the 6-digit code sent to:
-          <strong id="fpTargetEmailDisplay" style="display: block; color: #ff8800; margin-top: 2px;">email@example.com</strong>
+          <strong id="fpTargetEmailDisplay" style="display: block; color: #00a884; margin-top: 2px;">email@example.com</strong>
         </div>
 
-        <div id="fpDevOtpBanner" style="display: none; background: #fff8f0; border: 1px dashed #ff8800; border-radius: 8px; padding: 8px; font-size: 13px; color: #d97706; text-align: center; margin-bottom: 6px;">
+        <div id="fpDevOtpBanner" style="display: none; background: #f0fdf4; border: 1px dashed #00a884; border-radius: 8px; padding: 8px; font-size: 13px; color: #00a884; text-align: center; margin-bottom: 6px;">
           🔑 Reset Code: <strong id="fpDevOtpCode">-</strong>
         </div>
 
@@ -124,9 +121,31 @@
       ? 'http://localhost:8000'
       : '';
 
-    // Auto-redirect if already logged in
-    if (localStorage.getItem("chatUser")) {
-      window.location.href = "aftersignup.html";
+    // Auto-redirect or switch account
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("switch") === "true" || urlParams.get("logout") === "true") {
+      localStorage.removeItem("chatUser");
+      localStorage.removeItem("chatFullName");
+      localStorage.removeItem("chatEmail");
+    } else if (localStorage.getItem("chatUser")) {
+      const currentUser = localStorage.getItem("chatUser");
+      const switchBanner = document.createElement("div");
+      switchBanner.style.cssText = "margin-bottom: 14px; padding: 10px 14px; background: #f0fdf4; border: 1px solid #00a884; border-radius: 10px; font-size: 13px; color: #111b21; display: flex; align-items: center; justify-content: space-between;";
+      switchBanner.innerHTML = `
+        <span>Logged in as <strong>${currentUser}</strong></span>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <a href="aftersignup.html" style="color: #00a884; font-weight: 600; text-decoration: none;">Continue &rarr;</a>
+          <a href="javascript:void(0)" onclick="clearSessionAndStay()" style="color: #ef4444; font-weight: 500; text-decoration: underline;">Switch Account</a>
+        </div>
+      `;
+      document.getElementById("loginForm")?.prepend(switchBanner);
+    }
+
+    function clearSessionAndStay() {
+      localStorage.removeItem("chatUser");
+      localStorage.removeItem("chatFullName");
+      localStorage.removeItem("chatEmail");
+      window.location.href = "login.html?switch=true";
     }
 
     const form = document.getElementById("loginForm");
@@ -185,7 +204,7 @@
       }
     });
 
-    // --- FORGOT PASSWORD MODAL LOGIC ---
+    // Forgot password modal
     let resetTargetEmail = "";
     let fpTimer = null;
     let fpSecondsLeft = 60;
@@ -224,12 +243,11 @@
       fpModal.style.display = "none";
     }
 
-    // Close on overlay click outside modal box
     fpModal.addEventListener("click", (e) => {
       if (e.target === fpModal) closeForgotPasswordModal();
     });
 
-    // Step 1: Send Reset OTP
+    // Send reset OTP
     async function handleSendResetOtp(e) {
       e.preventDefault();
       fpAlertBox.style.display = "none";
@@ -256,7 +274,6 @@
           resetTargetEmail = data.email || email;
           document.getElementById("fpTargetEmailDisplay").textContent = resetTargetEmail;
 
-          // Switch to Step 2
           fpStep1Form.style.display = "none";
           fpStep2Form.style.display = "block";
 
@@ -284,7 +301,7 @@
       }
     }
 
-    // Step 2: Reset Password with OTP
+    // Reset password
     async function handleResetPassword(e) {
       e.preventDefault();
       fpAlertBox.style.display = "none";

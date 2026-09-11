@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 
 const messageSchema = new mongoose.Schema({
     username: String,
+    senderFullName: String,
+    avatarUrl: String,
     message: String,
     room: String,
     mediaUrl: String,

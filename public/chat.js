@@ -59,7 +59,7 @@ const form = document.getElementById("chat-form");
 const input = document.getElementById("msg");
 const messagesContainer = document.getElementById("messages");
 
-// --- TYPING INDICATOR LOGIC ---
+// Typing indicator
 let typingTimeout = null;
 
 input.addEventListener("input", () => {
@@ -90,7 +90,7 @@ socket.on("stop typing", (typingUser) => {
     }
 });
 
-// --- SUBMIT MESSAGE ---
+// Send message
 form.addEventListener("submit", (e) => {
     e.preventDefault();
     const text = input.value.trim();
@@ -106,7 +106,7 @@ form.addEventListener("submit", (e) => {
     }
 });
 
-// --- LOAD MESSAGES ---
+// Load message history
 socket.on("load messages", (msgs) => {
     messagesContainer.innerHTML = "";
     if (msgs && msgs.length > 0) {
@@ -120,7 +120,7 @@ socket.on("load messages", (msgs) => {
     scrollToBottom();
 });
 
-// --- RECEIVE MESSAGE ---
+// New incoming message
 socket.on("chat message", (data) => {
     const placeholder = messagesContainer.querySelector(".empty-chat-prompt");
     if (placeholder) {
@@ -137,7 +137,7 @@ socket.on("chat message", (data) => {
     }
 });
 
-// --- PLAY NOTIFICATION CHIME ---
+// Notification sound
 function playChime() {
     try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();

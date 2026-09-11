@@ -29,6 +29,16 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         minlength: 6
+    },
+
+    avatarUrl: {
+        type: String,
+        default: null
+    },
+
+    bio: {
+        type: String,
+        default: "Hey there! I am using chatNut."
     }
 
 }, {

@@ -16,21 +16,39 @@
 
 <body>
 
-<!-- TOP BAR -->
 <header>
-  <div class="header_logo">
-    <a href="aftersignup.html">chatNut</a>
+  <div class="header_left">
+    <label for="check" class="header-menu-icon" title="Menu">
+      <i class="fa-solid fa-bars"></i>
+    </label>
+    <div class="header_logo">
+      <a href="aftersignup.html">
+        <span class="logo-icon"><i class="fa-solid fa-comment-dots"></i></span>
+        <span class="logo-text">chat<span class="logo-accent">Nut</span></span>
+      </a>
+    </div>
   </div>
 
-  <div class="header_user_badge" onclick="openProfileModal()" title="View Profile">
-    <div class="avatar-badge" id="topUserAvatar" style="width: 32px; height: 32px; font-size: 13px; background: linear-gradient(135deg, #ff8800, #e65100);">U</div>
-    <span id="topUserName">User</span>
+  <div class="header_actions">
+    <button type="button" class="header-quick-theme-btn" onclick="cycleTheme()" title="Switch Theme (Light / Dark / Midnight)">
+      <i class="fa-solid fa-circle-half-stroke"></i>
+    </button>
+    <button type="button" class="header-add-status-btn" onclick="openCreateStatusModal()" title="Post Status">
+      <i class="fa-solid fa-plus"></i>
+      <span>Status</span>
+    </button>
+    <div class="header_user_badge" onclick="openProfileModal()" title="View Profile">
+      <div class="avatar-badge" id="topUserAvatar" style="width: 32px; height: 32px; font-size: 13px; background: linear-gradient(135deg, #00a884, #059669);">U</div>
+      <span id="topUserName">User</span>
+      <i class="fa-solid fa-chevron-down badge-caret"></i>
+    </div>
   </div>
 </header>
 
-<!-- HAMBURGER BUTTON & SIDEBAR MENU -->
 <div class="main_box">
   <input type="checkbox" id="check">
+
+  <label for="check" class="sidebar_overlay" id="sidebarOverlay" title="Close Menu"></label>
 
   <div class="btn_one">
     <label for="check">
@@ -38,7 +56,6 @@
     </label>
   </div>
 
-  <!-- Slide-out Sidebar -->
   <div class="sidebar_menu">
     <div class="logo">
       <a href="javascript:void(0)">Explore</a>
@@ -52,9 +69,19 @@
 
     <div class="menu">
       <ul>
-        <li onclick="openSettingsModal(); uncheckSidebar();">
-          <i class="fa-solid fa-gear"></i>
-          <a href="javascript:void(0)">Settings</a>
+        <li onclick="openCreateStatusModal(); uncheckSidebar();">
+          <i class="fa-solid fa-circle-notch" style="color: #25d366;"></i>
+          <a href="javascript:void(0)">Create Status</a>
+        </li>
+
+        <li onclick="openStatusModal(); uncheckSidebar();">
+          <i class="fa-solid fa-layer-group"></i>
+          <a href="javascript:void(0)">All Status Updates</a>
+        </li>
+
+        <li onclick="openNewGroupModal(); uncheckSidebar();">
+          <i class="fa-solid fa-users"></i>
+          <a href="javascript:void(0)">New Group</a>
         </li>
 
         <li onclick="openContactModal(); uncheckSidebar();">
@@ -64,7 +91,17 @@
 
         <li onclick="openProfileModal(); uncheckSidebar();">
           <i class="fa-solid fa-user"></i>
-          <a href="javascript:void(0)">Profile</a>
+          <a href="javascript:void(0)">Profile & Photo</a>
+        </li>
+
+        <li onclick="openSettingsModal(); uncheckSidebar();">
+          <i class="fa-solid fa-gear"></i>
+          <a href="javascript:void(0)">Settings & Themes</a>
+        </li>
+
+        <li onclick="logout(); uncheckSidebar();" style="border-top: 1px solid var(--border-color); margin-top: 8px; padding-top: 12px;">
+          <i class="fa-solid fa-arrow-right-from-bracket" style="color: #ef4444;"></i>
+          <a href="javascript:void(0)" style="color: #ef4444; font-weight: 500;">Log Out</a>
         </li>
       </ul>
     </div>
@@ -78,15 +115,21 @@
   </div>
 </div>
 
-<!-- UNIFIED SPLIT-SCREEN MESSENGER -->
 <div class="messenger-layout">
-
-  <!-- LEFT: ALWAYS VISIBLE CONTACTS SIDEBAR -->
   <aside class="contacts-panel">
     <div class="contacts-header">
       <div class="contacts-header-top">
         <h2>Chats</h2>
-        <i class="fa-solid fa-user-plus" onclick="openContactModal()" style="cursor: pointer; color: #ff8800; font-size: 16px;" title="New Contact"></i>
+        <div style="display: flex; gap: 14px; align-items: center;">
+          <i class="fa-solid fa-circle-notch" onclick="openCreateStatusModal()" style="cursor: pointer; color: var(--primary-accent); font-size: 16px;" title="New Status"></i>
+          <i class="fa-solid fa-users" onclick="openNewGroupModal()" style="cursor: pointer; color: var(--primary-accent); font-size: 16px;" title="New Group"></i>
+          <i class="fa-solid fa-user-plus" onclick="openContactModal()" style="cursor: pointer; color: var(--primary-accent); font-size: 16px;" title="New Contact"></i>
+        </div>
+      </div>
+      <div class="chat-type-tabs">
+        <button type="button" class="type-tab-btn active" onclick="switchChatFilter('all', this)">All</button>
+        <button type="button" class="type-tab-btn" onclick="switchChatFilter('direct', this)">Direct</button>
+        <button type="button" class="type-tab-btn" onclick="switchChatFilter('groups', this)">Groups</button>
       </div>
       <div class="search-bar-wrap">
         <i class="fa-solid fa-magnifying-glass"></i>
@@ -94,27 +137,41 @@
       </div>
     </div>
 
-    <!-- Scrollable contact list with avatars and active orange highlight -->
+    <div class="status-slider-section">
+      <div class="status-slider-titlebar">
+        <span class="status-title"><i class="fa-solid fa-circle-notch" style="color: var(--primary-accent); margin-right: 6px;"></i>Status Updates</span>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <button type="button" class="status-action-pill-btn" onclick="openCreateStatusModal()" title="Add your status update"><i class="fa-solid fa-plus"></i> Add</button>
+          <button type="button" class="status-all-btn" onclick="openStatusModal()" title="View all updates">All <i class="fa-solid fa-chevron-right" style="font-size: 9px;"></i></button>
+        </div>
+      </div>
+      <div class="status-slider-wrapper">
+        <button type="button" class="status-arrow-btn left" id="statusArrowLeft" onclick="scrollStatusTrack(-1)" aria-label="Scroll left">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <div class="status-slider-track" id="statusSliderTrack"></div>
+        <button type="button" class="status-arrow-btn right" id="statusArrowRight" onclick="scrollStatusTrack(1)" aria-label="Scroll right">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+
     <div class="contacts-scroll" id="contactsContainer">
       <p style="text-align: center; color: #888; font-size: 13px; padding-top: 30px;">Loading contacts...</p>
     </div>
   </aside>
 
-  <!-- RIGHT: CHAT PANEL -->
   <main class="chat-panel" id="chatPanel">
 
-    <!-- State 1: Empty state (No contact selected) -->
     <div class="empty-chat-view" id="emptyChatView">
       <div class="empty-chat-icon">
         <i class="fa-solid fa-comments"></i>
       </div>
       <h3>Welcome to chatNut</h3>
-      <p>Select any contact from the left panel to instantly start a real-time conversation.</p>
+      <p>Select any contact or group from the left panel to instantly start chatting in real time.</p>
     </div>
 
-    <!-- State 2: Active Chat Area (Visible when a contact is selected) -->
     <div class="active-chat-wrapper" id="activeChatWrapper" style="display: none;">
-      <!-- Active Chat Header -->
       <header class="chat-header-bar">
         <div class="chat-header-avatar" id="chatHeaderAvatar">?</div>
         <div class="chat-header-meta">
@@ -124,12 +181,15 @@
             <span id="chatHeaderStatusText">Online</span>
           </div>
         </div>
+        <div class="chat-header-actions">
+          <button type="button" class="header-action-btn" id="deleteContactBtn" onclick="triggerHeaderDeleteContact()" title="Delete contact & chat history">
+            <i class="fa-regular fa-trash-can"></i>
+          </button>
+        </div>
       </header>
 
-      <!-- Message History Stream -->
       <div class="messages-container" id="messagesContainer"></div>
 
-      <!-- WhatsApp Emoji Keyboard Tray -->
       <div class="emoji-tray" id="emojiTray">
         <div class="emoji-search-wrap">
           <input type="text" id="emojiSearch" class="emoji-search-input" placeholder="Search emoji..." oninput="filterEmojis(this.value)">
@@ -144,7 +204,6 @@
         <div class="emoji-grid-container" id="emojiGrid"></div>
       </div>
 
-      <!-- Media Preview Bar (Shown when an image or file is selected) -->
       <div class="media-preview-bar" id="mediaPreviewBar">
         <img id="mediaPreviewThumb" class="media-preview-thumb" src="" alt="preview">
         <div class="media-preview-info">
@@ -154,10 +213,8 @@
         <i class="fa-solid fa-xmark media-preview-remove" onclick="cancelPendingMedia()" title="Cancel attachment"></i>
       </div>
 
-      <!-- Hidden file input for photos & documents -->
       <input type="file" id="mediaFileInput" style="display: none;" accept="image/*,.pdf,.doc,.docx,.txt,.zip" onchange="handleMediaSelect(event)">
 
-      <!-- Chat Input Bar with WhatsApp-style Emoji and Attachment Clips -->
       <form class="chat-input-bar" id="chatForm">
         <button type="button" class="chat-tool-btn" id="emojiBtn" onclick="toggleEmojiTray()" title="Emoji keyboard">
           <i class="fa-regular fa-face-smile"></i>
@@ -176,9 +233,6 @@
 
 </div>
 
-<!-- MODALS -->
-
-<!-- Settings Modal with Theme Picker -->
 <div id="settingsModal" class="modal-overlay">
   <div class="modal-box">
     <div class="modal-header">
@@ -186,10 +240,9 @@
       <button class="modal-close" onclick="closeModals()">&times;</button>
     </div>
 
-    <!-- Appearance & Theme -->
     <div style="margin-bottom: 20px;">
       <label style="font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 10px;">
-        <i class="fa-solid fa-palette" style="color: #ff8800; margin-right: 6px;"></i> Theme Appearance
+        <i class="fa-solid fa-palette" style="color: var(--primary-accent); margin-right: 6px;"></i> Theme Appearance
       </label>
       <div class="theme-picker">
         <button type="button" class="theme-option-btn" id="themeBtnLight" onclick="setAppTheme('light')">
@@ -207,7 +260,6 @@
       </div>
     </div>
 
-    <!-- Notifications & Sounds -->
     <div style="margin-bottom: 20px; padding: 14px; background: var(--search-bg); border-radius: 12px; display: flex; align-items: center; justify-content: space-between;">
       <div>
         <strong style="font-size: 14px; display: block; color: var(--text-primary);">Notification Sound</strong>
@@ -219,7 +271,6 @@
       </label>
     </div>
 
-    <!-- User Info Preview -->
     <div style="padding: 12px 14px; background: var(--search-bg); border-radius: 12px; margin-bottom: 16px;">
       <div style="display: flex; align-items: center; justify-content: space-between;">
         <div>
@@ -234,26 +285,212 @@
   </div>
 </div>
 
-<!-- Profile Modal -->
 <div id="profileModal" class="modal-overlay">
   <div class="modal-box">
     <div class="modal-header">
       <h3>My Profile</h3>
       <button class="modal-close" onclick="closeModals()">&times;</button>
     </div>
-    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px;">
-      <div class="avatar-badge" id="profAvatarBig" style="width: 52px; height: 52px; font-size: 20px; background: linear-gradient(135deg, #ff8800, #e65100);">U</div>
+    <div style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; margin-bottom: 20px;">
+      <div style="position: relative; cursor: pointer;" onclick="document.getElementById('avatarFileInput').click()" title="Click to change profile picture">
+        <div class="avatar-badge" id="profAvatarBig" style="width: 72px; height: 72px; font-size: 28px; background: linear-gradient(135deg, #00a884, #059669); overflow: hidden;">
+          U
+        </div>
+        <span style="position: absolute; bottom: 0; right: 0; background: var(--primary-accent); color: #fff; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; border: 2px solid var(--modal-bg);">
+          <i class="fa-solid fa-camera"></i>
+        </span>
+      </div>
+      <input type="file" id="avatarFileInput" accept="image/*" style="display: none;" onchange="handleAvatarUpload(event)">
       <div>
-        <h4 id="profName" style="font-size: 16px; color: #222;">-</h4>
-        <small id="profUsername" style="color: #666;">@-</small>
+        <h4 id="profName" style="font-size: 17px; color: var(--text-primary);">-</h4>
+        <small id="profUsername" style="color: var(--text-secondary);">@-</small>
       </div>
     </div>
-    <p style="margin-bottom: 8px; font-size: 13.5px;"><strong>Email:</strong> <span id="profEmail">-</span></p>
-    <button class="modal-btn modal-btn-danger" onclick="logout()">Log Out</button>
+
+    <div class="input-card" style="margin-bottom: 14px; background: var(--search-bg); border-color: var(--border-color);">
+      <label style="font-size: 12px; color: var(--text-secondary);"><i class="fa-solid fa-quote-left" style="color: var(--primary-accent); margin-right: 4px;"></i> About / Status</label>
+      <input type="text" id="profBioInput" placeholder="Hey there! I am using chatNut." style="background: transparent; color: var(--text-primary); border: 1px solid var(--border-color); font-size: 13px; margin-top: 4px;">
+    </div>
+
+    <p style="margin-bottom: 14px; font-size: 13px; color: var(--text-secondary);"><strong>Email:</strong> <span id="profEmail">-</span></p>
+
+    <div style="display: flex; gap: 8px;">
+      <button type="button" class="modal-btn" onclick="saveProfileChanges()">Save Changes</button>
+      <button class="modal-btn modal-btn-danger" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;" onclick="logout()">Log Out</button>
+    </div>
   </div>
 </div>
 
-<!-- New Contact / Search Modal -->
+<div id="deleteContactModal" class="modal-overlay">
+  <div class="modal-box" style="max-width: 380px; text-align: center;">
+    <div class="modal-header">
+      <h3 style="margin: auto; color: #dc2626;"><i class="fa-solid fa-triangle-exclamation" style="margin-right: 8px;"></i>Delete Contact</h3>
+      <button class="modal-close" onclick="closeModals()">&times;</button>
+    </div>
+    <div style="margin: 16px auto; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #fff; background: linear-gradient(135deg, #ef4444, #b91c1c);" id="delContactAvatar">
+      ?
+    </div>
+    <h4 id="delContactName" style="font-size: 16px; margin-bottom: 6px; color: var(--text-primary);">-</h4>
+    <p style="color: var(--text-secondary); font-size: 13px; line-height: 1.5; margin-bottom: 20px;">
+      Are you sure you want to delete this contact and clear all chat history? This cannot be undone.
+    </p>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <button type="button" class="modal-btn modal-btn-danger" style="margin-top: 0;" onclick="confirmDeleteContact()">Delete Contact & Chat</button>
+      <button type="button" class="modal-btn" style="background: transparent; color: var(--text-secondary); padding: 8px;" onclick="closeModals()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="newGroupModal" class="modal-overlay">
+  <div class="modal-box" style="max-width: 440px;">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-users" style="color: var(--primary-accent); margin-right: 8px;"></i>Create New Group</h3>
+      <button class="modal-close" onclick="closeModals()">&times;</button>
+    </div>
+    <div class="input-card" style="margin-bottom: 14px; background: var(--search-bg); border-color: var(--border-color);">
+      <label style="font-size: 12px; color: var(--text-secondary);">Group Name</label>
+      <input type="text" id="groupNameInput" placeholder="e.g. Project Team, Friends" style="background: transparent; color: var(--text-primary); border: 1px solid var(--border-color); font-size: 13.5px; margin-top: 4px;">
+    </div>
+    <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px; display: block;">Select Members</label>
+    <div id="groupMembersList" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px;"></div>
+    <button type="button" class="modal-btn" onclick="submitCreateGroup()">Create Group</button>
+  </div>
+</div>
+
+<div id="createStatusModal" class="modal-overlay">
+  <div class="modal-box status-creator-modal-box">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-circle-notch" style="color: var(--primary-accent); margin-right: 8px;"></i>Create Status</h3>
+      <button class="modal-close" onclick="closeModals()">&times;</button>
+    </div>
+
+    <div class="status-mode-tabs">
+      <button type="button" class="status-mode-tab active" id="tabModeText" onclick="switchStatusComposerMode('text')">
+        <i class="fa-solid fa-font"></i> Text Status
+      </button>
+      <button type="button" class="status-mode-tab" id="tabModePhoto" onclick="switchStatusComposerMode('photo')">
+        <i class="fa-solid fa-camera"></i> Photo Status
+      </button>
+    </div>
+
+    <div id="statusTextModeContainer">
+      <div class="status-live-preview-card" id="statusTextPreviewCanvas" style="background: linear-gradient(135deg, #128c7e, #075e54);">
+        <div class="status-preview-avatar-badge" id="statusPreviewAvatar">U</div>
+        <p class="status-preview-text" id="statusPreviewText">What's on your mind?</p>
+      </div>
+
+      <div class="status-input-wrap">
+        <textarea id="creatorStatusTextInput" class="status-composer-textarea" rows="2" placeholder="Type a status update..." oninput="handleStatusTextInput(this.value)"></textarea>
+      </div>
+
+      <div class="status-swatches-section">
+        <span class="status-section-label">Background Color</span>
+        <div class="status-swatch-list">
+          <button type="button" class="status-swatch-circle active" style="background: linear-gradient(135deg, #128c7e, #075e54);" onclick="selectStatusGradient('linear-gradient(135deg, #128c7e, #075e54)', this)" title="WhatsApp Emerald"></button>
+          <button type="button" class="status-swatch-circle" style="background: linear-gradient(135deg, #0284c7, #0369a1);" onclick="selectStatusGradient('linear-gradient(135deg, #0284c7, #0369a1)', this)" title="Ocean Breeze"></button>
+          <button type="button" class="status-swatch-circle" style="background: linear-gradient(135deg, #0d9488, #0f766e);" onclick="selectStatusGradient('linear-gradient(135deg, #0d9488, #0f766e)', this)" title="Calm Teal"></button>
+          <button type="button" class="status-swatch-circle" style="background: linear-gradient(135deg, #6366f1, #4f46e5);" onclick="selectStatusGradient('linear-gradient(135deg, #6366f1, #4f46e5)', this)" title="Soft Indigo"></button>
+          <button type="button" class="status-swatch-circle" style="background: linear-gradient(135deg, #9333ea, #6b21a8);" onclick="selectStatusGradient('linear-gradient(135deg, #9333ea, #6b21a8)', this)" title="Royal Purple"></button>
+          <button type="button" class="status-swatch-circle" style="background: linear-gradient(135deg, #18181b, #09090b);" onclick="selectStatusGradient('linear-gradient(135deg, #18181b, #09090b)', this)" title="Midnight Slate"></button>
+        </div>
+      </div>
+
+      <div class="status-font-section">
+        <span class="status-section-label">Font Style</span>
+        <div class="status-font-pills">
+          <button type="button" class="status-font-pill active" onclick="setStatusFont('Poppins, sans-serif', this)">Clean</button>
+          <button type="button" class="status-font-pill" onclick="setStatusFont('Georgia, serif', this)">Serif</button>
+          <button type="button" class="status-font-pill" onclick="setStatusFont('Impact, sans-serif', this)">Bold</button>
+          <button type="button" class="status-font-pill" onclick="setStatusFont('Courier New, monospace', this)">Mono</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="statusPhotoModeContainer" style="display: none;">
+      <div class="status-photo-dropzone" id="statusPhotoDropzone" onclick="document.getElementById('statusPhotoFileInput').click()">
+        <input type="file" id="statusPhotoFileInput" accept="image/*" style="display: none;" onchange="handleStatusPhotoSelect(event)">
+        <div id="statusPhotoEmptyPrompt" class="status-photo-prompt">
+          <i class="fa-solid fa-cloud-arrow-up" style="font-size: 38px; color: var(--primary-accent); margin-bottom: 8px;"></i>
+          <strong>Click to choose photo</strong>
+          <small style="color: var(--text-secondary);">JPEG, PNG, WEBP</small>
+        </div>
+        <div id="statusPhotoPreviewWrap" style="display: none; width: 100%; height: 100%; position: relative;">
+          <img id="statusPhotoPreviewImg" class="status-photo-preview-img" src="" alt="Status preview">
+          <button type="button" class="status-photo-remove-btn" onclick="event.stopPropagation(); removeSelectedStatusPhoto();" title="Remove photo">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <div style="margin-top: 12px;">
+        <input type="text" id="statusPhotoCaptionInput" class="status-caption-input" placeholder="Add a caption...">
+      </div>
+    </div>
+
+    <div class="status-creator-footer">
+      <button type="button" class="modal-btn" style="background: transparent; color: var(--text-secondary); padding: 8px 16px;" onclick="closeModals()">Cancel</button>
+      <button type="button" id="btnPublishStatus" class="modal-btn modal-btn-status-publish" onclick="submitStatusPost()">
+        <i class="fa-solid fa-paper-plane" style="margin-right: 6px;"></i> Share Status
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="statusModal" class="modal-overlay">
+  <div class="modal-box" style="max-width: 480px;">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-circle-notch" style="color: #25d366; margin-right: 8px;"></i>Status Updates</h3>
+      <button class="modal-close" onclick="closeModals()">&times;</button>
+    </div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: var(--search-bg); border-radius: 12px; margin-bottom: 16px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div class="avatar-badge" id="myStatusAvatar" style="width: 44px; height: 44px; font-size: 16px; overflow: hidden;">U</div>
+        <div>
+          <strong style="font-size: 14px; color: var(--text-primary); display: block;">My Status</strong>
+          <small id="myStatusSubtitle" style="color: var(--text-secondary); font-size: 12px;">Tap to post an update</small>
+        </div>
+      </div>
+      <button type="button" class="modal-btn" style="padding: 7px 14px; font-size: 12.5px; background: #25d366; color: #fff; font-weight: 600;" onclick="closeModals(); openCreateStatusModal();">+ Add Status</button>
+    </div>
+
+    <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px; display: block;">Recent Updates</label>
+    <div id="recentStatusesList" style="max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+      <p style="text-align: center; color: var(--text-secondary); font-size: 12.5px; padding: 16px;">No recent status updates</p>
+    </div>
+  </div>
+</div>
+
+<div id="statusViewerModal" class="status-story-overlay" onclick="closeStatusViewer()">
+  <div class="status-story-box" id="statusStoryBox" onclick="event.stopPropagation()">
+    <div class="status-progress-track">
+      <div class="status-progress-bar" id="statusProgressBar"></div>
+    </div>
+    <div class="status-story-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div class="avatar-badge" id="storyViewerAvatar" style="width: 38px; height: 38px; font-size: 15px; overflow: hidden;">?</div>
+        <div>
+          <strong id="storyViewerName" style="color: #fff; font-size: 14px; display: block;">User Name</strong>
+          <small id="storyViewerTime" style="color: rgba(255,255,255,0.7); font-size: 11px;">Just now</small>
+        </div>
+      </div>
+      <button class="status-close-btn" onclick="closeStatusViewer()" title="Close story">&times;</button>
+    </div>
+    <div class="status-story-body" id="statusStoryBody">
+      <div id="storyTextContainer" class="story-text-container">
+        <p id="storyViewerText" class="status-story-text">Status content</p>
+      </div>
+
+      <div id="storyPhotoContainer" class="story-photo-container" style="display: none;">
+        <img id="storyViewerImage" class="status-story-image" src="" alt="Story photo">
+        <div id="storyViewerCaptionWrap" class="status-story-caption-wrap" style="display: none;">
+          <p id="storyViewerCaption" class="status-story-caption-text"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="contactModal" class="modal-overlay">
   <div class="modal-box">
     <div class="modal-header">
@@ -265,7 +502,6 @@
   </div>
 </div>
 
-<!-- Delete Message Modal -->
 <div id="deleteMsgModal" class="modal-overlay">
   <div class="modal-box" style="max-width: 360px; text-align: center;">
     <div class="modal-header">
@@ -281,18 +517,16 @@
   </div>
 </div>
 
-<!-- Full Screen Lightbox Modal -->
 <div id="lightboxModal" class="lightbox-overlay" onclick="closeLightbox()">
   <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
   <img id="lightboxImg" class="lightbox-img" src="" alt="preview" onclick="event.stopPropagation()">
 </div>
 
-<!-- In-App Floating Toast Container -->
 <div id="toastContainer" style="position: fixed; top: 72px; right: 24px; z-index: 1500; display: flex; flex-direction: column; gap: 8px;"></div>
 
 <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 <script>
-// --- CONFIG & STATE ---
+// Config & state
 const API_BASE = (window.location.protocol === 'file:' || (window.location.port && window.location.port !== '8000'))
     ? 'http://localhost:8000'
     : '';
@@ -308,30 +542,63 @@ if (!me) {
 
 // Update top bar user info
 document.getElementById("topUserName").textContent = myFullName || me;
-document.getElementById("topUserAvatar").textContent = (myFullName || me).charAt(0).toUpperCase();
+
+let myAvatar = localStorage.getItem("chatNutAvatar_" + me) || null;
+let myBio = localStorage.getItem("chatNutBio_" + me) || "Hey there! I am using chatNut.";
+
+function updateMyAvatarDisplay() {
+    const topAvatar = document.getElementById("topUserAvatar");
+    const profAvatar = document.getElementById("profAvatarBig");
+    const myStatusAvatar = document.getElementById("myStatusAvatar");
+    if (myAvatar) {
+        if (topAvatar) topAvatar.innerHTML = `<img src="${myAvatar}" class="avatar-img" alt="avatar">`;
+        if (profAvatar) profAvatar.innerHTML = `<img src="${myAvatar}" class="avatar-img" alt="avatar">`;
+        if (myStatusAvatar) myStatusAvatar.innerHTML = `<img src="${myAvatar}" class="avatar-img" alt="avatar">`;
+    } else {
+        const initial = (myFullName || me).charAt(0).toUpperCase();
+        if (topAvatar) topAvatar.textContent = initial;
+        if (profAvatar) profAvatar.textContent = initial;
+        if (myStatusAvatar) myStatusAvatar.textContent = initial;
+    }
+    if (typeof renderStatusSlider === "function") {
+        renderStatusSlider();
+    }
+}
+updateMyAvatarDisplay();
 
 // Notify online status
 socket.emit("user online", me);
 
 let allUsers = [];
+let allGroups = [];
+let allStatuses = [];
 let onlineUserList = [];
 let lastMessagesMap = {};
+let currentFilter = "all"; // 'all' | 'direct' | 'groups'
 
 // Active conversation state
+let activeChatType = "direct"; // 'direct' | 'group'
 let activeRecipientUsername = null;
 let activeRecipientDisplayName = null;
+let activeRecipientAvatar = null;
+let activeGroupId = null;
+let activeGroupObj = null;
 let activeRoom = null;
+
+// Target for delete contact modal
+let targetDeleteContactUsername = null;
+let targetDeleteContactDisplayName = null;
 
 // Dynamic avatar gradient palette for profile icons
 function getAvatarGradient(name) {
     const gradients = [
+        "linear-gradient(135deg, #00a884, #059669)",
         "linear-gradient(135deg, #128c7e, #075e54)",
-        "linear-gradient(135deg, #ff8800, #e65100)",
         "linear-gradient(135deg, #4f46e5, #3730a3)",
         "linear-gradient(135deg, #0ea5e9, #0284c7)",
-        "linear-gradient(135deg, #ec4899, #be185d)",
         "linear-gradient(135deg, #8b5cf6, #6d28d9)",
-        "linear-gradient(135deg, #10b981, #047857)"
+        "linear-gradient(135deg, #059669, #047857)",
+        "linear-gradient(135deg, #0284c7, #0369a1)"
     ];
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
@@ -345,11 +612,34 @@ function uncheckSidebar() {
     if (chk) chk.checked = false;
 }
 
+// Close sidebar when clicking anywhere outside or pressing Escape
+document.addEventListener("click", function(e) {
+    const chk = document.getElementById("check");
+    if (!chk || !chk.checked) return;
+
+    const sidebar = document.querySelector(".sidebar_menu");
+    const menuBtn = document.querySelector(".header-menu-icon");
+    const btnOne = document.querySelector(".btn_one");
+
+    if (sidebar && !sidebar.contains(e.target) &&
+        (!menuBtn || !menuBtn.contains(e.target)) &&
+        (!btnOne || !btnOne.contains(e.target))) {
+        chk.checked = false;
+    }
+});
+
+document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape") {
+        uncheckSidebar();
+        closeModals();
+    }
+});
+
 function closeModals() {
     document.querySelectorAll(".modal-overlay").forEach(m => m.style.display = "none");
 }
 
-// --- THEME & SETTINGS MANAGEMENT ---
+// Theme management
 function initTheme() {
     const saved = localStorage.getItem("chatNutTheme") || "light";
     setAppTheme(saved, false);
@@ -377,6 +667,13 @@ function setAppTheme(theme, save = true) {
     });
 }
 
+function cycleTheme() {
+    const current = document.documentElement.getAttribute("data-theme") || "light";
+    const next = current === "light" ? "dark" : (current === "dark" ? "midnight" : "light");
+    setAppTheme(next, true);
+    showToastBanner("Theme Changed", `Switched to ${next.charAt(0).toUpperCase() + next.slice(1)} theme.`);
+}
+
 function openSettingsModal() {
     const theme = localStorage.getItem("chatNutTheme") || "light";
     setAppTheme(theme, false);
@@ -399,21 +696,93 @@ function openProfileModal() {
     document.getElementById("profName").textContent = myFullName || me;
     document.getElementById("profUsername").textContent = `@${me}`;
     document.getElementById("profEmail").textContent = localStorage.getItem("chatEmail") || `${me}@example.com`;
-    document.getElementById("profAvatarBig").textContent = (myFullName || me).charAt(0).toUpperCase();
+    const bioInput = document.getElementById("profBioInput");
+    if (bioInput) bioInput.value = myBio;
+    updateMyAvatarDisplay();
     document.getElementById("profileModal").style.display = "flex";
+}
+
+function handleAvatarUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        const rawData = evt.target.result;
+        const img = new Image();
+        img.onload = function() {
+            try {
+                const canvas = document.createElement("canvas");
+                const size = 120;
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext("2d");
+
+                let sx = 0, sy = 0, sWidth = img.width, sHeight = img.height;
+                if (img.width > img.height) {
+                    sWidth = img.height;
+                    sx = (img.width - img.height) / 2;
+                } else {
+                    sHeight = img.width;
+                    sy = (img.height - img.width) / 2;
+                }
+                ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, size, size);
+                const compressed = canvas.toDataURL("image/jpeg", 0.85);
+
+                myAvatar = compressed;
+                localStorage.setItem("chatNutAvatar_" + me, compressed);
+                updateMyAvatarDisplay();
+
+                fetch(`${API_BASE}/api/update-profile`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username: me, avatarUrl: compressed })
+                }).catch(() => {});
+
+                showToastBanner("Profile Photo Updated", "Your new profile picture is active.");
+            } catch (err) {
+                console.error("Avatar compression error:", err);
+            }
+        };
+        img.src = rawData;
+    };
+    reader.readAsDataURL(file);
+}
+
+function saveProfileChanges() {
+    const bioInput = document.getElementById("profBioInput");
+    if (bioInput) {
+        myBio = bioInput.value.trim() || "Hey there! I am using chatNut.";
+        localStorage.setItem("chatNutBio_" + me, myBio);
+        fetch(`${API_BASE}/api/update-profile`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: me, bio: myBio })
+        }).catch(() => {});
+    }
+    closeModals();
+    showToastBanner("Profile Saved", "Your profile details have been saved.");
 }
 
 function logout() {
     localStorage.removeItem("chatUser");
     localStorage.removeItem("chatFullName");
     localStorage.removeItem("chatEmail");
-    window.location.href = "signup.html";
+    window.location.href = "login.html?switch=true";
 }
 
 function openContactModal() {
     document.getElementById("contactModal").style.display = "flex";
     document.getElementById("userSearchInput").value = "";
     filterUsers();
+}
+
+// Filter tabs switcher
+function switchChatFilter(filter, btn) {
+    currentFilter = filter;
+    document.querySelectorAll(".type-tab-btn").forEach(b => b.classList.remove("active"));
+    if (btn) btn.classList.add("active");
+    renderContacts();
 }
 
 // Online status updates from server
@@ -423,18 +792,37 @@ socket.on("online users", (users) => {
     updateChatHeaderStatus();
 });
 
-// Load contacts and last messages
+// Load contacts, groups, statuses, and last messages
 async function loadData() {
     try {
-        const [usersRes, lastMsgRes] = await Promise.all([
+        const [usersRes, lastMsgRes, groupsRes, statusesRes] = await Promise.all([
             fetch(`${API_BASE}/api/users`).then(r => r.json()).catch(() => []),
-            fetch(`${API_BASE}/api/last-messages?user=${encodeURIComponent(me)}`).then(r => r.json()).catch(() => ({}))
+            fetch(`${API_BASE}/api/last-messages?user=${encodeURIComponent(me)}`).then(r => r.json()).catch(() => ({})),
+            fetch(`${API_BASE}/api/groups`).then(r => r.json()).catch(() => []),
+            fetch(`${API_BASE}/api/statuses`).then(r => r.json()).catch(() => [])
         ]);
 
         allUsers = usersRes || [];
         lastMessagesMap = lastMsgRes || {};
+        allGroups = groupsRes || [];
+        allStatuses = statusesRes || [];
+
+        // Check if server has saved avatar for me
+        const myRecord = allUsers.find(u => u.username.toLowerCase() === me.toLowerCase());
+        if (myRecord) {
+            if (myRecord.avatarUrl && !myAvatar) {
+                myAvatar = myRecord.avatarUrl;
+                localStorage.setItem("chatNutAvatar_" + me, myAvatar);
+                updateMyAvatarDisplay();
+            }
+            if (myRecord.bio) {
+                myBio = myRecord.bio;
+                localStorage.setItem("chatNutBio_" + me, myBio);
+            }
+        }
 
         renderContacts();
+        renderStatusSlider();
 
         // Check if query param requests a specific contact
         const params = new URLSearchParams(window.location.search);
@@ -442,7 +830,7 @@ async function loadData() {
         if (reqRecipient) {
             const matched = allUsers.find(u => u.username.toLowerCase() === reqRecipient.toLowerCase() || (u.fullname && u.fullname.toLowerCase() === reqRecipient.toLowerCase()));
             if (matched) {
-                selectContact(matched.username, matched.fullname || matched.username);
+                selectContact(matched.username, matched.fullname || matched.username, matched.avatarUrl);
             }
         }
     } catch (e) {
@@ -450,87 +838,172 @@ async function loadData() {
     }
 }
 
-// Render Left Panel Contacts List
+// Render Left Panel Contacts List (Filtered by All, Direct, Groups)
 function renderContacts() {
     const container = document.getElementById("contactsContainer");
     if (!container) return;
 
-    const others = allUsers.filter(u => u.username.toLowerCase() !== me.toLowerCase());
+    const deletedContacts = JSON.parse(localStorage.getItem("deletedContacts_" + me) || "[]");
+    const others = allUsers.filter(u => u.username.toLowerCase() !== me.toLowerCase() && !deletedContacts.includes(u.username.toLowerCase()));
+    const myGroups = allGroups.filter(g => !g.members || g.members.length === 0 || g.members.includes(me.toLowerCase()));
 
-    if (others.length === 0) {
+    const searchVal = (document.getElementById("contactSearchInput").value || "").trim().toLowerCase();
+
+    // Filter by search term
+    const filteredUsers = others.filter(u =>
+        u.username.toLowerCase().includes(searchVal) || (u.fullname && u.fullname.toLowerCase().includes(searchVal))
+    );
+    const filteredGroups = myGroups.filter(g =>
+        g.name.toLowerCase().includes(searchVal)
+    );
+
+    let showUsers = currentFilter === "all" || currentFilter === "direct";
+    let showGroups = currentFilter === "all" || currentFilter === "groups";
+
+    container.innerHTML = "";
+
+    if ((!showUsers || filteredUsers.length === 0) && (!showGroups || filteredGroups.length === 0)) {
         container.innerHTML = `
             <div style="text-align: center; color: #888; font-size: 13px; padding: 40px 10px;">
-                <p>No other users yet.</p>
-                <small>Open an incognito window to sign up a second user!</small>
+                <p>No conversations found.</p>
+                <small>Use + buttons above to add a contact or group!</small>
             </div>
         `;
         return;
     }
 
-    const searchVal = (document.getElementById("contactSearchInput").value || "").trim().toLowerCase();
-    const filtered = others.filter(u => 
-        u.username.toLowerCase().includes(searchVal) || (u.fullname && u.fullname.toLowerCase().includes(searchVal))
-    );
+    // Groups
+    if (showGroups && filteredGroups.length > 0) {
+        filteredGroups.forEach(g => {
+            const card = document.createElement("div");
+            card.className = "contact-card";
+            if (activeChatType === "group" && activeGroupId === g.id) {
+                card.classList.add("active-contact");
+            }
 
-    container.innerHTML = "";
-    filtered.forEach(u => {
-        const card = document.createElement("div");
-        card.className = "contact-card";
-        if (activeRecipientUsername && activeRecipientUsername.toLowerCase() === u.username.toLowerCase()) {
-            card.classList.add("active-contact");
-        }
+            const room = g.id;
+            const lastMsgObj = lastMessagesMap[room];
+            let msgText = `${(g.members || []).length} members`;
+            let timeText = "";
 
-        const displayName = u.fullname || u.username;
-        const initial = displayName.charAt(0).toUpperCase();
-        const isOnline = onlineUserList.includes(u.username.toLowerCase());
-        const avatarBg = getAvatarGradient(u.username);
+            if (lastMsgObj) {
+                msgText = (lastMsgObj.username === me ? "You: " : `${lastMsgObj.username}: `) + lastMsgObj.message;
+                const d = new Date(lastMsgObj.time);
+                timeText = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
 
-        // Room ID & Last message
-        const room = [me.toLowerCase(), u.username.toLowerCase()].sort().join("--");
-        const lastMsgObj = lastMessagesMap[room];
-
-        let msgText = "No messages yet";
-        let timeText = "";
-
-        if (lastMsgObj) {
-            msgText = (lastMsgObj.username === me ? "You: " : "") + lastMsgObj.message;
-            const d = new Date(lastMsgObj.time);
-            timeText = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
-
-        card.innerHTML = `
-            <div class="avatar-badge" style="background: ${avatarBg}">
-                ${initial}
-                <span class="online-status-dot ${isOnline ? 'online' : 'offline'}"></span>
-            </div>
-            <div class="contact-info">
-                <div class="contact-top">
-                    <h4>${escapeHtml(displayName)}</h4>
-                    <span class="contact-time">${timeText}</span>
+            card.innerHTML = `
+                <div class="avatar-badge group-badge">
+                    <i class="fa-solid fa-users"></i>
                 </div>
-                <div class="contact-bottom">
-                    <span class="contact-last-message">${escapeHtml(msgText)}</span>
+                <div class="contact-info">
+                    <div class="contact-top">
+                        <h4>${escapeHtml(g.name)}</h4>
+                        <span class="contact-time">${timeText}</span>
+                    </div>
+                    <div class="contact-bottom">
+                        <span class="contact-last-message">${escapeHtml(msgText)}</span>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
 
-        card.onclick = () => selectContact(u.username, displayName);
-        container.appendChild(card);
-    });
+            card.onclick = () => selectGroup(g);
+            container.appendChild(card);
+        });
+    }
+
+    // Direct contacts
+    if (showUsers && filteredUsers.length > 0) {
+        filteredUsers.forEach(u => {
+            const card = document.createElement("div");
+            card.className = "contact-card";
+            if (activeChatType === "direct" && activeRecipientUsername && activeRecipientUsername.toLowerCase() === u.username.toLowerCase()) {
+                card.classList.add("active-contact");
+            }
+
+            const displayName = u.fullname || u.username;
+            const initial = displayName.charAt(0).toUpperCase();
+            const isOnline = onlineUserList.includes(u.username.toLowerCase());
+            const avatarBg = getAvatarGradient(u.username);
+
+            // Check if user posted an active status
+            const userStatus = allStatuses.find(s => s.username === u.username.toLowerCase());
+            const hasStatus = !!userStatus;
+
+            // Room ID & Last message
+            const room = [me.toLowerCase(), u.username.toLowerCase()].sort().join("--");
+            const lastMsgObj = lastMessagesMap[room];
+
+            let msgText = u.bio || "No messages yet";
+            let timeText = "";
+
+            if (lastMsgObj) {
+                msgText = (lastMsgObj.username === me ? "You: " : "") + lastMsgObj.message;
+                const d = new Date(lastMsgObj.time);
+                timeText = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+
+            const avatarContent = u.avatarUrl
+                ? `<img src="${u.avatarUrl}" class="avatar-img" alt="${escapeHtml(displayName)}">`
+                : initial;
+
+            card.innerHTML = `
+                <div class="avatar-badge ${hasStatus ? 'has-status' : ''}" style="background: ${avatarBg}" title="${hasStatus ? 'Click to view status' : ''}">
+                    ${avatarContent}
+                    <span class="online-status-dot ${isOnline ? 'online' : 'offline'}"></span>
+                </div>
+                <div class="contact-info">
+                    <div class="contact-top">
+                        <h4>${escapeHtml(displayName)}</h4>
+                        <span class="contact-time">${timeText}</span>
+                    </div>
+                    <div class="contact-bottom">
+                        <span class="contact-last-message">${escapeHtml(msgText)}</span>
+                    </div>
+                </div>
+                <button type="button" class="contact-card-delete" onclick="event.stopPropagation(); openDeleteContactModal('${escapeHtml(u.username)}', '${escapeHtml(displayName)}')" title="Delete contact">
+                    <i class="fa-regular fa-trash-can"></i>
+                </button>
+            `;
+
+            // If user has a status, clicking avatar views status
+            if (hasStatus) {
+                const av = card.querySelector(".avatar-badge");
+                if (av) {
+                    av.onclick = (e) => {
+                        e.stopPropagation();
+                        viewStatus(userStatus.id);
+                    };
+                }
+            }
+
+            card.onclick = () => selectContact(u.username, displayName, u.avatarUrl);
+            container.appendChild(card);
+        });
+    }
 }
 
 function handleContactSearch() {
     renderContacts();
 }
 
-// --- SELECT A CONTACT (SWITCH CONVERSATION SMOOTHLY) ---
-function selectContact(targetUsername, targetDisplayName) {
+// Select direct chat
+function selectContact(targetUsername, targetDisplayName, targetAvatar) {
+    activeChatType = "direct";
+    activeGroupId = null;
+    activeGroupObj = null;
     activeRecipientUsername = targetUsername;
     activeRecipientDisplayName = targetDisplayName;
+    activeRecipientAvatar = targetAvatar || null;
     activeRoom = [me.toLowerCase(), targetUsername.toLowerCase()].sort().join("--");
 
-    // Highlight active card with signature orange border
-    document.querySelectorAll(".contact-card").forEach(c => c.classList.remove("active-contact"));
+    // Un-delete contact if previously hidden
+    let deletedContacts = JSON.parse(localStorage.getItem("deletedContacts_" + me) || "[]");
+    if (deletedContacts.includes(targetUsername.toLowerCase())) {
+        deletedContacts = deletedContacts.filter(u => u !== targetUsername.toLowerCase());
+        localStorage.setItem("deletedContacts_" + me, JSON.stringify(deletedContacts));
+    }
+
     renderContacts();
 
     // Show Chat Panel
@@ -542,8 +1015,18 @@ function selectContact(targetUsername, targetDisplayName) {
     document.getElementById("chatHeaderName").textContent = targetDisplayName;
     const initial = targetDisplayName.charAt(0).toUpperCase();
     const avatarEl = document.getElementById("chatHeaderAvatar");
-    avatarEl.textContent = initial;
-    avatarEl.style.background = getAvatarGradient(targetUsername);
+    if (targetAvatar) {
+        avatarEl.innerHTML = `<img src="${targetAvatar}" class="avatar-img" alt="avatar">`;
+    } else {
+        avatarEl.textContent = initial;
+        avatarEl.style.background = getAvatarGradient(targetUsername);
+    }
+
+    const delBtn = document.getElementById("deleteContactBtn");
+    if (delBtn) {
+        delBtn.style.display = "flex";
+        delBtn.title = "Delete contact & chat history";
+    }
 
     updateChatHeaderStatus();
 
@@ -556,7 +1039,57 @@ function selectContact(targetUsername, targetDisplayName) {
     input.focus();
 }
 
+// Select group chat
+function selectGroup(group) {
+    activeChatType = "group";
+    activeGroupId = group.id;
+    activeGroupObj = group;
+    activeRecipientUsername = null;
+    activeRecipientDisplayName = group.name;
+    activeRecipientAvatar = null;
+    activeRoom = group.id;
+
+    renderContacts();
+
+    document.getElementById("emptyChatView").style.display = "none";
+    const chatWrapper = document.getElementById("activeChatWrapper");
+    chatWrapper.style.display = "flex";
+
+    document.getElementById("chatHeaderName").textContent = group.name;
+    const avatarEl = document.getElementById("chatHeaderAvatar");
+    avatarEl.innerHTML = `<i class="fa-solid fa-users" style="font-size: 16px;"></i>`;
+    avatarEl.style.background = "linear-gradient(135deg, #128c7e, #075e54)";
+
+    const dot = document.getElementById("chatHeaderDot");
+    const text = document.getElementById("chatHeaderStatusText");
+    if (dot && text) {
+        dot.className = "status-dot online";
+        text.textContent = `${(group.members || []).length} members`;
+    }
+
+    const delBtn = document.getElementById("deleteContactBtn");
+    if (delBtn) {
+        delBtn.style.display = "none";
+    }
+
+    socket.emit("join room", { room: activeRoom, user: me });
+
+    const input = document.getElementById("msgInput");
+    input.value = "";
+    input.focus();
+}
+
 function updateChatHeaderStatus() {
+    if (activeChatType === "group") {
+        const dot = document.getElementById("chatHeaderDot");
+        const text = document.getElementById("chatHeaderStatusText");
+        if (dot && text && activeGroupObj) {
+            dot.className = "status-dot online";
+            text.textContent = `${(activeGroupObj.members || []).length} members`;
+        }
+        return;
+    }
+
     if (!activeRecipientUsername) return;
     const isOnline = onlineUserList.includes(activeRecipientUsername.toLowerCase());
     const dot = document.getElementById("chatHeaderDot");
@@ -568,7 +1101,622 @@ function updateChatHeaderStatus() {
     }
 }
 
-// --- TYPING INDICATOR LOGIC ---
+// Delete contact
+function openDeleteContactModal(username, displayName) {
+    targetDeleteContactUsername = username;
+    targetDeleteContactDisplayName = displayName;
+
+    const nameEl = document.getElementById("delContactName");
+    const avatarEl = document.getElementById("delContactAvatar");
+    if (nameEl) nameEl.textContent = displayName;
+    if (avatarEl) {
+        const uObj = allUsers.find(u => u.username.toLowerCase() === username.toLowerCase());
+        if (uObj && uObj.avatarUrl) {
+            avatarEl.innerHTML = `<img src="${uObj.avatarUrl}" class="avatar-img" alt="avatar">`;
+        } else {
+            avatarEl.textContent = displayName.charAt(0).toUpperCase();
+        }
+    }
+
+    document.getElementById("deleteContactModal").style.display = "flex";
+}
+
+function triggerHeaderDeleteContact() {
+    if (activeChatType === "direct" && activeRecipientUsername) {
+        openDeleteContactModal(activeRecipientUsername, activeRecipientDisplayName);
+    }
+}
+
+async function confirmDeleteContact() {
+    if (!targetDeleteContactUsername) return;
+
+    const targetUser = targetDeleteContactUsername;
+    const targetDisp = targetDeleteContactDisplayName;
+
+    let deletedContacts = JSON.parse(localStorage.getItem("deletedContacts_" + me) || "[]");
+    if (!deletedContacts.includes(targetUser.toLowerCase())) {
+        deletedContacts.push(targetUser.toLowerCase());
+        localStorage.setItem("deletedContacts_" + me, JSON.stringify(deletedContacts));
+    }
+
+    try {
+        await fetch(`${API_BASE}/api/delete-conversation`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user: me, contact: targetUser })
+        });
+    } catch (e) {
+        console.warn("Delete conversation request error:", e);
+    }
+
+    if (activeRecipientUsername && activeRecipientUsername.toLowerCase() === targetUser.toLowerCase()) {
+        document.getElementById("activeChatWrapper").style.display = "none";
+        document.getElementById("emptyChatView").style.display = "flex";
+        activeRecipientUsername = null;
+        activeRecipientDisplayName = null;
+        activeRoom = null;
+    }
+
+    closeModals();
+    renderContacts();
+    showToastBanner("Contact Deleted", `Contact "${targetDisp}" and chat history removed.`);
+}
+
+// New group modal
+function openNewGroupModal() {
+    const list = document.getElementById("groupMembersList");
+    if (!list) return;
+    list.innerHTML = "";
+
+    const others = allUsers.filter(u => u.username.toLowerCase() !== me.toLowerCase());
+    if (others.length === 0) {
+        list.innerHTML = "<p style='color: var(--text-secondary); font-size: 13px; text-align: center; padding: 10px;'>No other users available</p>";
+    } else {
+        others.forEach(u => {
+            const item = document.createElement("label");
+            item.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--search-bg); border-radius: 8px; cursor: pointer;";
+            const disp = u.fullname || u.username;
+            item.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="avatar-badge" style="width: 32px; height: 32px; font-size: 13px; background: ${getAvatarGradient(u.username)}">
+                        ${u.avatarUrl ? `<img src="${u.avatarUrl}" class="avatar-img">` : disp.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                        <strong style="font-size: 13px; color: var(--text-primary); display: block;">${escapeHtml(disp)}</strong>
+                        <small style="color: var(--text-secondary); font-size: 11px;">@${escapeHtml(u.username)}</small>
+                    </div>
+                </div>
+                <input type="checkbox" value="${escapeHtml(u.username)}" class="group-member-checkbox" style="width: 18px; height: 18px; accent-color: var(--primary-accent);">
+            `;
+            list.appendChild(item);
+        });
+    }
+
+    document.getElementById("groupNameInput").value = "";
+    document.getElementById("newGroupModal").style.display = "flex";
+}
+
+async function submitCreateGroup() {
+    const name = document.getElementById("groupNameInput").value.trim();
+    if (!name) {
+        alert("Please enter a group name.");
+        return;
+    }
+
+    const checkboxes = document.querySelectorAll(".group-member-checkbox:checked");
+    const members = Array.from(checkboxes).map(cb => cb.value.toLowerCase());
+    members.push(me.toLowerCase());
+
+    try {
+        const res = await fetch(`${API_BASE}/api/groups`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, createdBy: me, members })
+        });
+        const data = await res.json();
+        if (data.success) {
+            closeModals();
+            allGroups.unshift(data.group);
+            renderContacts();
+            selectGroup(data.group);
+            showToastBanner("Group Created", `Group "${name}" is ready.`);
+        }
+    } catch (e) {
+        alert("Failed to create group.");
+    }
+}
+
+// Status updates
+let selectedStatusBg = "linear-gradient(135deg, #128c7e, #075e54)";
+let selectedStatusFont = "Poppins, sans-serif";
+let currentStatusMode = "text"; // 'text' | 'photo'
+let pendingStatusPhotoDataUrl = null;
+let statusProgressTimer = null;
+
+// Render status slider
+function renderStatusSlider() {
+    const track = document.getElementById("statusSliderTrack");
+    if (!track) return;
+    track.innerHTML = "";
+
+    if (!track.dataset.wheelHooked) {
+        track.dataset.wheelHooked = "true";
+        track.addEventListener("wheel", (e) => {
+            if (e.deltaY !== 0) {
+                e.preventDefault();
+                track.scrollBy({ left: e.deltaY * 1.6, behavior: "smooth" });
+            }
+        }, { passive: false });
+    }
+
+    // My status item
+    const myStatus = allStatuses.find(s => s.username === me.toLowerCase());
+    const myCard = document.createElement("div");
+    myCard.className = "status-story-card my-status";
+    myCard.title = myStatus ? "My Status - Click badge to add, or card to view" : "My Status - Click to post status";
+
+    const myInitial = (myFullName || me).charAt(0).toUpperCase();
+    const myRingClass = myStatus ? "status-ring-container has-active-status" : "status-ring-container";
+
+    myCard.innerHTML = `
+        <div class="${myRingClass}">
+            <div class="status-ring-gap">
+                <div class="status-bubble-avatar" style="background: ${getAvatarGradient(me)};">
+                    ${myAvatar ? `<img src="${myAvatar}" alt="My Avatar">` : myInitial}
+                </div>
+            </div>
+            <div class="my-status-add-badge" title="Post new status"><i class="fa-solid fa-plus"></i></div>
+        </div>
+        <span class="status-story-name">My Status</span>
+    `;
+
+    myCard.onclick = (e) => {
+        if (e.target.closest(".my-status-add-badge")) {
+            e.stopPropagation();
+            openCreateStatusModal();
+        } else if (myStatus) {
+            viewStatus(myStatus.id);
+        } else {
+            openCreateStatusModal();
+        }
+    };
+
+    const addBadgeBtn = myCard.querySelector(".my-status-add-badge");
+    if (addBadgeBtn) {
+        addBadgeBtn.onclick = (e) => {
+            e.stopPropagation();
+            openCreateStatusModal();
+        };
+    }
+
+    track.appendChild(myCard);
+
+    // Recent contact statuses
+    const othersStatuses = allStatuses.filter(s => s.username !== me.toLowerCase());
+    const seenUsers = new Set();
+    const uniqueContactStatuses = [];
+
+    othersStatuses.forEach(st => {
+        if (!seenUsers.has(st.username)) {
+            seenUsers.add(st.username);
+            uniqueContactStatuses.push(st);
+        }
+    });
+
+    uniqueContactStatuses.forEach(st => {
+        const card = document.createElement("div");
+        card.className = "status-story-card";
+        const firstName = (st.fullName || st.username).split(" ")[0];
+        card.title = `${st.fullName || st.username} - View status`;
+
+        card.innerHTML = `
+            <div class="status-ring-container has-active-status">
+                <div class="status-ring-gap">
+                    <div class="status-bubble-avatar" style="background: ${getAvatarGradient(st.username)};">
+                        ${st.avatarUrl ? `<img src="${st.avatarUrl}" alt="${escapeHtml(st.fullName)}">` : (st.fullName || st.username).charAt(0).toUpperCase()}
+                    </div>
+                </div>
+            </div>
+            <span class="status-story-name">${escapeHtml(firstName)}</span>
+        `;
+
+        card.onclick = () => viewStatus(st.id);
+        track.appendChild(card);
+    });
+}
+
+function scrollStatusTrack(direction) {
+    const track = document.getElementById("statusSliderTrack");
+    if (track) {
+        track.scrollBy({ left: direction * 160, behavior: "smooth" });
+    }
+}
+
+// Open status creator modal
+function openCreateStatusModal() {
+    closeModals();
+    currentStatusMode = "text";
+    selectedStatusBg = "linear-gradient(135deg, #128c7e, #075e54)";
+    selectedStatusFont = "Poppins, sans-serif";
+    pendingStatusPhotoDataUrl = null;
+
+    // Reset Text mode UI
+    const txtInput = document.getElementById("creatorStatusTextInput");
+    if (txtInput) txtInput.value = "";
+
+    const previewCanvas = document.getElementById("statusTextPreviewCanvas");
+    if (previewCanvas) previewCanvas.style.background = selectedStatusBg;
+
+    const previewText = document.getElementById("statusPreviewText");
+    if (previewText) {
+        previewText.textContent = "What's on your mind?";
+        previewText.style.fontFamily = selectedStatusFont;
+    }
+
+    const prevAvatar = document.getElementById("statusPreviewAvatar");
+    if (prevAvatar) {
+        if (myAvatar) {
+            prevAvatar.innerHTML = `<img src="${myAvatar}" alt="avatar">`;
+        } else {
+            prevAvatar.textContent = (myFullName || me).charAt(0).toUpperCase();
+            prevAvatar.style.background = getAvatarGradient(me);
+        }
+    }
+
+    // Reset Photo mode UI
+    removeSelectedStatusPhoto();
+    const captionInput = document.getElementById("statusPhotoCaptionInput");
+    if (captionInput) captionInput.value = "";
+
+    switchStatusComposerMode("text");
+
+    const modal = document.getElementById("createStatusModal");
+    if (modal) modal.style.display = "flex";
+    if (txtInput) txtInput.focus();
+}
+
+// Switch between Text Status and Photo Status tabs
+function switchStatusComposerMode(mode) {
+    currentStatusMode = mode;
+    const tabText = document.getElementById("tabModeText");
+    const tabPhoto = document.getElementById("tabModePhoto");
+    const textContainer = document.getElementById("statusTextModeContainer");
+    const photoContainer = document.getElementById("statusPhotoModeContainer");
+
+    if (mode === "text") {
+        if (tabText) tabText.classList.add("active");
+        if (tabPhoto) tabPhoto.classList.remove("active");
+        if (textContainer) textContainer.style.display = "block";
+        if (photoContainer) photoContainer.style.display = "none";
+        document.getElementById("creatorStatusTextInput")?.focus();
+    } else {
+        if (tabText) tabText.classList.remove("active");
+        if (tabPhoto) tabPhoto.classList.add("active");
+        if (textContainer) textContainer.style.display = "none";
+        if (photoContainer) photoContainer.style.display = "block";
+    }
+}
+
+function selectStatusGradient(gradient, btn) {
+    selectedStatusBg = gradient;
+    const previewCanvas = document.getElementById("statusTextPreviewCanvas");
+    if (previewCanvas) previewCanvas.style.background = gradient;
+
+    document.querySelectorAll(".status-swatch-circle").forEach(b => b.classList.remove("active"));
+    if (btn) btn.classList.add("active");
+}
+
+function setStatusFont(font, btn) {
+    selectedStatusFont = font;
+    const previewText = document.getElementById("statusPreviewText");
+    if (previewText) previewText.style.fontFamily = font;
+
+    document.querySelectorAll(".status-font-pill").forEach(b => b.classList.remove("active"));
+    if (btn) btn.classList.add("active");
+}
+
+function handleStatusTextInput(val) {
+    const previewText = document.getElementById("statusPreviewText");
+    if (previewText) {
+        previewText.textContent = val.trim() || "What's on your mind?";
+    }
+}
+
+// Photo file selection & compression
+function handleStatusPhotoSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        const raw = evt.target.result;
+        const img = new Image();
+        img.onload = function() {
+            try {
+                const maxDim = 900;
+                let w = img.width;
+                let h = img.height;
+                if (w > maxDim || h > maxDim) {
+                    if (w > h) {
+                        h = Math.round((h * maxDim) / w);
+                        w = maxDim;
+                    } else {
+                        w = Math.round((w * maxDim) / h);
+                        h = maxDim;
+                    }
+                }
+                const canvas = document.createElement("canvas");
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, w, h);
+                const compressed = canvas.toDataURL("image/jpeg", 0.85);
+
+                pendingStatusPhotoDataUrl = compressed;
+                const previewImg = document.getElementById("statusPhotoPreviewImg");
+                const previewWrap = document.getElementById("statusPhotoPreviewWrap");
+                const prompt = document.getElementById("statusPhotoEmptyPrompt");
+                if (previewImg) previewImg.src = compressed;
+                if (previewWrap) previewWrap.style.display = "block";
+                if (prompt) prompt.style.display = "none";
+            } catch (err) {
+                pendingStatusPhotoDataUrl = raw;
+            }
+        };
+        img.src = raw;
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeSelectedStatusPhoto() {
+    pendingStatusPhotoDataUrl = null;
+    const previewImg = document.getElementById("statusPhotoPreviewImg");
+    const previewWrap = document.getElementById("statusPhotoPreviewWrap");
+    const prompt = document.getElementById("statusPhotoEmptyPrompt");
+    const fileInput = document.getElementById("statusPhotoFileInput");
+    if (previewImg) previewImg.src = "";
+    if (previewWrap) previewWrap.style.display = "none";
+    if (prompt) prompt.style.display = "flex";
+    if (fileInput) fileInput.value = "";
+}
+
+// Submit status to server
+async function submitStatusPost() {
+    const btn = document.getElementById("btnPublishStatus");
+    let text = "";
+    let mediaUrl = null;
+
+    if (currentStatusMode === "text") {
+        text = (document.getElementById("creatorStatusTextInput").value || "").trim();
+        if (!text) {
+            alert("Please enter status text.");
+            return;
+        }
+    } else {
+        if (!pendingStatusPhotoDataUrl) {
+            alert("Please choose a photo to post.");
+            return;
+        }
+        mediaUrl = pendingStatusPhotoDataUrl;
+        text = (document.getElementById("statusPhotoCaptionInput").value || "").trim();
+    }
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin" style="margin-right: 6px;"></i> Posting...`;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/api/statuses`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                username: me,
+                fullName: myFullName || me,
+                avatarUrl: myAvatar,
+                text,
+                mediaUrl,
+                bgColor: selectedStatusBg,
+                fontStyle: selectedStatusFont
+            })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            allStatuses.unshift(data.status);
+            closeModals();
+            renderStatusSlider();
+            renderContacts();
+            showToastBanner("Status Updated", "Your status was shared with contacts.");
+        } else {
+            alert(data.message || "Failed to post status.");
+        }
+    } catch (e) {
+        console.error("Status post error:", e);
+        alert("Failed to share status. Please try again.");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-paper-plane" style="margin-right: 6px;"></i> Share Status`;
+        }
+    }
+}
+
+// All Statuses Overview Modal
+function openStatusModal() {
+    const subtitle = document.getElementById("myStatusSubtitle");
+    const myStatus = allStatuses.find(s => s.username === me.toLowerCase());
+    if (myStatus) {
+        subtitle.textContent = "Active status posted " + new Date(myStatus.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else {
+        subtitle.textContent = "Tap + Add Status to post";
+    }
+
+    const list = document.getElementById("recentStatusesList");
+    list.innerHTML = "";
+
+    const othersStatuses = allStatuses.filter(s => s.username !== me.toLowerCase());
+    if (othersStatuses.length === 0) {
+        list.innerHTML = "<p style='text-align: center; color: var(--text-secondary); font-size: 12.5px; padding: 16px;'>No recent status updates from contacts</p>";
+    } else {
+        othersStatuses.forEach(st => {
+            const row = document.createElement("div");
+            row.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--search-bg); border-radius: 12px; cursor: pointer; transition: transform 0.2s, background 0.2s;";
+            const d = new Date(st.createdAt);
+            const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const snippet = st.mediaUrl ? "📷 Photo" : (st.text ? (st.text.length > 25 ? st.text.substring(0, 25) + "..." : st.text) : "Status update");
+
+            row.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="avatar-badge has-status" style="width: 44px; height: 44px; font-size: 16px; background: ${getAvatarGradient(st.username)}">
+                        ${st.avatarUrl ? `<img src="${st.avatarUrl}" class="avatar-img" alt="avatar">` : (st.fullName || st.username).charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                        <strong style="font-size: 13.5px; color: var(--text-primary); display: block;">${escapeHtml(st.fullName || st.username)}</strong>
+                        <small style="color: var(--text-secondary); font-size: 12px;">Today, ${timeStr} • ${escapeHtml(snippet)}</small>
+                    </div>
+                </div>
+                <i class="fa-solid fa-play" style="color: #25d366; font-size: 13px;"></i>
+            `;
+            row.onclick = () => {
+                closeModals();
+                viewStatus(st.id);
+            };
+            list.appendChild(row);
+        });
+    }
+
+    document.getElementById("statusModal").style.display = "flex";
+}
+
+// Full-screen Story Viewer with 5s progress & pause-on-hold
+function viewStatus(statusId) {
+    const st = allStatuses.find(s => s.id === statusId);
+    if (!st) return;
+
+    const overlay = document.getElementById("statusViewerModal");
+    const box = document.getElementById("statusStoryBox");
+    const nameEl = document.getElementById("storyViewerName");
+    const avatarEl = document.getElementById("storyViewerAvatar");
+    const timeEl = document.getElementById("storyViewerTime");
+    const pBar = document.getElementById("statusProgressBar");
+
+    const textContainer = document.getElementById("storyTextContainer");
+    const textEl = document.getElementById("storyViewerText");
+    const photoContainer = document.getElementById("storyPhotoContainer");
+    const photoImg = document.getElementById("storyViewerImage");
+    const captionWrap = document.getElementById("storyViewerCaptionWrap");
+    const captionEl = document.getElementById("storyViewerCaption");
+
+    nameEl.textContent = st.fullName || st.username;
+    if (st.avatarUrl) {
+        avatarEl.innerHTML = `<img src="${st.avatarUrl}" class="avatar-img" alt="avatar">`;
+    } else {
+        avatarEl.textContent = (st.fullName || st.username).charAt(0).toUpperCase();
+        avatarEl.style.background = getAvatarGradient(st.username);
+    }
+
+    const d = new Date(st.createdAt);
+    timeEl.textContent = "Today, " + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    if (st.mediaUrl) {
+        // Photo Status
+        textContainer.style.display = "none";
+        photoContainer.style.display = "flex";
+        photoImg.src = st.mediaUrl;
+
+        if (st.text && st.text.trim()) {
+            captionWrap.style.display = "block";
+            captionEl.textContent = st.text;
+        } else {
+            captionWrap.style.display = "none";
+        }
+        box.style.background = "#000000";
+    } else {
+        // Text Status
+        photoContainer.style.display = "none";
+        textContainer.style.display = "flex";
+        textEl.textContent = st.text;
+        textEl.style.fontFamily = st.fontStyle || "Poppins, sans-serif";
+        box.style.background = st.bgColor || "linear-gradient(135deg, #128c7e, #075e54)";
+    }
+
+    pBar.style.transition = "none";
+    pBar.style.width = "0%";
+    overlay.style.display = "flex";
+
+    // Progress bar animation
+    setTimeout(() => {
+        pBar.style.transition = "width 5s linear";
+        pBar.style.width = "100%";
+    }, 50);
+
+    clearTimeout(statusProgressTimer);
+    statusProgressTimer = setTimeout(() => {
+        closeStatusViewer();
+    }, 5100);
+
+    // Press-and-hold pause logic
+    box.onmousedown = box.ontouchstart = () => {
+        pBar.style.transition = "none";
+        const computedWidth = window.getComputedStyle(pBar).width;
+        pBar.style.width = computedWidth;
+        clearTimeout(statusProgressTimer);
+    };
+
+    box.onmouseup = box.ontouchend = () => {
+        const parentWidth = box.offsetWidth - 28;
+        const currentPx = parseFloat(pBar.style.width) || 0;
+        const remainingRatio = Math.max(0, (parentWidth - currentPx) / parentWidth);
+        const remainingMs = remainingRatio * 5000;
+
+        pBar.style.transition = `width ${remainingMs / 1000}s linear`;
+        pBar.style.width = "100%";
+
+        clearTimeout(statusProgressTimer);
+        statusProgressTimer = setTimeout(() => {
+            closeStatusViewer();
+        }, remainingMs + 50);
+    };
+}
+
+function closeStatusViewer() {
+    clearTimeout(statusProgressTimer);
+    document.getElementById("statusViewerModal").style.display = "none";
+    const box = document.getElementById("statusStoryBox");
+    if (box) {
+        box.onmousedown = null;
+        box.ontouchstart = null;
+        box.onmouseup = null;
+        box.ontouchend = null;
+    }
+}
+
+function showToastBanner(title, msg) {
+    const container = document.getElementById("toastContainer");
+    if (!container) return;
+
+    const toast = document.createElement("div");
+    toast.className = "toast-notification";
+    toast.innerHTML = `
+        <div class="avatar-badge" style="width: 34px; height: 34px; font-size: 13px; background: var(--primary-accent); flex-shrink: 0;">
+            <i class="fa-solid fa-bell"></i>
+        </div>
+        <div style="flex: 1; min-width: 0;">
+            <strong style="font-size: 13.5px; color: var(--text-primary); display: block;">${escapeHtml(title)}</strong>
+            <span style="font-size: 12px; color: var(--text-secondary); display: block;">${escapeHtml(msg)}</span>
+        </div>
+    `;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateX(40px)";
+        toast.style.transition = "all 0.3s ease";
+        setTimeout(() => toast.remove(), 300);
+    }, 3500);
+}
+
+// Typing indicator
 const msgInput = document.getElementById("msgInput");
 let typingTimer = null;
 
@@ -602,7 +1750,7 @@ socket.on("stop typing", (typingUser) => {
     }
 });
 
-// ---------------- EMOJI KEYBOARD LOGIC ----------------
+// Emoji picker
 const emojiCategories = {
     smileys: ["😀","😃","😄","😁","😆","😅","🤣","😂","🙂","🙃","😉","😊","😇","🥰","😍","🤩","😘","😗","😚","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","🤐","🤨","😐","😑","😶","😏","😒","🙄","😬","🤥","😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤮","🤧","🥵","🥶","🥴","😵","🤯","🤠","🥳","🥸","😎","🤓","🧐"],
     hands: ["👋","🤚","🖐️","✋","🖖","👌","🤌","🤏","✌️","🤞","🤟","🤘","🤙","👈","👉","👆","🖕","👇","☝️","👍","👎","✊","👊","🤛","🤜","👏","🙌","👐","🤲","🤝","🙏","✍️","💅","🤳","💪","🧠","🫀","🫁"],
@@ -643,7 +1791,6 @@ function renderEmojiGrid(cat, query = "") {
 
     let list = emojiCategories[cat] || emojiCategories.smileys;
     if (query.trim().length > 0) {
-        // Search across all categories
         list = [];
         Object.values(emojiCategories).forEach(arr => {
             arr.forEach(em => {
@@ -676,7 +1823,6 @@ function insertEmoji(emoji) {
     input.selectionStart = input.selectionEnd = start + emoji.length;
 }
 
-// Close emoji tray when clicking outside
 document.addEventListener("click", (e) => {
     const tray = document.getElementById("emojiTray");
     const btn = document.getElementById("emojiBtn");
@@ -688,7 +1834,7 @@ document.addEventListener("click", (e) => {
     }
 });
 
-// ---------------- MEDIA ATTACHMENTS LOGIC ----------------
+// Media attachments
 let pendingMedia = null;
 
 function handleMediaSelect(e) {
@@ -698,7 +1844,7 @@ function handleMediaSelect(e) {
     const isImg = file.type.startsWith("image/");
     const reader = new FileReader();
 
-    // 1. Immediately read file and display preview bar so user never waits
+    // Read file and preview
     reader.onload = function(evt) {
         const rawData = evt.target.result;
 
@@ -803,7 +1949,7 @@ function closeLightbox() {
     if (modal) modal.style.display = "none";
 }
 
-// ---------------- DELETE MESSAGE LOGIC ----------------
+// Delete message
 let activeDeleteMsgId = null;
 let activeDeleteMsgIsMe = false;
 
@@ -847,7 +1993,7 @@ socket.on("message deleted", (data) => {
     }
 });
 
-// ---------------- APP & DESKTOP NOTIFICATIONS ----------------
+// Notifications
 if ("Notification" in window && Notification.permission === "default") {
     Notification.requestPermission();
 }
@@ -890,7 +2036,7 @@ function showToastNotification(data) {
     }, 4500);
 }
 
-// ---------------- SUBMIT MESSAGE ----------------
+// Send message
 const chatForm = document.getElementById("chatForm");
 const messagesContainer = document.getElementById("messagesContainer");
 
@@ -906,6 +2052,8 @@ chatForm.addEventListener("submit", (e) => {
             id: localId,
             _id: localId,
             username: me,
+            senderFullName: myFullName || me,
+            avatarUrl: myAvatar || null,
             message: text,
             room: activeRoom,
             mediaUrl: pendingMedia ? pendingMedia.dataUrl : null,
@@ -915,14 +2063,14 @@ chatForm.addEventListener("submit", (e) => {
             time: new Date()
         };
 
-        // 1. OPTIMISTIC INSTANT RENDER: Shows media in chat immediately with 0ms delay!
+        // Optimistic render
         displayChatMessage(payload);
         scrollToBottom();
 
-        // 2. EMIT TO SOCKET: Delivers to server and recipient
+        // Emit to server
         socket.emit("chat message", payload);
 
-        // 3. Update last message in left contacts list immediately
+        // Update last message
         lastMessagesMap[activeRoom] = {
             message: payload.mediaUrl ? (payload.mediaType === "image" ? "📷 Photo" : "📎 Attachment") : payload.message,
             time: payload.time,
@@ -934,14 +2082,13 @@ chatForm.addEventListener("submit", (e) => {
         cancelPendingMedia();
         msgInput.focus();
 
-        // Close emoji tray if open
         const tray = document.getElementById("emojiTray");
         if (tray) tray.style.display = "none";
         document.getElementById("emojiBtn")?.classList.remove("active");
     }
 });
 
-// ---------------- LOAD MESSAGES ----------------
+// Load messages
 socket.on("load messages", (msgs) => {
     messagesContainer.innerHTML = "";
     if (msgs && msgs.length > 0) {
@@ -949,13 +2096,15 @@ socket.on("load messages", (msgs) => {
     } else {
         const placeholder = document.createElement("div");
         placeholder.style.cssText = "text-align: center; color: #888; font-size: 13px; margin: auto; padding: 20px; background: rgba(255,255,255,0.7); border-radius: 20px; z-index: 1;";
-        placeholder.textContent = `No messages yet. Say hi to ${activeRecipientDisplayName}!`;
+        placeholder.textContent = activeChatType === "group"
+            ? `Welcome to ${activeRecipientDisplayName}! Start the group conversation.`
+            : `No messages yet. Say hi to ${activeRecipientDisplayName}!`;
         messagesContainer.appendChild(placeholder);
     }
     scrollToBottom();
 });
 
-// ---------------- RECEIVE MESSAGE ----------------
+// Receive message
 socket.on("chat message", (data) => {
     const isCurrentRoom = activeRoom && data.room === activeRoom;
     const isMe = data.username.toLowerCase() === me.toLowerCase();
@@ -982,7 +2131,7 @@ socket.on("chat message", (data) => {
         // Native Desktop Notification if tab is hidden
         if ("Notification" in window && Notification.permission === "granted" && document.hidden) {
             const previewText = data.mediaUrl ? (data.mediaType === "image" ? "Sent a photo" : "Sent a file") : data.message;
-            new Notification(`chatNut - ${data.username}`, {
+            new Notification(`chatNut - ${data.senderFullName || data.username}`, {
                 body: previewText,
                 icon: "https://cdn-icons-png.flaticon.com/512/1041/1041916.png"
             });
@@ -996,6 +2145,51 @@ socket.on("chat message", (data) => {
         username: data.username
     };
     renderContacts();
+});
+
+// Real-time conversation deletion sync
+socket.on("conversation deleted", (data) => {
+    if (activeRoom && data && data.room === activeRoom) {
+        messagesContainer.innerHTML = `
+            <div style="text-align: center; color: #888; font-size: 13px; margin: auto; padding: 20px; background: rgba(255,255,255,0.7); border-radius: 20px; z-index: 1;">
+                This conversation was deleted.
+            </div>
+        `;
+    }
+});
+
+// Real-time group creation sync
+socket.on("group created", (group) => {
+    if (group && (!group.members || group.members.includes(me.toLowerCase()))) {
+        if (!allGroups.some(g => g.id === group.id)) {
+            allGroups.unshift(group);
+            renderContacts();
+        }
+    }
+});
+
+// Real-time status update sync
+socket.on("new status", (status) => {
+    if (status) {
+        if (!allStatuses.some(s => s.id === status.id)) {
+            allStatuses.unshift(status);
+            renderContacts();
+            renderStatusSlider();
+        }
+    }
+});
+
+// Real-time user profile sync
+socket.on("user profile updated", (profile) => {
+    if (profile && profile.username) {
+        const u = allUsers.find(user => user.username.toLowerCase() === profile.username.toLowerCase());
+        if (u) {
+            if (profile.avatarUrl !== undefined) u.avatarUrl = profile.avatarUrl;
+            if (profile.bio !== undefined) u.bio = profile.bio;
+            renderContacts();
+            renderStatusSlider();
+        }
+    }
 });
 
 function displayChatMessage(data) {
@@ -1041,16 +2235,20 @@ function displayChatMessage(data) {
 
     let textHtml = data.message ? `<p class="message-text">${escapeHtml(data.message)}</p>` : "";
 
+    const senderHeader = (activeChatType === "group" && !isMe)
+        ? `<span class="msg-group-sender"><i class="fa-solid fa-user" style="margin-right: 4px; font-size: 10px;"></i>${escapeHtml(data.senderFullName || data.username)}</span>`
+        : (!isMe ? `<span class="message-sender">${escapeHtml(data.senderFullName || data.username)}</span>` : '');
+
     bubble.innerHTML = `
         <button type="button" class="msg-actions-btn" onclick="openDeleteModal('${msgId}', ${isMe})" title="Delete message">
             <i class="fa-regular fa-trash-can"></i>
         </button>
-        ${!isMe ? `<span class="message-sender">${escapeHtml(data.username)}</span>` : ''}
+        ${senderHeader}
         ${mediaHtml}
         ${textHtml}
         <div class="message-info">
             <span>${timeFormatted}</span>
-            ${isMe ? '<i class="fa-solid fa-check-double check-icon"></i>' : ''}
+            ${isMe ? '<i class="fa-solid fa-check-double check-icon" title="Delivered"></i>' : ''}
         </div>
     `;
 
@@ -1079,7 +2277,7 @@ function playChime() {
     } catch (e) {}
 }
 
-// --- SEARCH NEW CONTACT MODAL ---
+// Contact search
 function filterUsers() {
     const val = (document.getElementById("userSearchInput").value || "").trim().toLowerCase();
     const results = document.getElementById("searchResults");
@@ -1104,11 +2302,11 @@ function filterUsers() {
               <strong>${escapeHtml(displayName)}</strong>
               <small style="color: #777; display: block;">@${escapeHtml(u.username)}</small>
             </div>
-            <i class="fa-solid fa-comment" style="color: #ff8800;"></i>
+            <i class="fa-solid fa-comment" style="color: var(--primary-accent);"></i>
         `;
         div.onclick = () => {
             closeModals();
-            selectContact(u.username, displayName);
+            selectContact(u.username, displayName, u.avatarUrl);
         };
         results.appendChild(div);
     });
