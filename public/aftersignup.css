@@ -2617,27 +2617,7 @@ input:checked + .toggle-slider:before {
     transform: scale(1.2);
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .contacts-panel {
-        width: 100%;
-    }
-    .chat-panel {
-        display: none;
-    }
-    .chat-panel.mobile-active {
-        display: flex;
-        position: fixed;
-        top: 60px;
-        left: 0;
-        width: 100vw;
-        height: calc(100vh - 60px);
-        z-index: 400;
-    }
-    .chat-back-btn {
-        display: flex;
-    }
-}
+/* Responsive mobile styles are defined at the end of this stylesheet for optimal CSS cascade */
 
 /* ---------------- IN-CHAT SEARCH BAR ---------------- */
 .in-chat-search-bar {
@@ -3357,4 +3337,491 @@ input:checked + .toggle-slider:before {
 
 .avatar-badge.group-badge {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+/* ================================================================
+   RESPONSIVE MOBILE OVERRIDES (Optimal Cascade Position at End)
+   ================================================================ */
+@media (max-width: 768px) {
+    /* Prevent horizontal viewport overflow */
+    html, body {
+        overflow-x: hidden !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        height: 100dvh !important;
+        height: 100vh;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Compact Top Header */
+    header.main-header,
+    body > header {
+        height: 56px !important;
+        padding: 0 12px !important;
+        z-index: 500 !important;
+    }
+
+    .header_left {
+        gap: 10px !important;
+    }
+
+    .header-menu-icon {
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 18px !important;
+    }
+
+    .header_logo a {
+        font-size: 18px !important;
+        gap: 6px !important;
+    }
+
+    .logo-icon {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 13px !important;
+    }
+
+    .header_actions {
+        gap: 6px !important;
+    }
+
+    .header-quick-theme-btn {
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 15px !important;
+    }
+
+    .header-add-status-btn {
+        padding: 5px 10px !important;
+        font-size: 12px !important;
+        gap: 4px !important;
+    }
+
+    .header_user_badge {
+        padding: 2px !important;
+        border: none !important;
+        background: transparent !important;
+        gap: 0 !important;
+    }
+
+    .header_user_badge #topUserName,
+    .header_user_badge .badge-caret {
+        display: none !important;
+    }
+
+    #topUserAvatar {
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 14px !important;
+    }
+
+    /* Split layout: full mobile height with dynamic viewport */
+    .messenger-layout {
+        height: calc(100dvh - 56px) !important;
+        height: calc(100vh - 56px);
+        margin-top: 56px !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        overflow: hidden !important;
+    }
+
+    /* Contacts panel takes full width when no chat is open */
+    .contacts-panel {
+        width: 100% !important;
+        height: 100% !important;
+        border-right: none !important;
+        position: relative !important;
+    }
+
+    .contacts-header {
+        padding: 12px 14px 10px 14px !important;
+    }
+
+    .contacts-header-top {
+        margin-bottom: 10px !important;
+    }
+
+    .contacts-header-top h2 {
+        font-size: 18px !important;
+    }
+
+    .search-input {
+        padding: 8px 12px 8px 36px !important;
+        font-size: 14px !important;
+        border-radius: 18px !important;
+    }
+
+    .search-bar-wrap i {
+        left: 12px !important;
+        font-size: 13px !important;
+    }
+
+    .chat-filter-tabs {
+        margin-top: 10px !important;
+        gap: 6px !important;
+    }
+
+    .filter-tab-pill {
+        padding: 5px 12px !important;
+        font-size: 12px !important;
+    }
+
+    /* Touch-Optimized Status Stories Slider */
+    .status-slider-section {
+        padding: 10px 12px 8px 12px !important;
+    }
+
+    .status-slider-titlebar {
+        margin-bottom: 8px !important;
+    }
+
+    .status-slider-track {
+        gap: 12px !important;
+        padding: 4px 2px 6px 2px !important;
+        -webkit-overflow-scrolling: touch !important;
+        scroll-snap-type: x proximity !important;
+    }
+
+    /* Never block touch taps with arrow buttons on touchscreens */
+    .status-arrow-btn {
+        display: none !important;
+    }
+
+    .status-story-card {
+        scroll-snap-align: start !important;
+        min-width: 58px !important;
+        max-width: 66px !important;
+    }
+
+    .status-ring-container {
+        width: 54px !important;
+        height: 54px !important;
+    }
+
+    .status-bubble-avatar {
+        width: 46px !important;
+        height: 46px !important;
+        font-size: 17px !important;
+    }
+
+    .status-story-name {
+        font-size: 11px !important;
+        max-width: 62px !important;
+    }
+
+    /* Contacts scroll list */
+    .contacts-scroll {
+        padding: 4px 8px 84px 8px !important;
+    }
+
+    .contact-card {
+        padding: 10px 10px !important;
+        gap: 11px !important;
+        min-height: 64px !important;
+        border-radius: 14px !important;
+    }
+
+    .contact-card .avatar-badge {
+        width: 44px !important;
+        height: 44px !important;
+        font-size: 16px !important;
+    }
+
+    .contact-top h4 {
+        font-size: 14.5px !important;
+    }
+
+    .contact-snippet {
+        font-size: 12.5px !important;
+    }
+
+    .contact-time {
+        font-size: 11px !important;
+    }
+
+    /* WhatsApp Floating Action Button (FAB) */
+    .chat-fab-btn {
+        position: fixed !important;
+        bottom: max(20px, calc(16px + env(safe-area-inset-bottom))) !important;
+        right: 18px !important;
+        width: 54px !important;
+        height: 54px !important;
+        font-size: 22px !important;
+        box-shadow: 0 6px 20px rgba(0, 168, 132, 0.45) !important;
+        z-index: 90 !important;
+    }
+
+    /* Chat Panel: Full Screen Mobile WhatsApp Layout */
+    .chat-panel {
+        display: none !important;
+    }
+
+    .chat-panel.mobile-active {
+        display: flex !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        height: 100dvh !important;
+        height: 100vh !important;
+        z-index: 600 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: var(--chat-bg) !important;
+    }
+
+    .active-chat-wrapper {
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100% !important;
+        width: 100% !important;
+    }
+
+    .chat-header-bar {
+        min-height: 56px !important;
+        height: 56px !important;
+        padding: 6px 10px !important;
+        gap: 8px !important;
+        background: var(--chat-header-bg) !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    .chat-back-btn {
+        display: flex !important;
+        width: 36px !important;
+        height: 36px !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 18px !important;
+        color: var(--text-primary) !important;
+        cursor: pointer !important;
+        margin-right: 2px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .chat-header-avatar {
+        width: 38px !important;
+        height: 38px !important;
+        font-size: 15px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .chat-header-meta {
+        flex: 1 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+        cursor: pointer !important;
+    }
+
+    .chat-header-meta h3 {
+        font-size: 14.5px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        margin: 0 !important;
+        line-height: 1.2 !important;
+    }
+
+    .chat-header-status {
+        font-size: 11px !important;
+        line-height: 1.2 !important;
+    }
+
+    .chat-header-actions {
+        gap: 2px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .header-action-btn {
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 14px !important;
+        border-radius: 50% !important;
+    }
+
+    .messages-container {
+        padding: 10px 10px !important;
+        gap: 8px !important;
+        flex: 1 !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    .message-bubble {
+        max-width: 84% !important;
+        padding: 7px 11px !important;
+        border-radius: 12px !important;
+    }
+
+    .message-text {
+        font-size: 14px !important;
+        line-height: 1.4 !important;
+    }
+
+    .message-info {
+        font-size: 10px !important;
+        margin-top: 3px !important;
+    }
+
+    .message-media-img {
+        max-width: 100% !important;
+        max-height: 220px !important;
+        border-radius: 8px !important;
+    }
+
+    /* Mobile Chat Input Bar pinned above soft keyboard */
+    .chat-input-bar {
+        padding: 8px 10px !important;
+        padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
+        gap: 6px !important;
+        background: var(--input-bar-bg) !important;
+    }
+
+    .input-field {
+        font-size: 16px !important; /* Prevents unwanted iOS Safari auto-zoom */
+        padding: 9px 14px !important;
+        border-radius: 20px !important;
+    }
+
+    .send-button {
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 15px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .chat-tool-btn {
+        padding: 6px !important;
+        font-size: 18px !important;
+    }
+
+    .media-preview-bar {
+        padding: 6px 10px !important;
+        gap: 8px !important;
+    }
+
+    .in-chat-search-bar {
+        padding: 6px 10px !important;
+        gap: 6px !important;
+    }
+
+    #inChatSearchInput {
+        padding: 6px 10px !important;
+        font-size: 13px !important;
+    }
+
+    .search-match-count {
+        font-size: 11px !important;
+    }
+
+    .search-nav-btn, .search-close-btn {
+        width: 26px !important;
+        height: 26px !important;
+        font-size: 10px !important;
+    }
+
+    .emoji-tray {
+        height: 210px !important;
+    }
+
+    /* Modals on mobile */
+    .modal-box,
+    .new-chat-modal-box {
+        width: 94% !important;
+        max-width: 400px !important;
+        max-height: 88dvh !important;
+        max-height: 88vh;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding: 18px 16px !important;
+        border-radius: 20px !important;
+    }
+
+    .modal-header h3 {
+        font-size: 16px !important;
+    }
+
+    .modal-close {
+        font-size: 22px !important;
+        width: 32px !important;
+        height: 32px !important;
+    }
+
+    .status-creator-modal-box {
+        max-height: 92dvh !important;
+        max-height: 92vh;
+    }
+
+    .status-live-preview-card {
+        padding: 16px 12px !important;
+        min-height: 110px !important;
+    }
+
+    .status-preview-text {
+        font-size: 14px !important;
+    }
+
+    .call-modal-box {
+        padding: 28px 20px !important;
+        width: 88% !important;
+        max-width: 320px !important;
+        border-radius: 24px !important;
+    }
+
+    .call-avatar-wrap {
+        width: 90px !important;
+        height: 90px !important;
+        margin-bottom: 14px !important;
+    }
+
+    .call-avatar {
+        width: 80px !important;
+        height: 80px !important;
+        font-size: 30px !important;
+    }
+
+    .call-contact-name {
+        font-size: 18px !important;
+    }
+
+    .sidebar_menu {
+        width: 280px !important;
+        max-width: 82vw !important;
+        left: -290px !important;
+    }
+
+    .sidebar_menu.open,
+    #check:checked ~ .sidebar_menu {
+        left: 0 !important;
+    }
+}
+
+/* Extra-compact smartphone screens (<= 480px) */
+@media (max-width: 480px) {
+    .header-add-status-btn span {
+        display: none !important;
+    }
+
+    .header-add-status-btn {
+        width: 34px !important;
+        height: 34px !important;
+        padding: 0 !important;
+        border-radius: 50% !important;
+        justify-content: center !important;
+    }
+
+    #searchChatBtn {
+        display: none !important;
+    }
+
+    .message-bubble {
+        max-width: 88% !important;
+    }
+
+    .quick-contacts-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+    }
 }
