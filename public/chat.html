@@ -3,8 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+window.location.replace("aftersignup.html" + window.location.search);
+</script>
 <title>chatNut Chat</title>
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="chat.css">
 
 </head>
@@ -13,20 +20,32 @@
 
 <div class="chat-container">
 
-    <header>
-        <h2>chatNut</h2>
+    <header class="chat-header">
+        <a href="aftersignup.html" class="back-link" title="Back to Contacts">
+            <i class="fa-solid fa-arrow-left"></i>
+        </a>
+        <div class="header-avatar" id="headerAvatar">?</div>
+        <div class="header-details">
+            <h2 id="chatTitle" class="chat-contact-name">chatNut</h2>
+            <div id="chatStatusLine" class="chat-status-line">
+                <span class="status-indicator-dot online" id="statusDot"></span>
+                <span id="statusText">Active</span>
+            </div>
+        </div>
     </header>
 
     <div id="messages"></div>
 
     <form id="chat-form">
         <input id="msg" placeholder="Type a message..." autocomplete="off">
-        <button type="submit">Send</button>
+        <button type="submit" title="Send message">
+            <i class="fa-solid fa-paper-plane"></i>
+        </button>
     </form>
 
 </div>
 
-<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 <script src="chat.js"></script>
 
 </body>

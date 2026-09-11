@@ -1,50 +1,196 @@
-const socket = io();
+const API_BASE = (window.location.protocol === 'file:' || (window.location.port && window.location.port !== '8000'))
+    ? 'http://localhost:8000'
+    : '';
+const socket = API_BASE ? io(API_BASE) : io();
 const params = new URLSearchParams(window.location.search);
-const username = params.get("username");
-const room = params.get("room");
 
-if (!room || !username) {
-    window.location.href = "/dashboard";
+// User and room details
+let username = params.get("username") || localStorage.getItem("chatUser");
+if (!username) {
+    username = "User" + Math.floor(1000 + Math.random() * 9000);
+    localStorage.setItem("chatUser", username);
 }
 
-// Join the specific room
+const room = params.get("room") || "general";
+const recipient = params.get("recipient") || "chatNut";
+
+// Elements
+const chatTitle = document.getElementById("chatTitle");
+const headerAvatar = document.getElementById("headerAvatar");
+const chatStatusLine = document.getElementById("chatStatusLine");
+const statusDot = document.getElementById("statusDot");
+const statusText = document.getElementById("statusText");
+
+if (chatTitle) {
+    chatTitle.textContent = recipient;
+}
+if (headerAvatar) {
+    headerAvatar.textContent = recipient.charAt(0).toUpperCase();
+}
+
+// Register user online
+socket.emit("user online", username);
+
+// Join room
 socket.emit("join room", room);
+
+let isRecipientOnline = false;
+let currentOnlineUsers = [];
+
+function updateOnlineStatusUI() {
+    if (!chatStatusLine) return;
+
+    // Check if recipient is in online list
+    isRecipientOnline = currentOnlineUsers.some(u => u.toLowerCase() === recipient.toLowerCase());
+
+    chatStatusLine.innerHTML = `
+        <span class="status-indicator-dot ${isRecipientOnline ? 'online' : 'offline'}"></span>
+        <span>${isRecipientOnline ? 'Online' : 'Offline'}</span>
+    `;
+}
+
+// Listen for global online users
+socket.on("online users", (users) => {
+    currentOnlineUsers = users || [];
+    updateOnlineStatusUI();
+});
 
 const form = document.getElementById("chat-form");
 const input = document.getElementById("msg");
 const messagesContainer = document.getElementById("messages");
 
-form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    if (input.value.trim()) {
-        socket.emit("chat message", {
-            username: username,
-            message: input.value,
-            room: room
-        });
-        input.value = "";
+// --- TYPING INDICATOR LOGIC ---
+let typingTimeout = null;
+
+input.addEventListener("input", () => {
+    if (input.value.trim().length > 0) {
+        socket.emit("typing", { room, username });
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+            socket.emit("stop typing", { room, username });
+        }, 1500);
+    } else {
+        socket.emit("stop typing", { room, username });
     }
 });
 
-socket.on("load messages", (msgs) => {
-    messagesContainer.innerHTML = "";
-    msgs.forEach(displayMessage);
+socket.on("typing", (typingUser) => {
+    if (typingUser !== username && chatStatusLine) {
+        chatStatusLine.innerHTML = `
+            <span class="typing-active">
+                <i class="fa-solid fa-pen-nib"></i> typing...
+            </span>
+        `;
+    }
 });
 
-socket.on("chat message", (data) => {
-    displayMessage(data);
+socket.on("stop typing", (typingUser) => {
+    if (chatStatusLine) {
+        updateOnlineStatusUI();
+    }
 });
+
+// --- SUBMIT MESSAGE ---
+form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (text) {
+        socket.emit("stop typing", { room, username });
+        socket.emit("chat message", {
+            username: username,
+            message: text,
+            room: room
+        });
+        input.value = "";
+        input.focus();
+    }
+});
+
+// --- LOAD MESSAGES ---
+socket.on("load messages", (msgs) => {
+    messagesContainer.innerHTML = "";
+    if (msgs && msgs.length > 0) {
+        msgs.forEach(displayMessage);
+    } else {
+        const placeholder = document.createElement("div");
+        placeholder.className = "empty-chat-prompt";
+        placeholder.textContent = `No messages yet. Say hi!`;
+        messagesContainer.appendChild(placeholder);
+    }
+    scrollToBottom();
+});
+
+// --- RECEIVE MESSAGE ---
+socket.on("chat message", (data) => {
+    const placeholder = messagesContainer.querySelector(".empty-chat-prompt");
+    if (placeholder) {
+        placeholder.remove();
+    }
+    displayMessage(data);
+    scrollToBottom();
+
+    // Sound chime if message from another user
+    if (data.username !== username) {
+        playChime();
+        // Restore status in case they were typing
+        updateOnlineStatusUI();
+    }
+});
+
+// --- PLAY NOTIFICATION CHIME ---
+function playChime() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.25);
+    } catch (e) {}
+}
 
 function displayMessage(data) {
     const div = document.createElement("div");
     div.classList.add("message");
-    if (data.username === username) div.classList.add("me");
-    
-    div.innerHTML = `
-        <strong>${data.username}</strong>
-        <p>${data.message}</p>
-        <span class="time">${new Date(data.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+
+    const isMe = data.username.toLowerCase() === username.toLowerCase();
+    if (isMe) {
+        div.classList.add("me");
+    }
+
+    // Sender label (for received messages)
+    const strong = document.createElement("span");
+    strong.className = "sender-name";
+    strong.textContent = data.username;
+    div.appendChild(strong);
+
+    // Message text
+    const p = document.createElement("p");
+    p.className = "text-content";
+    p.textContent = data.message;
+    div.appendChild(p);
+
+    // Timestamp & checkmark
+    const meta = document.createElement("div");
+    meta.className = "message-meta";
+    const date = data.time ? new Date(data.time) : new Date();
+    const timeFormatted = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    meta.innerHTML = `
+        <span class="time">${timeFormatted}</span>
+        ${isMe ? '<i class="fa-solid fa-check-double checkmark"></i>' : ''}
     `;
+    div.appendChild(meta);
+
     messagesContainer.appendChild(div);
+}
+
+function scrollToBottom() {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }

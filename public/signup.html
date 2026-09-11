@@ -3,51 +3,318 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign Up | MyBlogs</title>
+  <title>Sign Up | chatNut</title>
   <link rel="stylesheet" href="signup.css">
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    .alert-box {
+      display: none;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .alert-error {
+      background: #ffebee;
+      color: #c62828;
+      border: 1px solid #ef9a9a;
+    }
+    .alert-success {
+      background: #e8f5e9;
+      color: #2e7d32;
+      border: 1px solid #a5d6a7;
+    }
+    .btn-disabled {
+      opacity: 0.6;
+      cursor: not-allowed !important;
+    }
+  </style>
 </head>
 <body>
   <section class="signup-hero">
-    <h1>Create Your Account</h1>
-    <p>Join chatNut.</p>
+    <h1 id="pageTitle">Create Your Account</h1>
+    <p id="pageSubtitle">Join chatNut to connect with friends</p>
 
     <div class="signup-wrapper">
-      <!-- <form class="signup-form"> -->
-        <form class="signup-form" action="/signup" method="POST">
+      <div id="alertBox" class="alert-box"></div>
 
+      <!-- STEP 1: Registration Details Form -->
+      <form id="signupForm" class="signup-form">
         <div class="input-card">
-          <label for="fullname">Name</label>
-          <input type="text" id="fullname" name="fullname" required>
+          <label for="fullname">Full Name</label>
+          <input type="text" id="fullname" name="fullname" placeholder="John Doe" required>
         </div>
 
         <div class="input-card">
           <label for="username">Username</label>
-          <input type="text" id="username" name="username" required>
+          <input type="text" id="username" name="username" placeholder="johndoe" required autocomplete="username">
         </div>
 
         <div class="input-card">
-          <label for="email">Email</label>
-          <input type="email" id="email" name="email" required>
+          <label for="email">Email Address</label>
+          <input type="email" id="email" name="email" placeholder="john@example.com" required autocomplete="email">
         </div>
 
         <div class="input-card">
           <label for="password">Password</label>
-          <input type="password" id="password" name="password" required>
+          <input type="password" id="password" name="password" placeholder="At least 6 characters" required autocomplete="new-password">
         </div>
 
         <div class="input-card">
           <label for="confirmpassword">Confirm Password</label>
-          <input type="password" id="confirmpassword" name="confirmpassword" required>
+          <input type="password" id="confirmpassword" name="confirmpassword" placeholder="Re-enter password" required autocomplete="new-password">
         </div>
 
-        <button type="submit" class="signup-btn">Sign Up</button>
-        <p class="login-text">Already have an account? <a href="aftersignup.html">Open Chat</a></p>
+        <button type="submit" id="submitBtn" class="signup-btn">Verify Email & Sign Up</button>
+        <p class="login-text">Already have an account? <a href="login.html">Log In</a></p>
       </form>
+
+      <!-- STEP 2: Email OTP Verification Card -->
+      <form id="otpForm" class="signup-form" style="display: none;">
+        <div class="otp-meta-info">
+          We've sent a 6-digit verification code to:
+          <strong id="otpEmailDisplay" style="display: block; margin-top: 4px; color: #ff8800;">user@example.com</strong>
+        </div>
+
+        <div id="devOtpBanner" style="display: none; background: #fff8f0; border: 1px dashed #ff8800; border-radius: 8px; padding: 8px; font-size: 13px; color: #d97706; text-align: center; margin-bottom: 6px;">
+          🔑 Verification code: <strong id="devOtpCode">-</strong>
+        </div>
+
+        <div class="input-card">
+          <label for="otpInput">Enter 6-Digit Code</label>
+          <input type="text" id="otpInput" class="otp-display-code" placeholder="------" maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code" required>
+        </div>
+
+        <div class="resend-row">
+          <span id="countdownText">Resend code in <strong id="timerVal">60</strong>s</span>
+          <button type="button" id="resendBtn" class="resend-btn" disabled onclick="handleResendOtp()">Resend Code</button>
+        </div>
+
+        <button type="submit" id="verifyBtn" class="signup-btn" style="margin-top: 10px;">Verify & Complete Registration</button>
+        <button type="button" class="signup-btn btn-secondary" onclick="backToStep1()">Edit Details</button>
+      </form>
+
     </div>
   </section>
+
+  <script>
+    const API_BASE = (window.location.protocol === 'file:' || (window.location.port && window.location.port !== '8000'))
+      ? 'http://localhost:8000'
+      : '';
+
+    const signupForm = document.getElementById("signupForm");
+    const otpForm = document.getElementById("otpForm");
+    const alertBox = document.getElementById("alertBox");
+    const submitBtn = document.getElementById("submitBtn");
+    const verifyBtn = document.getElementById("verifyBtn");
+    const resendBtn = document.getElementById("resendBtn");
+    const timerVal = document.getElementById("timerVal");
+    const countdownText = document.getElementById("countdownText");
+    const devOtpBanner = document.getElementById("devOtpBanner");
+    const devOtpCode = document.getElementById("devOtpCode");
+
+    let registeredEmail = "";
+    let resendTimer = null;
+    let secondsLeft = 60;
+
+    function showAlert(msg, isError = true) {
+      alertBox.textContent = msg;
+      alertBox.className = "alert-box " + (isError ? "alert-error" : "alert-success");
+      alertBox.style.display = "block";
+    }
+
+    // Step 1: Request Signup OTP
+    signupForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      alertBox.style.display = "none";
+
+      const fullname = document.getElementById("fullname").value.trim();
+      const username = document.getElementById("username").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const confirmpassword = document.getElementById("confirmpassword").value;
+
+      if (!fullname || !username || !email || !password) {
+        showAlert("Please fill in all required fields.");
+        return;
+      }
+
+      if (password.length < 6) {
+        showAlert("Password must be at least 6 characters long.");
+        return;
+      }
+
+      if (password !== confirmpassword) {
+        showAlert("Passwords do not match. Please recheck.");
+        return;
+      }
+
+      submitBtn.classList.add("btn-disabled");
+      submitBtn.textContent = "Sending verification code...";
+
+      try {
+        const res = await fetch(`${API_BASE}/api/send-signup-otp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fullname, username, email, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          registeredEmail = email;
+          document.getElementById("otpEmailDisplay").textContent = email;
+
+          // Switch view to Step 2 OTP
+          signupForm.style.display = "none";
+          otpForm.style.display = "flex";
+          document.getElementById("pageTitle").textContent = "Verify Your Email";
+          document.getElementById("pageSubtitle").textContent = "Enter the code sent to your inbox";
+
+          if (data.devOtp) {
+            devOtpCode.textContent = data.devOtp;
+            devOtpBanner.style.display = "block";
+            document.getElementById("otpInput").value = data.devOtp;
+          } else {
+            devOtpBanner.style.display = "none";
+          }
+
+          startResendCountdown();
+          document.getElementById("otpInput").focus();
+          showAlert(data.message || "Verification code sent!", false);
+        } else {
+          showAlert(data.message || "Failed to send code. Please try again.");
+          submitBtn.classList.remove("btn-disabled");
+          submitBtn.textContent = "Verify Email & Sign Up";
+        }
+      } catch (err) {
+        console.error("Signup OTP error:", err);
+        showAlert("Failed to connect to server. Please verify the server is running on port 8000.");
+        submitBtn.classList.remove("btn-disabled");
+        submitBtn.textContent = "Verify Email & Sign Up";
+      }
+    });
+
+    // Step 2: Verify OTP and Register
+    otpForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      alertBox.style.display = "none";
+
+      const otp = document.getElementById("otpInput").value.trim();
+
+      if (!otp || otp.length < 6) {
+        showAlert("Please enter the complete 6-digit verification code.");
+        return;
+      }
+
+      verifyBtn.classList.add("btn-disabled");
+      verifyBtn.textContent = "Verifying code...";
+
+      try {
+        const res = await fetch(`${API_BASE}/api/verify-signup-otp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: registeredEmail, otp })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          localStorage.setItem("chatUser", data.username);
+          if (data.fullname) localStorage.setItem("chatFullName", data.fullname);
+          if (data.email) localStorage.setItem("chatEmail", data.email);
+
+          showAlert("Email verified! Redirecting to chatNut...", false);
+          setTimeout(() => {
+            window.location.href = "aftersignup.html";
+          }, 800);
+        } else {
+          showAlert(data.message || "Invalid or expired code.");
+          verifyBtn.classList.remove("btn-disabled");
+          verifyBtn.textContent = "Verify & Complete Registration";
+        }
+      } catch (err) {
+        console.error("Verify OTP error:", err);
+        showAlert("Failed to connect to server. Please try again.");
+        verifyBtn.classList.remove("btn-disabled");
+        verifyBtn.textContent = "Verify & Complete Registration";
+      }
+    });
+
+    // Resend OTP
+    async function handleResendOtp() {
+      if (resendBtn.disabled) return;
+
+      resendBtn.disabled = true;
+      resendBtn.textContent = "Sending...";
+
+      const fullname = document.getElementById("fullname").value.trim();
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/send-signup-otp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fullname, username, email: registeredEmail, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          showAlert("A fresh verification code has been sent!", false);
+          if (data.devOtp) {
+            devOtpCode.textContent = data.devOtp;
+            devOtpBanner.style.display = "block";
+            document.getElementById("otpInput").value = data.devOtp;
+          }
+          startResendCountdown();
+        } else {
+          showAlert(data.message || "Failed to resend code.");
+          resendBtn.disabled = false;
+          resendBtn.textContent = "Resend Code";
+        }
+      } catch (e) {
+        showAlert("Failed to resend code. Please try again.");
+        resendBtn.disabled = false;
+        resendBtn.textContent = "Resend Code";
+      }
+    }
+
+    function startResendCountdown() {
+      clearInterval(resendTimer);
+      secondsLeft = 60;
+      resendBtn.disabled = true;
+      countdownText.style.display = "inline";
+      timerVal.textContent = secondsLeft;
+
+      resendTimer = setInterval(() => {
+        secondsLeft--;
+        if (secondsLeft <= 0) {
+          clearInterval(resendTimer);
+          countdownText.style.display = "none";
+          resendBtn.disabled = false;
+          resendBtn.textContent = "Resend Code";
+        } else {
+          timerVal.textContent = secondsLeft;
+        }
+      }, 1000);
+    }
+
+    function backToStep1() {
+      clearInterval(resendTimer);
+      alertBox.style.display = "none";
+      otpForm.style.display = "none";
+      signupForm.style.display = "flex";
+      document.getElementById("pageTitle").textContent = "Create Your Account";
+      document.getElementById("pageSubtitle").textContent = "Join chatNut to connect with friends";
+      submitBtn.classList.remove("btn-disabled");
+      submitBtn.textContent = "Verify Email & Sign Up";
+    }
+  </script>
 </body>
 </html>

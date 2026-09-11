@@ -7,107 +7,1122 @@
 <title>chatNut</title>
 
 <link rel="stylesheet" href="aftersignup.css">
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
-
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 </head>
 
 <body>
 
+<!-- TOP BAR -->
 <header>
-<div class="header_logo">
-<a href="#">chatNut</a>
-</div>
+  <div class="header_logo">
+    <a href="aftersignup.html">chatNut</a>
+  </div>
+
+  <div class="header_user_badge" onclick="openProfileModal()" title="View Profile">
+    <div class="avatar-badge" id="topUserAvatar" style="width: 32px; height: 32px; font-size: 13px; background: linear-gradient(135deg, #ff8800, #e65100);">U</div>
+    <span id="topUserName">User</span>
+  </div>
 </header>
 
-
+<!-- HAMBURGER BUTTON & SIDEBAR MENU -->
 <div class="main_box">
+  <input type="checkbox" id="check">
 
-<input type="checkbox" id="check">
+  <div class="btn_one">
+    <label for="check">
+      <i class="fa-solid fa-bars"></i>
+    </label>
+  </div>
 
-<div class="btn_one">
-<label for="check">
-<i class="fa-solid fa-bars"></i>
-</label>
+  <!-- Slide-out Sidebar -->
+  <div class="sidebar_menu">
+    <div class="logo">
+      <a href="javascript:void(0)">Explore</a>
+    </div>
+
+    <div class="btn_two">
+      <label for="check">
+        <i class="fa-solid fa-xmark"></i>
+      </label>
+    </div>
+
+    <div class="menu">
+      <ul>
+        <li onclick="openSettingsModal(); uncheckSidebar();">
+          <i class="fa-solid fa-gear"></i>
+          <a href="javascript:void(0)">Settings</a>
+        </li>
+
+        <li onclick="openContactModal(); uncheckSidebar();">
+          <i class="fa-solid fa-user-plus"></i>
+          <a href="javascript:void(0)">New Contact</a>
+        </li>
+
+        <li onclick="openProfileModal(); uncheckSidebar();">
+          <i class="fa-solid fa-user"></i>
+          <a href="javascript:void(0)">Profile</a>
+        </li>
+      </ul>
+    </div>
+
+    <div class="social_media">
+      <a href="#"><i class="fa-brands fa-facebook"></i></a>
+      <a href="#"><i class="fa-brands fa-twitter"></i></a>
+      <a href="#"><i class="fa-brands fa-instagram"></i></a>
+      <a href="#"><i class="fa-brands fa-youtube"></i></a>
+    </div>
+  </div>
 </div>
 
+<!-- UNIFIED SPLIT-SCREEN MESSENGER -->
+<div class="messenger-layout">
 
-<!-- Sidebar -->
-<div class="sidebar_menu">
+  <!-- LEFT: ALWAYS VISIBLE CONTACTS SIDEBAR -->
+  <aside class="contacts-panel">
+    <div class="contacts-header">
+      <div class="contacts-header-top">
+        <h2>Chats</h2>
+        <i class="fa-solid fa-user-plus" onclick="openContactModal()" style="cursor: pointer; color: #ff8800; font-size: 16px;" title="New Contact"></i>
+      </div>
+      <div class="search-bar-wrap">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="contactSearchInput" class="search-input" placeholder="Search conversations..." oninput="handleContactSearch()">
+      </div>
+    </div>
 
-<div class="logo">
-<a href="#">Explore</a>
+    <!-- Scrollable contact list with avatars and active orange highlight -->
+    <div class="contacts-scroll" id="contactsContainer">
+      <p style="text-align: center; color: #888; font-size: 13px; padding-top: 30px;">Loading contacts...</p>
+    </div>
+  </aside>
+
+  <!-- RIGHT: CHAT PANEL -->
+  <main class="chat-panel" id="chatPanel">
+
+    <!-- State 1: Empty state (No contact selected) -->
+    <div class="empty-chat-view" id="emptyChatView">
+      <div class="empty-chat-icon">
+        <i class="fa-solid fa-comments"></i>
+      </div>
+      <h3>Welcome to chatNut</h3>
+      <p>Select any contact from the left panel to instantly start a real-time conversation.</p>
+    </div>
+
+    <!-- State 2: Active Chat Area (Visible when a contact is selected) -->
+    <div class="active-chat-wrapper" id="activeChatWrapper" style="display: none;">
+      <!-- Active Chat Header -->
+      <header class="chat-header-bar">
+        <div class="chat-header-avatar" id="chatHeaderAvatar">?</div>
+        <div class="chat-header-meta">
+          <h3 id="chatHeaderName">Contact Name</h3>
+          <div class="chat-header-status" id="chatHeaderStatus">
+            <span class="status-dot online" id="chatHeaderDot"></span>
+            <span id="chatHeaderStatusText">Online</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Message History Stream -->
+      <div class="messages-container" id="messagesContainer"></div>
+
+      <!-- WhatsApp Emoji Keyboard Tray -->
+      <div class="emoji-tray" id="emojiTray">
+        <div class="emoji-search-wrap">
+          <input type="text" id="emojiSearch" class="emoji-search-input" placeholder="Search emoji..." oninput="filterEmojis(this.value)">
+        </div>
+        <div class="emoji-tabs">
+          <button type="button" class="emoji-tab-btn active" onclick="switchEmojiCategory('smileys', this)" title="Smileys">😀</button>
+          <button type="button" class="emoji-tab-btn" onclick="switchEmojiCategory('hands', this)" title="Gestures">👍</button>
+          <button type="button" class="emoji-tab-btn" onclick="switchEmojiCategory('hearts', this)" title="Hearts">❤️</button>
+          <button type="button" class="emoji-tab-btn" onclick="switchEmojiCategory('celebration', this)" title="Celebration">🔥</button>
+          <button type="button" class="emoji-tab-btn" onclick="switchEmojiCategory('animals', this)" title="Animals & Food">🍕</button>
+        </div>
+        <div class="emoji-grid-container" id="emojiGrid"></div>
+      </div>
+
+      <!-- Media Preview Bar (Shown when an image or file is selected) -->
+      <div class="media-preview-bar" id="mediaPreviewBar">
+        <img id="mediaPreviewThumb" class="media-preview-thumb" src="" alt="preview">
+        <div class="media-preview-info">
+          <span id="mediaPreviewName" class="media-preview-name">attachment</span>
+          <span id="mediaPreviewSize" class="media-preview-size">-</span>
+        </div>
+        <i class="fa-solid fa-xmark media-preview-remove" onclick="cancelPendingMedia()" title="Cancel attachment"></i>
+      </div>
+
+      <!-- Hidden file input for photos & documents -->
+      <input type="file" id="mediaFileInput" style="display: none;" accept="image/*,.pdf,.doc,.docx,.txt,.zip" onchange="handleMediaSelect(event)">
+
+      <!-- Chat Input Bar with WhatsApp-style Emoji and Attachment Clips -->
+      <form class="chat-input-bar" id="chatForm">
+        <button type="button" class="chat-tool-btn" id="emojiBtn" onclick="toggleEmojiTray()" title="Emoji keyboard">
+          <i class="fa-regular fa-face-smile"></i>
+        </button>
+        <button type="button" class="chat-tool-btn" id="attachBtn" onclick="const fi = document.getElementById('mediaFileInput'); fi.value = ''; fi.click();" title="Attach photo or file">
+          <i class="fa-solid fa-paperclip"></i>
+        </button>
+        <input type="text" id="msgInput" class="input-field" placeholder="Type a message..." autocomplete="off">
+        <button type="submit" class="send-button" title="Send message">
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </form>
+    </div>
+
+  </main>
+
 </div>
 
-<div class="btn_two">
-<label for="check">
-<i class="fa-solid fa-xmark"></i>
-</label>
+<!-- MODALS -->
+
+<!-- Settings Modal with Theme Picker -->
+<div id="settingsModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>Settings</h3>
+      <button class="modal-close" onclick="closeModals()">&times;</button>
+    </div>
+
+    <!-- Appearance & Theme -->
+    <div style="margin-bottom: 20px;">
+      <label style="font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 10px;">
+        <i class="fa-solid fa-palette" style="color: #ff8800; margin-right: 6px;"></i> Theme Appearance
+      </label>
+      <div class="theme-picker">
+        <button type="button" class="theme-option-btn" id="themeBtnLight" onclick="setAppTheme('light')">
+          <i class="fa-regular fa-sun" style="font-size: 18px;"></i>
+          <span>Light</span>
+        </button>
+        <button type="button" class="theme-option-btn" id="themeBtnDark" onclick="setAppTheme('dark')">
+          <i class="fa-solid fa-moon" style="font-size: 18px;"></i>
+          <span>Dark</span>
+        </button>
+        <button type="button" class="theme-option-btn" id="themeBtnMidnight" onclick="setAppTheme('midnight')">
+          <i class="fa-solid fa-circle-half-stroke" style="font-size: 18px;"></i>
+          <span>Midnight</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Notifications & Sounds -->
+    <div style="margin-bottom: 20px; padding: 14px; background: var(--search-bg); border-radius: 12px; display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <strong style="font-size: 14px; display: block; color: var(--text-primary);">Notification Sound</strong>
+        <small style="color: var(--text-secondary); font-size: 12px;">Play chime on incoming messages</small>
+      </div>
+      <label style="cursor: pointer; position: relative; display: inline-block; width: 44px; height: 24px;">
+        <input type="checkbox" id="soundToggle" onchange="toggleSoundSetting(this.checked)" checked style="opacity: 0; width: 0; height: 0;">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <!-- User Info Preview -->
+    <div style="padding: 12px 14px; background: var(--search-bg); border-radius: 12px; margin-bottom: 16px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <span style="font-size: 12px; color: var(--text-secondary);">Logged in as:</span>
+          <strong id="settingsUsername" style="display: block; font-size: 14px; color: var(--text-primary);">-</strong>
+        </div>
+        <button class="modal-btn" style="padding: 6px 12px; font-size: 12px;" onclick="closeModals(); openProfileModal();">Profile</button>
+      </div>
+    </div>
+
+    <button class="modal-btn modal-btn-danger" onclick="logout()">Log Out</button>
+  </div>
 </div>
 
-<div class="menu">
-<ul>
-
-<li>
-<i class="fa-solid fa-house"></i>
-<a href="#">Settings</a>
-</li>
-
-<li>
-<i class="fa-solid fa-blog"></i>
-<a href="#">Create Groups</a>
-</li>
-
-<li>
-<i class="fa-solid fa-pen"></i>
-<a href="#">New Contact</a>
-</li>
-
-<li>
-<i class="fa-solid fa-user-plus"></i>
-<a href="#">Profile</a>
-</li>
-
-</ul>
+<!-- Profile Modal -->
+<div id="profileModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>My Profile</h3>
+      <button class="modal-close" onclick="closeModals()">&times;</button>
+    </div>
+    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px;">
+      <div class="avatar-badge" id="profAvatarBig" style="width: 52px; height: 52px; font-size: 20px; background: linear-gradient(135deg, #ff8800, #e65100);">U</div>
+      <div>
+        <h4 id="profName" style="font-size: 16px; color: #222;">-</h4>
+        <small id="profUsername" style="color: #666;">@-</small>
+      </div>
+    </div>
+    <p style="margin-bottom: 8px; font-size: 13.5px;"><strong>Email:</strong> <span id="profEmail">-</span></p>
+    <button class="modal-btn modal-btn-danger" onclick="logout()">Log Out</button>
+  </div>
 </div>
 
-
-<div class="social_media">
-
-<a href="#"><i class="fa-brands fa-facebook"></i></a>
-<a href="#"><i class="fa-brands fa-twitter"></i></a>
-<a href="#"><i class="fa-brands fa-instagram"></i></a>
-<a href="#"><i class="fa-brands fa-youtube"></i></a>
-
+<!-- New Contact / Search Modal -->
+<div id="contactModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>New Contact</h3>
+      <button class="modal-close" onclick="closeModals()">&times;</button>
+    </div>
+    <input type="text" id="userSearchInput" class="modal-input" placeholder="Type a name or username..." oninput="filterUsers()">
+    <div id="searchResults" class="search-results"></div>
+  </div>
 </div>
 
+<!-- Delete Message Modal -->
+<div id="deleteMsgModal" class="modal-overlay">
+  <div class="modal-box" style="max-width: 360px; text-align: center;">
+    <div class="modal-header">
+      <h3 style="margin: auto;">Delete Message</h3>
+      <button class="modal-close" onclick="closeModals()">&times;</button>
+    </div>
+    <p style="color: var(--text-secondary); font-size: 13.5px; margin: 12px 0 20px 0;">Select how you want to delete this message:</p>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <button type="button" id="deleteForEveryoneBtn" class="modal-btn modal-btn-danger" style="margin-top: 0;" onclick="confirmDeleteMessage('everyone')">Delete for everyone</button>
+      <button type="button" class="modal-btn" style="background: var(--search-bg); color: var(--text-primary); border: 1px solid var(--border-color);" onclick="confirmDeleteMessage('me')">Delete for me</button>
+      <button type="button" class="modal-btn" style="background: transparent; color: var(--text-secondary); padding: 8px;" onclick="closeModals()">Cancel</button>
+    </div>
+  </div>
 </div>
 
-
-<!-- Contact List -->
-
-<section class="blogs">
-
-<h2>Frequently Connected</h2>
-
-<div class="blog-card" onclick="location.href='chat.html'">
-<h3>Contact One</h3>
-<p>Last message...</p>
+<!-- Full Screen Lightbox Modal -->
+<div id="lightboxModal" class="lightbox-overlay" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+  <img id="lightboxImg" class="lightbox-img" src="" alt="preview" onclick="event.stopPropagation()">
 </div>
 
-<div class="blog-card" onclick="location.href='chat.html'">
-<h3>Contact Two</h3>
-<p>Last message...</p>
-</div>
+<!-- In-App Floating Toast Container -->
+<div id="toastContainer" style="position: fixed; top: 72px; right: 24px; z-index: 1500; display: flex; flex-direction: column; gap: 8px;"></div>
 
-</section>
+<script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+<script>
+// --- CONFIG & STATE ---
+const API_BASE = (window.location.protocol === 'file:' || (window.location.port && window.location.port !== '8000'))
+    ? 'http://localhost:8000'
+    : '';
 
-</div>
+const socket = API_BASE ? io(API_BASE) : io();
+
+const me = localStorage.getItem("chatUser") || "";
+const myFullName = localStorage.getItem("chatFullName") || me;
+
+if (!me) {
+    window.location.href = "signup.html";
+}
+
+// Update top bar user info
+document.getElementById("topUserName").textContent = myFullName || me;
+document.getElementById("topUserAvatar").textContent = (myFullName || me).charAt(0).toUpperCase();
+
+// Notify online status
+socket.emit("user online", me);
+
+let allUsers = [];
+let onlineUserList = [];
+let lastMessagesMap = {};
+
+// Active conversation state
+let activeRecipientUsername = null;
+let activeRecipientDisplayName = null;
+let activeRoom = null;
+
+// Dynamic avatar gradient palette for profile icons
+function getAvatarGradient(name) {
+    const gradients = [
+        "linear-gradient(135deg, #128c7e, #075e54)",
+        "linear-gradient(135deg, #ff8800, #e65100)",
+        "linear-gradient(135deg, #4f46e5, #3730a3)",
+        "linear-gradient(135deg, #0ea5e9, #0284c7)",
+        "linear-gradient(135deg, #ec4899, #be185d)",
+        "linear-gradient(135deg, #8b5cf6, #6d28d9)",
+        "linear-gradient(135deg, #10b981, #047857)"
+    ];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return gradients[Math.abs(hash) % gradients.length];
+}
+
+function uncheckSidebar() {
+    const chk = document.getElementById("check");
+    if (chk) chk.checked = false;
+}
+
+function closeModals() {
+    document.querySelectorAll(".modal-overlay").forEach(m => m.style.display = "none");
+}
+
+// --- THEME & SETTINGS MANAGEMENT ---
+function initTheme() {
+    const saved = localStorage.getItem("chatNutTheme") || "light";
+    setAppTheme(saved, false);
+}
+
+function setAppTheme(theme, save = true) {
+    if (save) {
+        localStorage.setItem("chatNutTheme", theme);
+    }
+    document.documentElement.setAttribute("data-theme", theme);
+
+    const btns = {
+        light: document.getElementById("themeBtnLight"),
+        dark: document.getElementById("themeBtnDark"),
+        midnight: document.getElementById("themeBtnMidnight")
+    };
+    Object.keys(btns).forEach(key => {
+        if (btns[key]) {
+            if (key === theme) {
+                btns[key].classList.add("active");
+            } else {
+                btns[key].classList.remove("active");
+            }
+        }
+    });
+}
+
+function openSettingsModal() {
+    const theme = localStorage.getItem("chatNutTheme") || "light";
+    setAppTheme(theme, false);
+
+    const soundEnabled = localStorage.getItem("chatNutSound") !== "false";
+    const soundToggle = document.getElementById("soundToggle");
+    if (soundToggle) soundToggle.checked = soundEnabled;
+
+    const userEl = document.getElementById("settingsUsername");
+    if (userEl) userEl.textContent = `${myFullName || me} (@${me})`;
+
+    document.getElementById("settingsModal").style.display = "flex";
+}
+
+function toggleSoundSetting(enabled) {
+    localStorage.setItem("chatNutSound", enabled ? "true" : "false");
+}
+
+function openProfileModal() {
+    document.getElementById("profName").textContent = myFullName || me;
+    document.getElementById("profUsername").textContent = `@${me}`;
+    document.getElementById("profEmail").textContent = localStorage.getItem("chatEmail") || `${me}@example.com`;
+    document.getElementById("profAvatarBig").textContent = (myFullName || me).charAt(0).toUpperCase();
+    document.getElementById("profileModal").style.display = "flex";
+}
+
+function logout() {
+    localStorage.removeItem("chatUser");
+    localStorage.removeItem("chatFullName");
+    localStorage.removeItem("chatEmail");
+    window.location.href = "signup.html";
+}
+
+function openContactModal() {
+    document.getElementById("contactModal").style.display = "flex";
+    document.getElementById("userSearchInput").value = "";
+    filterUsers();
+}
+
+// Online status updates from server
+socket.on("online users", (users) => {
+    onlineUserList = (users || []).map(u => u.toLowerCase());
+    renderContacts();
+    updateChatHeaderStatus();
+});
+
+// Load contacts and last messages
+async function loadData() {
+    try {
+        const [usersRes, lastMsgRes] = await Promise.all([
+            fetch(`${API_BASE}/api/users`).then(r => r.json()).catch(() => []),
+            fetch(`${API_BASE}/api/last-messages?user=${encodeURIComponent(me)}`).then(r => r.json()).catch(() => ({}))
+        ]);
+
+        allUsers = usersRes || [];
+        lastMessagesMap = lastMsgRes || {};
+
+        renderContacts();
+
+        // Check if query param requests a specific contact
+        const params = new URLSearchParams(window.location.search);
+        const reqRecipient = params.get("recipient") || params.get("contact");
+        if (reqRecipient) {
+            const matched = allUsers.find(u => u.username.toLowerCase() === reqRecipient.toLowerCase() || (u.fullname && u.fullname.toLowerCase() === reqRecipient.toLowerCase()));
+            if (matched) {
+                selectContact(matched.username, matched.fullname || matched.username);
+            }
+        }
+    } catch (e) {
+        console.warn("Error loading data:", e);
+    }
+}
+
+// Render Left Panel Contacts List
+function renderContacts() {
+    const container = document.getElementById("contactsContainer");
+    if (!container) return;
+
+    const others = allUsers.filter(u => u.username.toLowerCase() !== me.toLowerCase());
+
+    if (others.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; color: #888; font-size: 13px; padding: 40px 10px;">
+                <p>No other users yet.</p>
+                <small>Open an incognito window to sign up a second user!</small>
+            </div>
+        `;
+        return;
+    }
+
+    const searchVal = (document.getElementById("contactSearchInput").value || "").trim().toLowerCase();
+    const filtered = others.filter(u => 
+        u.username.toLowerCase().includes(searchVal) || (u.fullname && u.fullname.toLowerCase().includes(searchVal))
+    );
+
+    container.innerHTML = "";
+    filtered.forEach(u => {
+        const card = document.createElement("div");
+        card.className = "contact-card";
+        if (activeRecipientUsername && activeRecipientUsername.toLowerCase() === u.username.toLowerCase()) {
+            card.classList.add("active-contact");
+        }
+
+        const displayName = u.fullname || u.username;
+        const initial = displayName.charAt(0).toUpperCase();
+        const isOnline = onlineUserList.includes(u.username.toLowerCase());
+        const avatarBg = getAvatarGradient(u.username);
+
+        // Room ID & Last message
+        const room = [me.toLowerCase(), u.username.toLowerCase()].sort().join("--");
+        const lastMsgObj = lastMessagesMap[room];
+
+        let msgText = "No messages yet";
+        let timeText = "";
+
+        if (lastMsgObj) {
+            msgText = (lastMsgObj.username === me ? "You: " : "") + lastMsgObj.message;
+            const d = new Date(lastMsgObj.time);
+            timeText = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        card.innerHTML = `
+            <div class="avatar-badge" style="background: ${avatarBg}">
+                ${initial}
+                <span class="online-status-dot ${isOnline ? 'online' : 'offline'}"></span>
+            </div>
+            <div class="contact-info">
+                <div class="contact-top">
+                    <h4>${escapeHtml(displayName)}</h4>
+                    <span class="contact-time">${timeText}</span>
+                </div>
+                <div class="contact-bottom">
+                    <span class="contact-last-message">${escapeHtml(msgText)}</span>
+                </div>
+            </div>
+        `;
+
+        card.onclick = () => selectContact(u.username, displayName);
+        container.appendChild(card);
+    });
+}
+
+function handleContactSearch() {
+    renderContacts();
+}
+
+// --- SELECT A CONTACT (SWITCH CONVERSATION SMOOTHLY) ---
+function selectContact(targetUsername, targetDisplayName) {
+    activeRecipientUsername = targetUsername;
+    activeRecipientDisplayName = targetDisplayName;
+    activeRoom = [me.toLowerCase(), targetUsername.toLowerCase()].sort().join("--");
+
+    // Highlight active card with signature orange border
+    document.querySelectorAll(".contact-card").forEach(c => c.classList.remove("active-contact"));
+    renderContacts();
+
+    // Show Chat Panel
+    document.getElementById("emptyChatView").style.display = "none";
+    const chatWrapper = document.getElementById("activeChatWrapper");
+    chatWrapper.style.display = "flex";
+
+    // Set Header
+    document.getElementById("chatHeaderName").textContent = targetDisplayName;
+    const initial = targetDisplayName.charAt(0).toUpperCase();
+    const avatarEl = document.getElementById("chatHeaderAvatar");
+    avatarEl.textContent = initial;
+    avatarEl.style.background = getAvatarGradient(targetUsername);
+
+    updateChatHeaderStatus();
+
+    // Join Socket Room with requesting user
+    socket.emit("join room", { room: activeRoom, user: me });
+
+    // Focus input
+    const input = document.getElementById("msgInput");
+    input.value = "";
+    input.focus();
+}
+
+function updateChatHeaderStatus() {
+    if (!activeRecipientUsername) return;
+    const isOnline = onlineUserList.includes(activeRecipientUsername.toLowerCase());
+    const dot = document.getElementById("chatHeaderDot");
+    const text = document.getElementById("chatHeaderStatusText");
+
+    if (dot && text) {
+        dot.className = `status-dot ${isOnline ? 'online' : 'offline'}`;
+        text.textContent = isOnline ? "Online" : "Offline";
+    }
+}
+
+// --- TYPING INDICATOR LOGIC ---
+const msgInput = document.getElementById("msgInput");
+let typingTimer = null;
+
+msgInput.addEventListener("input", () => {
+    if (!activeRoom) return;
+    if (msgInput.value.trim().length > 0) {
+        socket.emit("typing", { room: activeRoom, username: me });
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(() => {
+            socket.emit("stop typing", { room: activeRoom, username: me });
+        }, 1500);
+    } else {
+        socket.emit("stop typing", { room: activeRoom, username: me });
+    }
+});
+
+socket.on("typing", (typingUser) => {
+    if (!activeRecipientUsername) return;
+    if (typingUser.toLowerCase() === activeRecipientUsername.toLowerCase()) {
+        const statusText = document.getElementById("chatHeaderStatusText");
+        if (statusText) {
+            statusText.innerHTML = `<span class="typing-pill"><i class="fa-solid fa-pen-nib"></i> typing...</span>`;
+        }
+    }
+});
+
+socket.on("stop typing", (typingUser) => {
+    if (!activeRecipientUsername) return;
+    if (typingUser.toLowerCase() === activeRecipientUsername.toLowerCase()) {
+        updateChatHeaderStatus();
+    }
+});
+
+// ---------------- EMOJI KEYBOARD LOGIC ----------------
+const emojiCategories = {
+    smileys: ["😀","😃","😄","😁","😆","😅","🤣","😂","🙂","🙃","😉","😊","😇","🥰","😍","🤩","😘","😗","😚","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🤫","🤔","🤐","🤨","😐","😑","😶","😏","😒","🙄","😬","🤥","😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤮","🤧","🥵","🥶","🥴","😵","🤯","🤠","🥳","🥸","😎","🤓","🧐"],
+    hands: ["👋","🤚","🖐️","✋","🖖","👌","🤌","🤏","✌️","🤞","🤟","🤘","🤙","👈","👉","👆","🖕","👇","☝️","👍","👎","✊","👊","🤛","🤜","👏","🙌","👐","🤲","🤝","🙏","✍️","💅","🤳","💪","🧠","🫀","🫁"],
+    hearts: ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❣️","💕","💞","💓","💗","💖","💘","💝","💟","☮️","✝️","☪️","🕉️","☸️","✡️","🔯","🕎","☯️"],
+    celebration: ["🔥","✨","🌟","💫","💥","💯","💢","💨","💦","💤","🕳️","🎉","🎊","🎈","🎁","🏆","🥇","🥈","🥉","⚽","🏀","🏈","⚾","🎾","🎮","🎯","🎲","📱","💻","💡","🔔"],
+    animals: ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🍕","🍔","🍟","🌭","🍿","🥓","🥞","🧀","🥗","🥪","🌮","🌯","🍫","🍩","🍪","🎂","🍰","☕","🧃","🍺","🥂"]
+};
+
+let currentEmojiCat = "smileys";
+
+function toggleEmojiTray() {
+    const tray = document.getElementById("emojiTray");
+    const btn = document.getElementById("emojiBtn");
+    if (!tray) return;
+
+    if (tray.style.display === "flex") {
+        tray.style.display = "none";
+        btn.classList.remove("active");
+    } else {
+        tray.style.display = "flex";
+        btn.classList.add("active");
+        renderEmojiGrid(currentEmojiCat);
+        document.getElementById("emojiSearch").focus();
+    }
+}
+
+function switchEmojiCategory(cat, btn) {
+    currentEmojiCat = cat;
+    document.querySelectorAll(".emoji-tab-btn").forEach(b => b.classList.remove("active"));
+    if (btn) btn.classList.add("active");
+    renderEmojiGrid(cat);
+}
+
+function renderEmojiGrid(cat, query = "") {
+    const grid = document.getElementById("emojiGrid");
+    if (!grid) return;
+    grid.innerHTML = "";
+
+    let list = emojiCategories[cat] || emojiCategories.smileys;
+    if (query.trim().length > 0) {
+        // Search across all categories
+        list = [];
+        Object.values(emojiCategories).forEach(arr => {
+            arr.forEach(em => {
+                if (!list.includes(em)) list.push(em);
+            });
+        });
+    }
+
+    list.forEach(emoji => {
+        const span = document.createElement("span");
+        span.className = "emoji-item";
+        span.textContent = emoji;
+        span.onclick = () => insertEmoji(emoji);
+        grid.appendChild(span);
+    });
+}
+
+function filterEmojis(val) {
+    renderEmojiGrid(currentEmojiCat, val);
+}
+
+function insertEmoji(emoji) {
+    const input = document.getElementById("msgInput");
+    if (!input) return;
+    const start = input.selectionStart || input.value.length;
+    const end = input.selectionEnd || input.value.length;
+    const current = input.value;
+    input.value = current.substring(0, start) + emoji + current.substring(end);
+    input.focus();
+    input.selectionStart = input.selectionEnd = start + emoji.length;
+}
+
+// Close emoji tray when clicking outside
+document.addEventListener("click", (e) => {
+    const tray = document.getElementById("emojiTray");
+    const btn = document.getElementById("emojiBtn");
+    if (tray && tray.style.display === "flex") {
+        if (!tray.contains(e.target) && !btn.contains(e.target)) {
+            tray.style.display = "none";
+            btn.classList.remove("active");
+        }
+    }
+});
+
+// ---------------- MEDIA ATTACHMENTS LOGIC ----------------
+let pendingMedia = null;
+
+function handleMediaSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const isImg = file.type.startsWith("image/");
+    const reader = new FileReader();
+
+    // 1. Immediately read file and display preview bar so user never waits
+    reader.onload = function(evt) {
+        const rawData = evt.target.result;
+
+        if (isImg) {
+            // Immediately assign so user can hit Send without delay!
+            pendingMedia = {
+                dataUrl: rawData,
+                type: "image",
+                name: file.name,
+                size: formatBytes(file.size)
+            };
+            showMediaPreview(pendingMedia);
+
+            // In background, compress down on canvas if large (max 800px)
+            const img = new Image();
+            img.onload = function() {
+                try {
+                    const maxDim = 800;
+                    let w = img.width;
+                    let h = img.height;
+                    if (w > maxDim || h > maxDim) {
+                        if (w > h) {
+                            h = Math.round((h * maxDim) / w);
+                            w = maxDim;
+                        } else {
+                            w = Math.round((w * maxDim) / h);
+                            h = maxDim;
+                        }
+                        const canvas = document.createElement("canvas");
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext("2d");
+                        ctx.drawImage(img, 0, 0, w, h);
+                        const compressed = canvas.toDataURL("image/jpeg", 0.75);
+                        if (pendingMedia && pendingMedia.name === file.name) {
+                            pendingMedia.dataUrl = compressed;
+                        }
+                    }
+                } catch (e) {}
+            };
+            img.src = rawData;
+        } else {
+            pendingMedia = {
+                dataUrl: rawData,
+                type: "file",
+                name: file.name,
+                size: formatBytes(file.size)
+            };
+            showMediaPreview(pendingMedia);
+        }
+    };
+
+    reader.readAsDataURL(file);
+}
+
+function showMediaPreview(media) {
+    const bar = document.getElementById("mediaPreviewBar");
+    const thumb = document.getElementById("mediaPreviewThumb");
+    const nameEl = document.getElementById("mediaPreviewName");
+    const sizeEl = document.getElementById("mediaPreviewSize");
+
+    if (media.type === "image") {
+        thumb.src = media.dataUrl;
+        thumb.style.display = "block";
+    } else {
+        thumb.src = "https://cdn-icons-png.flaticon.com/512/2965/2965335.png";
+        thumb.style.display = "block";
+    }
+
+    nameEl.textContent = media.name;
+    sizeEl.textContent = media.size;
+    bar.style.display = "flex";
+    document.getElementById("msgInput").focus();
+}
+
+function cancelPendingMedia() {
+    pendingMedia = null;
+    const bar = document.getElementById("mediaPreviewBar");
+    if (bar) bar.style.display = "none";
+    const fi = document.getElementById("mediaFileInput");
+    if (fi) fi.value = "";
+}
+
+function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / 1048576).toFixed(1) + " MB";
+}
+
+// Lightbox
+function openLightbox(src) {
+    const modal = document.getElementById("lightboxModal");
+    const img = document.getElementById("lightboxImg");
+    if (modal && img) {
+        img.src = src;
+        modal.style.display = "flex";
+    }
+}
+
+function closeLightbox() {
+    const modal = document.getElementById("lightboxModal");
+    if (modal) modal.style.display = "none";
+}
+
+// ---------------- DELETE MESSAGE LOGIC ----------------
+let activeDeleteMsgId = null;
+let activeDeleteMsgIsMe = false;
+
+function openDeleteModal(msgId, isMe) {
+    activeDeleteMsgId = msgId;
+    activeDeleteMsgIsMe = isMe;
+    const everyoneBtn = document.getElementById("deleteForEveryoneBtn");
+
+    if (everyoneBtn) {
+        everyoneBtn.style.display = isMe ? "block" : "none";
+    }
+
+    document.getElementById("deleteMsgModal").style.display = "flex";
+}
+
+function confirmDeleteMessage(deleteType) {
+    if (!activeDeleteMsgId) return;
+
+    socket.emit("delete message", {
+        messageId: activeDeleteMsgId,
+        room: activeRoom,
+        deleteType: deleteType,
+        username: me
+    });
+
+    closeModals();
+}
+
+socket.on("message deleted", (data) => {
+    const { messageId, deleteType } = data;
+    const bubble = document.querySelector(`.message-bubble[data-msg-id="${messageId}"]`);
+    if (!bubble) return;
+
+    if (deleteType === "everyone") {
+        bubble.classList.add("deleted");
+        bubble.innerHTML = `
+            <p class="message-text"><i class="fa-solid fa-ban" style="margin-right: 5px; color: #999;"></i> This message was deleted</p>
+        `;
+    } else if (deleteType === "me") {
+        bubble.remove();
+    }
+});
+
+// ---------------- APP & DESKTOP NOTIFICATIONS ----------------
+if ("Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+}
+
+function showToastNotification(data) {
+    const container = document.getElementById("toastContainer");
+    if (!container) return;
+
+    const toast = document.createElement("div");
+    toast.className = "toast-notification";
+
+    const senderName = data.username;
+    const initial = senderName.charAt(0).toUpperCase();
+    const avatarBg = getAvatarGradient(senderName);
+    const snippet = data.mediaUrl ? (data.mediaType === "image" ? "📷 Sent a photo" : "📎 Sent a file") : data.message;
+
+    toast.innerHTML = `
+        <div class="avatar-badge" style="width: 36px; height: 36px; font-size: 14px; background: ${avatarBg}">
+            ${initial}
+        </div>
+        <div style="flex: 1; overflow: hidden;">
+            <strong style="font-size: 13.5px; color: var(--text-primary); display: block;">${escapeHtml(senderName)}</strong>
+            <span style="font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">${escapeHtml(snippet)}</span>
+        </div>
+    `;
+
+    toast.onclick = () => {
+        const matched = allUsers.find(u => u.username.toLowerCase() === data.username.toLowerCase());
+        const disp = matched ? (matched.fullname || matched.username) : data.username;
+        selectContact(data.username, disp);
+        toast.remove();
+    };
+
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateX(40px)";
+        toast.style.transition = "all 0.3s ease";
+        setTimeout(() => toast.remove(), 300);
+    }, 4500);
+}
+
+// ---------------- SUBMIT MESSAGE ----------------
+const chatForm = document.getElementById("chatForm");
+const messagesContainer = document.getElementById("messagesContainer");
+
+chatForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const text = msgInput.value.trim();
+
+    if ((text || pendingMedia) && activeRoom) {
+        socket.emit("stop typing", { room: activeRoom, username: me });
+
+        const localId = "msg-" + Date.now() + "-" + Math.random().toString(36).substr(2, 6);
+        const payload = {
+            id: localId,
+            _id: localId,
+            username: me,
+            message: text,
+            room: activeRoom,
+            mediaUrl: pendingMedia ? pendingMedia.dataUrl : null,
+            mediaType: pendingMedia ? pendingMedia.type : null,
+            fileName: pendingMedia ? pendingMedia.name : null,
+            fileSize: pendingMedia ? pendingMedia.size : null,
+            time: new Date()
+        };
+
+        // 1. OPTIMISTIC INSTANT RENDER: Shows media in chat immediately with 0ms delay!
+        displayChatMessage(payload);
+        scrollToBottom();
+
+        // 2. EMIT TO SOCKET: Delivers to server and recipient
+        socket.emit("chat message", payload);
+
+        // 3. Update last message in left contacts list immediately
+        lastMessagesMap[activeRoom] = {
+            message: payload.mediaUrl ? (payload.mediaType === "image" ? "📷 Photo" : "📎 Attachment") : payload.message,
+            time: payload.time,
+            username: me
+        };
+        renderContacts();
+
+        msgInput.value = "";
+        cancelPendingMedia();
+        msgInput.focus();
+
+        // Close emoji tray if open
+        const tray = document.getElementById("emojiTray");
+        if (tray) tray.style.display = "none";
+        document.getElementById("emojiBtn")?.classList.remove("active");
+    }
+});
+
+// ---------------- LOAD MESSAGES ----------------
+socket.on("load messages", (msgs) => {
+    messagesContainer.innerHTML = "";
+    if (msgs && msgs.length > 0) {
+        msgs.forEach(displayChatMessage);
+    } else {
+        const placeholder = document.createElement("div");
+        placeholder.style.cssText = "text-align: center; color: #888; font-size: 13px; margin: auto; padding: 20px; background: rgba(255,255,255,0.7); border-radius: 20px; z-index: 1;";
+        placeholder.textContent = `No messages yet. Say hi to ${activeRecipientDisplayName}!`;
+        messagesContainer.appendChild(placeholder);
+    }
+    scrollToBottom();
+});
+
+// ---------------- RECEIVE MESSAGE ----------------
+socket.on("chat message", (data) => {
+    const isCurrentRoom = activeRoom && data.room === activeRoom;
+    const isMe = data.username.toLowerCase() === me.toLowerCase();
+
+    if (isCurrentRoom) {
+        // If sent by me, check if already optimistically rendered
+        const msgId = data._id || data.id;
+        const alreadyRendered = msgId ? document.querySelector(`.message-bubble[data-msg-id="${msgId}"]`) : null;
+
+        if (!alreadyRendered) {
+            displayChatMessage(data);
+            scrollToBottom();
+        }
+
+        if (!isMe) {
+            playChime();
+            updateChatHeaderStatus();
+        }
+    } else if (!isMe) {
+        // Message arrived from another chat!
+        playChime();
+        showToastNotification(data);
+
+        // Native Desktop Notification if tab is hidden
+        if ("Notification" in window && Notification.permission === "granted" && document.hidden) {
+            const previewText = data.mediaUrl ? (data.mediaType === "image" ? "Sent a photo" : "Sent a file") : data.message;
+            new Notification(`chatNut - ${data.username}`, {
+                body: previewText,
+                icon: "https://cdn-icons-png.flaticon.com/512/1041/1041916.png"
+            });
+        }
+    }
+
+    // Update last message in left panel
+    lastMessagesMap[data.room] = {
+        message: data.mediaUrl ? (data.mediaType === "image" ? "📷 Photo" : "📎 Attachment") : data.message,
+        time: data.time || new Date(),
+        username: data.username
+    };
+    renderContacts();
+});
+
+function displayChatMessage(data) {
+    const isMe = data.username.toLowerCase() === me.toLowerCase();
+    const bubble = document.createElement("div");
+    const msgId = data._id || data.id || ("msg-" + Math.random().toString(36).substr(2, 6));
+    bubble.className = `message-bubble ${isMe ? 'me' : 'received'}`;
+    bubble.setAttribute("data-msg-id", msgId);
+
+    const date = data.time ? new Date(data.time) : new Date();
+    const timeFormatted = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    if (data.isDeleted) {
+        bubble.classList.add("deleted");
+        bubble.innerHTML = `
+            <p class="message-text"><i class="fa-solid fa-ban" style="margin-right: 5px; color: #999;"></i> This message was deleted</p>
+            <div class="message-info">
+                <span>${timeFormatted}</span>
+            </div>
+        `;
+        messagesContainer.appendChild(bubble);
+        return;
+    }
+
+    let mediaHtml = "";
+    if (data.mediaUrl) {
+        const isImage = data.mediaType === "image" || (typeof data.mediaUrl === "string" && (data.mediaUrl.startsWith("data:image") || data.mediaUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)($|\?)/i)));
+
+        if (isImage) {
+            mediaHtml = `<img src="${data.mediaUrl}" class="message-media-img" onclick="openLightbox(this.src)" alt="Photo" title="Click to view full size" onload="scrollToBottom()" onerror="this.style.display='none'">`;
+        } else {
+            mediaHtml = `
+                <a href="${data.mediaUrl}" download="${data.fileName || 'download'}" class="message-file-card" title="Click to download file">
+                    <i class="fa-solid fa-file-arrow-down message-file-icon"></i>
+                    <div class="message-file-meta">
+                        <span class="message-file-name">${escapeHtml(data.fileName || "Attachment")}</span>
+                        <span class="message-file-size">${data.fileSize || "File"}</span>
+                    </div>
+                </a>
+            `;
+        }
+    }
+
+    let textHtml = data.message ? `<p class="message-text">${escapeHtml(data.message)}</p>` : "";
+
+    bubble.innerHTML = `
+        <button type="button" class="msg-actions-btn" onclick="openDeleteModal('${msgId}', ${isMe})" title="Delete message">
+            <i class="fa-regular fa-trash-can"></i>
+        </button>
+        ${!isMe ? `<span class="message-sender">${escapeHtml(data.username)}</span>` : ''}
+        ${mediaHtml}
+        ${textHtml}
+        <div class="message-info">
+            <span>${timeFormatted}</span>
+            ${isMe ? '<i class="fa-solid fa-check-double check-icon"></i>' : ''}
+        </div>
+    `;
+
+    messagesContainer.appendChild(bubble);
+}
+
+function scrollToBottom() {
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// Audio chime using Web Audio API synthesizer
+function playChime() {
+    if (localStorage.getItem("chatNutSound") === "false") return;
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.25);
+    } catch (e) {}
+}
+
+// --- SEARCH NEW CONTACT MODAL ---
+function filterUsers() {
+    const val = (document.getElementById("userSearchInput").value || "").trim().toLowerCase();
+    const results = document.getElementById("searchResults");
+    results.innerHTML = "";
+
+    const matches = allUsers.filter(u => 
+        u.username.toLowerCase() !== me.toLowerCase() &&
+        (u.username.toLowerCase().includes(val) || (u.fullname && u.fullname.toLowerCase().includes(val)))
+    );
+
+    if (matches.length === 0) {
+        results.innerHTML = "<p style='padding: 10px; color: #888; text-align: center;'>No matching users found</p>";
+        return;
+    }
+
+    matches.forEach(u => {
+        const div = document.createElement("div");
+        div.className = "search-item";
+        const displayName = u.fullname || u.username;
+        div.innerHTML = `
+            <div>
+              <strong>${escapeHtml(displayName)}</strong>
+              <small style="color: #777; display: block;">@${escapeHtml(u.username)}</small>
+            </div>
+            <i class="fa-solid fa-comment" style="color: #ff8800;"></i>
+        `;
+        div.onclick = () => {
+            closeModals();
+            selectContact(u.username, displayName);
+        };
+        results.appendChild(div);
+    });
+}
+
+function escapeHtml(str) {
+    if (!str) return "";
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// Initialize
+initTheme();
+loadData();
+</script>
 
 </body>
 </html>

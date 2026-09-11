@@ -131,3 +131,135 @@ body {
     font-size: 16px;
   }
 }
+
+/* OTP Verification & Enhanced Elements */
+.otp-display-code {
+  letter-spacing: 10px;
+  text-align: center;
+  font-size: 26px;
+  font-weight: 700;
+  color: #ff8800;
+  font-family: monospace;
+  padding: 10px;
+}
+
+.otp-meta-info {
+  font-size: 13.5px;
+  color: #666;
+  text-align: center;
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.otp-meta-info strong {
+  color: #222;
+}
+
+.resend-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #777;
+  margin-top: 6px;
+}
+
+.resend-btn {
+  background: none;
+  border: none;
+  color: #ff8800;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.resend-btn:disabled {
+  color: #aaa;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: #f1f3f5 !important;
+  color: #333 !important;
+  margin-top: 6px;
+}
+
+.btn-secondary:hover {
+  background: #e5e7eb !important;
+}
+
+.forgot-password-link {
+  display: block;
+  text-align: right;
+  font-size: 13px;
+  color: #ff8800;
+  text-decoration: none;
+  font-weight: 500;
+  margin-top: -8px;
+  margin-bottom: 4px;
+  cursor: pointer;
+}
+
+.forgot-password-link:hover {
+  text-decoration: underline;
+}
+
+/* Modal Overlay for Forgot Password */
+.fp-modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.fp-modal-content {
+  background: #ffffff;
+  width: 100%;
+  max-width: 440px;
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  animation: modalPop 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes modalPop {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.fp-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fp-modal-header h3 {
+  font-size: 20px;
+  color: #222;
+}
+
+.fp-close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  color: #888;
+  cursor: pointer;
+}
+
+.fp-close-btn:hover {
+  color: #222;
+}
