@@ -113,6 +113,23 @@ app.use((req, res, next) => {
     next();
 });
 
+// Provide a sleek default avatar if /uploads/default-avatar.png or /default-avatar.png is ever requested
+app.get(["/uploads/default-avatar.png", "/default-avatar.png"], (req, res) => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+        <defs>
+            <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#00a884"/>
+                <stop offset="100%" stop-color="#059669"/>
+            </linearGradient>
+        </defs>
+        <circle cx="60" cy="60" r="60" fill="url(#g)"/>
+        <circle cx="60" cy="45" r="20" fill="#ffffff"/>
+        <path d="M26,102 C30,78 44,70 60,70 C76,70 90,78 94,102 Z" fill="#ffffff"/>
+    </svg>`;
+    res.setHeader("Content-Type", "image/svg+xml");
+    res.send(svg);
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 
 // MongoDB connection
@@ -144,6 +161,15 @@ mongoose.connection.on("error", (err) => {
     console.error(" MongoDB error:", err.message);
 });
 
+function getCleanAvatarUrl(userDoc) {
+    if (!userDoc) return null;
+    const url = userDoc.avatarUrl || userDoc.profilePic;
+    if (!url || typeof url !== "string") return null;
+    const trimmed = url.trim();
+    if (!trimmed || trimmed === "null" || trimmed === "undefined" || trimmed.includes("default-avatar") || trimmed.startsWith("/uploads/")) return null;
+    return trimmed;
+}
+
 // Synchronize real database users into local cache
 async function syncMongoUsersToCache() {
     try {
@@ -156,7 +182,7 @@ async function syncMongoUsersToCache() {
                     username: u.username,
                     fullname: u.fullname || u.username,
                     email: u.email,
-                    avatarUrl: u.avatarUrl || u.profilePic || null,
+                    avatarUrl: getCleanAvatarUrl(u),
                     bio: u.bio || "Hey there! I am using chatNut.",
                     createdAt: u.createdAt,
                     updatedAt: u.updatedAt
@@ -700,7 +726,7 @@ app.get("/api/users", async (req, res) => {
                         username: u.username,
                         fullname: u.fullname || u.username,
                         email: u.email,
-                        avatarUrl: u.avatarUrl || u.profilePic || null,
+                        avatarUrl: getCleanAvatarUrl(u),
                         bio: u.bio || "Hey there! I am using chatNut.",
                         createdAt: u.createdAt,
                         updatedAt: u.updatedAt
@@ -719,7 +745,7 @@ app.get("/api/users", async (req, res) => {
                 username: u.username,
                 fullname: u.fullname || u.username,
                 email: u.email,
-                avatarUrl: u.avatarUrl || u.profilePic || null,
+                avatarUrl: getCleanAvatarUrl(u),
                 bio: u.bio || "Hey there! I am using chatNut.",
                 createdAt: u.createdAt
             });
@@ -1023,7 +1049,7 @@ app.post("/api/contacts/add", async (req, res) => {
                 username: targetUser.username,
                 fullname: targetUser.fullname || targetUser.username,
                 email: targetUser.email,
-                avatarUrl: targetUser.avatarUrl || targetUser.profilePic || null,
+                avatarUrl: getCleanAvatarUrl(targetUser),
                 bio: targetUser.bio || "Hey there! I am using chatNut."
             }
         });

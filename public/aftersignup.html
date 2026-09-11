@@ -790,16 +790,17 @@ document.getElementById("topUserName").textContent = myFullName || me;
 let myAvatar = localStorage.getItem("chatNutAvatar_" + me) || null;
 let myBio = localStorage.getItem("chatNutBio_" + me) || "Hey there! I am using chatNut.";
 
-// Helper function: Dynamic avatar gradient palette
+// Helper function: Dynamic avatar gradient palette (signature WhatsApp theme)
 function getAvatarGradient(name) {
     const gradients = [
         "linear-gradient(135deg, #00a884, #059669)",
         "linear-gradient(135deg, #128c7e, #075e54)",
         "linear-gradient(135deg, #4f46e5, #3730a3)",
         "linear-gradient(135deg, #0ea5e9, #0284c7)",
+        "linear-gradient(135deg, #ec4899, #be185d)",
         "linear-gradient(135deg, #8b5cf6, #6d28d9)",
-        "linear-gradient(135deg, #059669, #047857)",
-        "linear-gradient(135deg, #0284c7, #0369a1)"
+        "linear-gradient(135deg, #10b981, #047857)",
+        "linear-gradient(135deg, #f59e0b, #d97706)"
     ];
     let hash = 0;
     const str = name || "user";
@@ -807,6 +808,13 @@ function getAvatarGradient(name) {
         hash = str.charCodeAt(i) + ((hash << 5) - hash);
     }
     return gradients[Math.abs(hash) % gradients.length];
+}
+
+function cleanAvatarString(url) {
+    if (!url || typeof url !== "string") return null;
+    const clean = url.trim();
+    if (!clean || clean === "null" || clean === "undefined" || clean.includes("default-avatar") || clean.startsWith("/uploads/")) return null;
+    return clean;
 }
 
 let allUsers = [];
@@ -835,15 +843,42 @@ function updateMyAvatarDisplay() {
     const topAvatar = document.getElementById("topUserAvatar");
     const profAvatar = document.getElementById("profAvatarBig");
     const myStatusAvatar = document.getElementById("myStatusAvatar");
+
+    myAvatar = cleanAvatarString(myAvatar);
+    if (!myAvatar) {
+        localStorage.removeItem("chatNutAvatar_" + me);
+    }
+
+    const initial = (myFullName || me || "U").charAt(0).toUpperCase();
+    const grad = getAvatarGradient(me || "user");
+
     if (myAvatar) {
-        if (topAvatar) topAvatar.innerHTML = `<img src="${myAvatar}" class="avatar-img" alt="avatar">`;
-        if (profAvatar) profAvatar.innerHTML = `<img src="${myAvatar}" class="avatar-img" alt="avatar">`;
-        if (myStatusAvatar) myStatusAvatar.innerHTML = `<img src="${myAvatar}" class="avatar-img" alt="avatar">`;
+        const imgHtml = `<img src="${myAvatar}" class="avatar-img" alt="avatar" onerror="this.parentElement.textContent='${initial}';">`;
+        if (topAvatar) {
+            topAvatar.innerHTML = imgHtml;
+            topAvatar.style.background = grad;
+        }
+        if (profAvatar) {
+            profAvatar.innerHTML = imgHtml;
+            profAvatar.style.background = grad;
+        }
+        if (myStatusAvatar) {
+            myStatusAvatar.innerHTML = imgHtml;
+            myStatusAvatar.style.background = grad;
+        }
     } else {
-        const initial = (myFullName || me).charAt(0).toUpperCase();
-        if (topAvatar) topAvatar.textContent = initial;
-        if (profAvatar) profAvatar.textContent = initial;
-        if (myStatusAvatar) myStatusAvatar.textContent = initial;
+        if (topAvatar) {
+            topAvatar.textContent = initial;
+            topAvatar.style.background = grad;
+        }
+        if (profAvatar) {
+            profAvatar.textContent = initial;
+            profAvatar.style.background = grad;
+        }
+        if (myStatusAvatar) {
+            myStatusAvatar.textContent = initial;
+            myStatusAvatar.style.background = grad;
+        }
     }
 }
 updateMyAvatarDisplay();
@@ -1105,7 +1140,7 @@ async function handleAddContact() {
 
         closeModals();
         renderContacts();
-        selectContact(localMatch.username, localMatch.fullname || localMatch.username, localMatch.avatarUrl);
+        selectContact(localMatch.username, localMatch.fullname || localMatch.username, cleanAvatarString(localMatch.avatarUrl));
         showToastBanner("Contact Added", `Now chatting with ${localMatch.fullname || localMatch.username}!`);
         return;
     }
@@ -1129,7 +1164,7 @@ async function handleAddContact() {
 
             closeModals();
             renderContacts();
-            selectContact(target.username, target.fullname || target.username, target.avatarUrl);
+            selectContact(target.username, target.fullname || target.username, cleanAvatarString(target.avatarUrl));
             showToastBanner("Contact Added", `Now chatting with ${target.fullname || target.username}!`);
         } else {
             showToastBanner("User Not Found", data.message || `No user found with "${query}".`);
@@ -1177,11 +1212,12 @@ function renderGroupMembersChecklist(searchQuery = "") {
         row.className = "group-member-item";
         const displayName = u.fullname || u.username;
         const initial = displayName.charAt(0).toUpperCase();
+        const cleanAv = cleanAvatarString(u.avatarUrl);
 
         row.innerHTML = `
             <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
                 <div class="avatar-badge" style="width: 34px; height: 34px; font-size: 13px; background: ${getAvatarGradient(u.username)}; flex-shrink: 0;">
-                    ${u.avatarUrl ? `<img src="${u.avatarUrl}" class="avatar-img" alt="avatar">` : initial}
+                    ${cleanAv ? `<img src="${cleanAv}" class="avatar-img" alt="avatar" onerror="this.parentElement.textContent='${initial}';">` : initial}
                 </div>
                 <div style="overflow: hidden; text-align: left;">
                     <strong style="font-size: 13.5px; color: var(--text-primary); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(displayName)}</strong>
@@ -1383,9 +1419,14 @@ async function loadData() {
         // Check if server has saved avatar for me
         const myRecord = allUsers.find(u => (u.username || "").toLowerCase() === me.toLowerCase());
         if (myRecord) {
-            if (myRecord.avatarUrl && !myAvatar) {
-                myAvatar = myRecord.avatarUrl;
+            const cleanAv = cleanAvatarString(myRecord.avatarUrl);
+            if (cleanAv && !myAvatar) {
+                myAvatar = cleanAv;
                 localStorage.setItem("chatNutAvatar_" + me, myAvatar);
+                updateMyAvatarDisplay();
+            } else if (!cleanAv && myAvatar && (myAvatar.includes("default-avatar") || myAvatar.startsWith("/uploads/"))) {
+                myAvatar = null;
+                localStorage.removeItem("chatNutAvatar_" + me);
                 updateMyAvatarDisplay();
             }
             if (myRecord.bio) {
@@ -1400,7 +1441,7 @@ async function loadData() {
         if (reqRecipient) {
             const matched = allUsers.find(u => (u.username || "").toLowerCase() === reqRecipient.toLowerCase() || (u.fullname && u.fullname.toLowerCase() === reqRecipient.toLowerCase()));
             if (matched) {
-                selectContact(matched.username, matched.fullname || matched.username, matched.avatarUrl);
+                selectContact(matched.username, matched.fullname || matched.username, cleanAvatarString(matched.avatarUrl));
             }
         }
         const reqGroup = params.get("group");
@@ -1591,8 +1632,11 @@ function renderContacts() {
             let badgeBg = getAvatarGradient(u.username || "user");
             let badgeStyle = `background: ${badgeBg};`;
 
-            if (u.avatarUrl) {
-                badgeContent = `<img src="${u.avatarUrl}" class="avatar-img" alt="${escapeHtml(item.name)}">`;
+            const cleanAv = cleanAvatarString(u.avatarUrl);
+            const initial = item.name.charAt(0).toUpperCase();
+
+            if (cleanAv) {
+                badgeContent = `<img src="${cleanAv}" class="avatar-img" alt="${escapeHtml(item.name)}" onerror="this.parentElement.textContent='${initial}';">`;
             } else if (u.avatarIcon) {
                 badgeBg = u.avatarColor || "#4c1d42";
                 badgeStyle = `background: ${badgeBg};`;
@@ -1602,7 +1646,6 @@ function renderContacts() {
                 badgeStyle = `background: ${badgeBg};`;
                 badgeContent = `<span style="color: ${u.avatarTextColor || '#25d366'}; font-size: 21px; font-weight: 700;">${u.avatarInitial}</span>`;
             } else {
-                const initial = item.name.charAt(0).toUpperCase();
                 badgeContent = initial;
             }
 
@@ -1695,7 +1738,7 @@ function renderContacts() {
                     };
                 }
             }
-            card.onclick = () => selectContact(u.username, item.name, u.avatarUrl);
+            card.onclick = () => selectContact(u.username, item.name, cleanAvatarString(u.avatarUrl));
         }
 
         container.appendChild(card);
@@ -1722,17 +1765,18 @@ function renderQuickCenterContacts() {
         item.className = "quick-contact-card";
         const displayName = u.fullname || u.username;
         const initial = displayName.charAt(0).toUpperCase();
+        const cleanAv = cleanAvatarString(u.avatarUrl);
 
         item.innerHTML = `
             <div class="avatar-badge" style="width: 44px; height: 44px; font-size: 16px; background: ${getAvatarGradient(u.username)}; margin: 0 auto 8px auto;">
-                ${u.avatarUrl ? `<img src="${u.avatarUrl}" class="avatar-img" alt="avatar">` : initial}
+                ${cleanAv ? `<img src="${cleanAv}" class="avatar-img" alt="avatar" onerror="this.parentElement.textContent='${initial}';">` : initial}
             </div>
             <strong class="quick-contact-name">${escapeHtml(displayName)}</strong>
             <span class="quick-contact-bio">${escapeHtml(u.bio || '@' + u.username)}</span>
             <button type="button" class="quick-contact-btn"><i class="fa-solid fa-comment"></i> Chat</button>
         `;
 
-        item.onclick = () => selectContact(u.username, displayName, u.avatarUrl);
+        item.onclick = () => selectContact(u.username, displayName, cleanAv);
         grid.appendChild(item);
     });
 
@@ -1797,12 +1841,12 @@ function selectContact(targetUsername, targetDisplayName, targetAvatar) {
 
     const initial = activeRecipientDisplayName.charAt(0).toUpperCase();
     const targetUserObj = allUsers.find(u => (u.username || "").toLowerCase() === (targetUsername || "").toLowerCase());
-    const finalAvatar = targetAvatar || (targetUserObj && targetUserObj.avatarUrl);
+    const finalAvatar = cleanAvatarString(targetAvatar || (targetUserObj && targetUserObj.avatarUrl));
     const avatarEl = document.getElementById("chatHeaderAvatar");
     if (avatarEl) {
         if (finalAvatar) {
-            avatarEl.innerHTML = `<img src="${finalAvatar}" class="avatar-img" alt="avatar">`;
-            avatarEl.style.background = "transparent";
+            avatarEl.innerHTML = `<img src="${finalAvatar}" class="avatar-img" alt="avatar" onerror="this.parentElement.textContent='${initial}';">`;
+            avatarEl.style.background = getAvatarGradient(targetUsername);
         } else if (targetUserObj && targetUserObj.avatarIcon) {
             avatarEl.innerHTML = `<i class="${targetUserObj.avatarIcon}" style="color: ${targetUserObj.avatarIconColor || '#38bdf8'}; font-size: 18px;"></i>`;
             avatarEl.style.background = targetUserObj.avatarColor || getAvatarGradient(targetUsername);
@@ -1978,10 +2022,12 @@ function startCall(type) {
 
     if (avatarEl) {
         const uObj = allUsers.find(u => u.username.toLowerCase() === activeRecipientUsername.toLowerCase());
-        if (uObj && uObj.avatarUrl) {
-            avatarEl.innerHTML = `<img src="${uObj.avatarUrl}" class="avatar-img" alt="avatar">`;
+        const cleanAv = cleanAvatarString(uObj && uObj.avatarUrl);
+        const initial = activeRecipientDisplayName.charAt(0).toUpperCase();
+        if (cleanAv) {
+            avatarEl.innerHTML = `<img src="${cleanAv}" class="avatar-img" alt="avatar" onerror="this.parentElement.textContent='${initial}';">`;
         } else {
-            avatarEl.textContent = activeRecipientDisplayName.charAt(0).toUpperCase();
+            avatarEl.textContent = initial;
             avatarEl.style.background = getAvatarGradient(activeRecipientUsername);
         }
     }
@@ -2092,10 +2138,12 @@ socket.on("incoming call", (data) => {
     if (typeEl) typeEl.textContent = data.callType === "video" ? "Incoming video call..." : "Incoming audio call...";
     if (avatarEl) {
         const uObj = allUsers.find(u => u.username.toLowerCase() === data.from.toLowerCase());
-        if (uObj && uObj.avatarUrl) {
-            avatarEl.innerHTML = `<img src="${uObj.avatarUrl}" class="avatar-img" alt="avatar">`;
+        const cleanAv = cleanAvatarString(uObj && uObj.avatarUrl);
+        const callerInitial = (data.callerFullName || data.from).charAt(0).toUpperCase();
+        if (cleanAv) {
+            avatarEl.innerHTML = `<img src="${cleanAv}" class="avatar-img" alt="avatar" onerror="this.parentElement.textContent='${callerInitial}';">`;
         } else {
-            avatarEl.textContent = (data.callerFullName || data.from).charAt(0).toUpperCase();
+            avatarEl.textContent = callerInitial;
             avatarEl.style.background = getAvatarGradient(data.from);
         }
     }
@@ -2142,10 +2190,12 @@ function acceptIncomingCall() {
 
     if (avatarEl) {
         const uObj = allUsers.find(u => u.username.toLowerCase() === callerUsername.toLowerCase());
-        if (uObj && uObj.avatarUrl) {
-            avatarEl.innerHTML = `<img src="${uObj.avatarUrl}" class="avatar-img" alt="avatar">`;
+        const cleanAv = cleanAvatarString(uObj && uObj.avatarUrl);
+        const callerInitial = callerDisp.charAt(0).toUpperCase();
+        if (cleanAv) {
+            avatarEl.innerHTML = `<img src="${cleanAv}" class="avatar-img" alt="avatar" onerror="this.parentElement.textContent='${callerInitial}';">`;
         } else {
-            avatarEl.textContent = callerDisp.charAt(0).toUpperCase();
+            avatarEl.textContent = callerInitial;
             avatarEl.style.background = getAvatarGradient(callerUsername);
         }
     }
@@ -2325,10 +2375,13 @@ function openContactInfoModal() {
     if (emailEl) emailEl.textContent = email;
 
     if (avatarEl) {
-        if (uObj && uObj.avatarUrl) {
-            avatarEl.innerHTML = `<img src="${uObj.avatarUrl}" class="avatar-img" alt="avatar">`;
+        const cleanAv = cleanAvatarString(uObj && uObj.avatarUrl);
+        const initial = dispName.charAt(0).toUpperCase();
+        if (cleanAv) {
+            avatarEl.innerHTML = `<img src="${cleanAv}" class="avatar-img" alt="avatar" onerror="this.parentElement.textContent='${initial}';">`;
+            avatarEl.style.background = getAvatarGradient(activeRecipientUsername);
         } else {
-            avatarEl.textContent = dispName.charAt(0).toUpperCase();
+            avatarEl.textContent = initial;
             avatarEl.style.background = getAvatarGradient(activeRecipientUsername);
         }
     }
@@ -2389,10 +2442,14 @@ function openDeleteContactModal(username, displayName) {
     if (nameEl) nameEl.textContent = displayName;
     if (avatarEl) {
         const uObj = allUsers.find(u => u.username.toLowerCase() === username.toLowerCase());
-        if (uObj && uObj.avatarUrl) {
-            avatarEl.innerHTML = `<img src="${uObj.avatarUrl}" class="avatar-img" alt="avatar">`;
+        const cleanAv = cleanAvatarString(uObj && uObj.avatarUrl);
+        const initial = displayName.charAt(0).toUpperCase();
+        if (cleanAv) {
+            avatarEl.innerHTML = `<img src="${cleanAv}" class="avatar-img" alt="avatar" onerror="this.parentElement.textContent='${initial}';">`;
+            avatarEl.style.background = getAvatarGradient(username);
         } else {
-            avatarEl.textContent = displayName.charAt(0).toUpperCase();
+            avatarEl.textContent = initial;
+            avatarEl.style.background = getAvatarGradient(username);
         }
     }
 
@@ -2627,11 +2684,12 @@ function renderStatusSlider() {
     const myInitial = (myFullName || me).charAt(0).toUpperCase();
     const myRingClass = myStatus ? "status-ring-container has-active-status" : "status-ring-container";
 
+    const cleanMyAv = cleanAvatarString(myAvatar);
     myCard.innerHTML = `
         <div class="${myRingClass}">
             <div class="status-ring-gap">
                 <div class="status-bubble-avatar" style="background: ${getAvatarGradient(me)};">
-                    ${myAvatar ? `<img src="${myAvatar}" alt="My Avatar">` : myInitial}
+                    ${cleanMyAv ? `<img src="${cleanMyAv}" alt="My Avatar" onerror="this.parentElement.textContent='${myInitial}';">` : myInitial}
                 </div>
             </div>
             <div class="my-status-add-badge" title="Post new status"><i class="fa-solid fa-plus"></i></div>
@@ -2677,12 +2735,14 @@ function renderStatusSlider() {
         card.className = "status-story-card";
         const firstName = (st.fullName || st.username).split(" ")[0];
         card.title = `${st.fullName || st.username} - View status`;
+        const cleanAv = cleanAvatarString(st.avatarUrl);
+        const initial = (st.fullName || st.username).charAt(0).toUpperCase();
 
         card.innerHTML = `
             <div class="status-ring-container has-active-status">
                 <div class="status-ring-gap">
                     <div class="status-bubble-avatar" style="background: ${getAvatarGradient(st.username)};">
-                        ${st.avatarUrl ? `<img src="${st.avatarUrl}" alt="${escapeHtml(st.fullName)}">` : (st.fullName || st.username).charAt(0).toUpperCase()}
+                        ${cleanAv ? `<img src="${cleanAv}" alt="${escapeHtml(st.fullName)}" onerror="this.parentElement.textContent='${initial}';">` : initial}
                     </div>
                 </div>
             </div>
@@ -2935,10 +2995,13 @@ function openStatusModal() {
             const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const snippet = st.mediaUrl ? "📷 Photo" : (st.text ? (st.text.length > 25 ? st.text.substring(0, 25) + "..." : st.text) : "Status update");
 
+            const cleanAv = cleanAvatarString(st.avatarUrl);
+            const initial = (st.fullName || st.username).charAt(0).toUpperCase();
+
             row.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <div class="avatar-badge has-status" style="width: 44px; height: 44px; font-size: 16px; background: ${getAvatarGradient(st.username)}">
-                        ${st.avatarUrl ? `<img src="${st.avatarUrl}" class="avatar-img" alt="avatar">` : (st.fullName || st.username).charAt(0).toUpperCase()}
+                        ${cleanAv ? `<img src="${cleanAv}" class="avatar-img" alt="avatar" onerror="this.parentElement.textContent='${initial}';">` : initial}
                     </div>
                     <div>
                         <strong style="font-size: 13.5px; color: var(--text-primary); display: block;">${escapeHtml(st.fullName || st.username)}</strong>
@@ -2978,10 +3041,13 @@ function viewStatus(statusId) {
     const captionEl = document.getElementById("storyViewerCaption");
 
     nameEl.textContent = st.fullName || st.username;
-    if (st.avatarUrl) {
-        avatarEl.innerHTML = `<img src="${st.avatarUrl}" class="avatar-img" alt="avatar">`;
+    const cleanAv = cleanAvatarString(st.avatarUrl);
+    const initial = (st.fullName || st.username).charAt(0).toUpperCase();
+    if (cleanAv) {
+        avatarEl.innerHTML = `<img src="${cleanAv}" class="avatar-img" alt="avatar" onerror="this.parentElement.textContent='${initial}';">`;
+        avatarEl.style.background = getAvatarGradient(st.username);
     } else {
-        avatarEl.textContent = (st.fullName || st.username).charAt(0).toUpperCase();
+        avatarEl.textContent = initial;
         avatarEl.style.background = getAvatarGradient(st.username);
     }
 
@@ -3743,10 +3809,11 @@ function filterUsers() {
         div.className = "search-item";
         const displayName = u.fullname || u.username;
         const initial = displayName.charAt(0).toUpperCase();
+        const cleanAv = cleanAvatarString(u.avatarUrl);
         div.innerHTML = `
             <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
               <div class="avatar-badge" style="width: 38px; height: 38px; font-size: 14px; background: ${getAvatarGradient(u.username)}; flex-shrink: 0;">
-                ${u.avatarUrl ? `<img src="${u.avatarUrl}" class="avatar-img" alt="avatar">` : initial}
+                ${cleanAv ? `<img src="${cleanAv}" class="avatar-img" alt="avatar" onerror="this.parentElement.textContent='${initial}';">` : initial}
               </div>
               <div style="text-align: left; overflow: hidden;">
                 <strong style="display: block; font-size: 14px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(displayName)}</strong>
@@ -3757,7 +3824,7 @@ function filterUsers() {
         `;
         div.onclick = () => {
             closeModals();
-            selectContact(u.username, displayName, u.avatarUrl);
+            selectContact(u.username, displayName, cleanAv);
         };
         results.appendChild(div);
     });
