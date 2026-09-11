@@ -173,6 +173,9 @@
 
     <div class="active-chat-wrapper" id="activeChatWrapper" style="display: none;">
       <header class="chat-header-bar">
+        <button type="button" class="chat-back-btn" id="chatBackBtn" onclick="closeActiveChat()" title="Back to contacts">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
         <div class="chat-header-avatar" id="chatHeaderAvatar">?</div>
         <div class="chat-header-meta">
           <h3 id="chatHeaderName">Contact Name</h3>
@@ -577,10 +580,31 @@ updateMyAvatarDisplay();
 // Notify online status
 socket.emit("user online", me);
 
-let allUsers = [];
+const defaultSeedContacts = [
+    {
+        username: "chatnut",
+        fullname: "chatNut Bot",
+        avatarUrl: "https://cdn-icons-png.flaticon.com/512/8943/8943377.png",
+        bio: "Official assistant. Chat with me anytime!"
+    },
+    {
+        username: "alex",
+        fullname: "Alex Smith",
+        avatarUrl: null,
+        bio: "Hey there! I am using chatNut."
+    },
+    {
+        username: "priya",
+        fullname: "Priya Sharma",
+        avatarUrl: null,
+        bio: "Working on the project demo!"
+    }
+];
+
+let allUsers = [...defaultSeedContacts];
 let allGroups = [];
 let allStatuses = [];
-let onlineUserList = [];
+let onlineUserList = ["chatnut"];
 let lastMessagesMap = {};
 let currentFilter = "all"; // 'all' | 'direct' | 'groups'
 
@@ -800,23 +824,56 @@ socket.on("online users", (users) => {
     updateChatHeaderStatus();
 });
 
+function fetchWithTimeout(url, options = {}, timeoutMs = 4000) {
+    if (typeof AbortController === "undefined") {
+        return fetch(url, options).then(r => r.ok ? r.json().catch(() => null) : null).catch(() => null);
+    }
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    return fetch(url, { ...options, signal: controller.signal })
+        .then(async (r) => {
+            clearTimeout(timeoutId);
+            if (!r.ok) return null;
+            return await r.json().catch(() => null);
+        })
+        .catch(() => {
+            clearTimeout(timeoutId);
+            return null;
+        });
+}
+
 // Load contacts, groups, statuses, and last messages
 async function loadData() {
     try {
         const [usersRes, lastMsgRes, groupsRes, statusesRes] = await Promise.all([
-            fetch(`${API_BASE}/api/users`).then(r => r.json()).catch(() => []),
-            fetch(`${API_BASE}/api/last-messages?user=${encodeURIComponent(me)}`).then(r => r.json()).catch(() => ({})),
-            fetch(`${API_BASE}/api/groups`).then(r => r.json()).catch(() => []),
-            fetch(`${API_BASE}/api/statuses`).then(r => r.json()).catch(() => [])
+            fetchWithTimeout(`${API_BASE}/api/users`),
+            fetchWithTimeout(`${API_BASE}/api/last-messages?user=${encodeURIComponent(me)}`),
+            fetchWithTimeout(`${API_BASE}/api/groups`),
+            fetchWithTimeout(`${API_BASE}/api/statuses`)
         ]);
 
-        allUsers = usersRes || [];
-        lastMessagesMap = lastMsgRes || {};
-        allGroups = groupsRes || [];
-        allStatuses = statusesRes || [];
+        if (Array.isArray(usersRes)) {
+            allUsers = usersRes;
+        }
+        if (lastMsgRes && typeof lastMsgRes === "object" && !Array.isArray(lastMsgRes)) {
+            lastMessagesMap = lastMsgRes;
+        }
+        if (Array.isArray(groupsRes)) {
+            allGroups = groupsRes;
+        }
+        if (Array.isArray(statusesRes)) {
+            allStatuses = statusesRes;
+        }
+
+        // Ensure default demo contacts exist so chats can always be opened
+        defaultSeedContacts.forEach(seed => {
+            if (!allUsers.some(u => (u.username || "").toLowerCase() === seed.username.toLowerCase())) {
+                allUsers.push(seed);
+            }
+        });
 
         // Check if server has saved avatar for me
-        const myRecord = allUsers.find(u => u.username.toLowerCase() === me.toLowerCase());
+        const myRecord = allUsers.find(u => (u.username || "").toLowerCase() === me.toLowerCase());
         if (myRecord) {
             if (myRecord.avatarUrl && !myAvatar) {
                 myAvatar = myRecord.avatarUrl;
@@ -829,20 +886,20 @@ async function loadData() {
             }
         }
 
-        renderContacts();
-        renderStatusSlider();
-
         // Check if query param requests a specific contact
         const params = new URLSearchParams(window.location.search);
         const reqRecipient = params.get("recipient") || params.get("contact");
         if (reqRecipient) {
-            const matched = allUsers.find(u => u.username.toLowerCase() === reqRecipient.toLowerCase() || (u.fullname && u.fullname.toLowerCase() === reqRecipient.toLowerCase()));
+            const matched = allUsers.find(u => (u.username || "").toLowerCase() === reqRecipient.toLowerCase() || (u.fullname && u.fullname.toLowerCase() === reqRecipient.toLowerCase()));
             if (matched) {
                 selectContact(matched.username, matched.fullname || matched.username, matched.avatarUrl);
             }
         }
     } catch (e) {
         console.warn("Error loading data:", e);
+    } finally {
+        renderContacts();
+        renderStatusSlider();
     }
 }
 
@@ -852,17 +909,17 @@ function renderContacts() {
     if (!container) return;
 
     const deletedContacts = JSON.parse(localStorage.getItem("deletedContacts_" + me) || "[]");
-    const others = allUsers.filter(u => u.username.toLowerCase() !== me.toLowerCase() && !deletedContacts.includes(u.username.toLowerCase()));
-    const myGroups = allGroups.filter(g => !g.members || g.members.length === 0 || g.members.includes(me.toLowerCase()));
+    const others = (allUsers || []).filter(u => u && u.username && u.username.toLowerCase() !== me.toLowerCase() && !deletedContacts.includes(u.username.toLowerCase()));
+    const myGroups = (allGroups || []).filter(g => g && (!g.members || g.members.length === 0 || g.members.some(m => (m || "").toLowerCase() === me.toLowerCase())));
 
-    const searchVal = (document.getElementById("contactSearchInput").value || "").trim().toLowerCase();
+    const searchVal = (document.getElementById("contactSearchInput")?.value || "").trim().toLowerCase();
 
     // Filter by search term
     const filteredUsers = others.filter(u =>
-        u.username.toLowerCase().includes(searchVal) || (u.fullname && u.fullname.toLowerCase().includes(searchVal))
+        (u.username || "").toLowerCase().includes(searchVal) || (u.fullname && u.fullname.toLowerCase().includes(searchVal))
     );
     const filteredGroups = myGroups.filter(g =>
-        g.name.toLowerCase().includes(searchVal)
+        (g.name || "").toLowerCase().includes(searchVal)
     );
 
     let showUsers = currentFilter === "all" || currentFilter === "direct";
@@ -931,11 +988,11 @@ function renderContacts() {
 
             const displayName = u.fullname || u.username;
             const initial = displayName.charAt(0).toUpperCase();
-            const isOnline = onlineUserList.includes(u.username.toLowerCase());
-            const avatarBg = getAvatarGradient(u.username);
+            const isOnline = (u.username || "").toLowerCase() === "chatnut" || onlineUserList.includes((u.username || "").toLowerCase());
+            const avatarBg = getAvatarGradient(u.username || "user");
 
             // Check if user posted an active status
-            const userStatus = allStatuses.find(s => s.username === u.username.toLowerCase());
+            const userStatus = (allStatuses || []).find(s => s && (s.username || "").toLowerCase() === (u.username || "").toLowerCase());
             const hasStatus = !!userStatus;
 
             // Room ID & Last message
@@ -997,11 +1054,13 @@ function handleContactSearch() {
 
 // Select direct chat
 function selectContact(targetUsername, targetDisplayName, targetAvatar) {
+    if (!targetUsername) return;
+
     activeChatType = "direct";
     activeGroupId = null;
     activeGroupObj = null;
     activeRecipientUsername = targetUsername;
-    activeRecipientDisplayName = targetDisplayName;
+    activeRecipientDisplayName = targetDisplayName || targetUsername;
     activeRecipientAvatar = targetAvatar || null;
     activeRoom = [me.toLowerCase(), targetUsername.toLowerCase()].sort().join("--");
 
@@ -1015,19 +1074,28 @@ function selectContact(targetUsername, targetDisplayName, targetAvatar) {
     renderContacts();
 
     // Show Chat Panel
-    document.getElementById("emptyChatView").style.display = "none";
+    const emptyChat = document.getElementById("emptyChatView");
+    if (emptyChat) emptyChat.style.display = "none";
+
     const chatWrapper = document.getElementById("activeChatWrapper");
-    chatWrapper.style.display = "flex";
+    if (chatWrapper) chatWrapper.style.display = "flex";
+
+    const chatPanel = document.getElementById("chatPanel");
+    if (chatPanel) chatPanel.classList.add("mobile-active");
 
     // Set Header
-    document.getElementById("chatHeaderName").textContent = targetDisplayName;
-    const initial = targetDisplayName.charAt(0).toUpperCase();
+    const nameEl = document.getElementById("chatHeaderName");
+    if (nameEl) nameEl.textContent = activeRecipientDisplayName;
+
+    const initial = activeRecipientDisplayName.charAt(0).toUpperCase();
     const avatarEl = document.getElementById("chatHeaderAvatar");
-    if (targetAvatar) {
-        avatarEl.innerHTML = `<img src="${targetAvatar}" class="avatar-img" alt="avatar">`;
-    } else {
-        avatarEl.textContent = initial;
-        avatarEl.style.background = getAvatarGradient(targetUsername);
+    if (avatarEl) {
+        if (targetAvatar) {
+            avatarEl.innerHTML = `<img src="${targetAvatar}" class="avatar-img" alt="avatar">`;
+        } else {
+            avatarEl.textContent = initial;
+            avatarEl.style.background = getAvatarGradient(targetUsername);
+        }
     }
 
     const delBtn = document.getElementById("deleteContactBtn");
@@ -1043,12 +1111,16 @@ function selectContact(targetUsername, targetDisplayName, targetAvatar) {
 
     // Focus input
     const input = document.getElementById("msgInput");
-    input.value = "";
-    input.focus();
+    if (input) {
+        input.value = "";
+        input.focus();
+    }
 }
 
 // Select group chat
 function selectGroup(group) {
+    if (!group) return;
+
     activeChatType = "group";
     activeGroupId = group.id;
     activeGroupObj = group;
@@ -1059,14 +1131,23 @@ function selectGroup(group) {
 
     renderContacts();
 
-    document.getElementById("emptyChatView").style.display = "none";
-    const chatWrapper = document.getElementById("activeChatWrapper");
-    chatWrapper.style.display = "flex";
+    const emptyChat = document.getElementById("emptyChatView");
+    if (emptyChat) emptyChat.style.display = "none";
 
-    document.getElementById("chatHeaderName").textContent = group.name;
+    const chatWrapper = document.getElementById("activeChatWrapper");
+    if (chatWrapper) chatWrapper.style.display = "flex";
+
+    const chatPanel = document.getElementById("chatPanel");
+    if (chatPanel) chatPanel.classList.add("mobile-active");
+
+    const nameEl = document.getElementById("chatHeaderName");
+    if (nameEl) nameEl.textContent = group.name;
+
     const avatarEl = document.getElementById("chatHeaderAvatar");
-    avatarEl.innerHTML = `<i class="fa-solid fa-users" style="font-size: 16px;"></i>`;
-    avatarEl.style.background = "linear-gradient(135deg, #128c7e, #075e54)";
+    if (avatarEl) {
+        avatarEl.innerHTML = `<i class="fa-solid fa-users" style="font-size: 16px;"></i>`;
+        avatarEl.style.background = "linear-gradient(135deg, #128c7e, #075e54)";
+    }
 
     const dot = document.getElementById("chatHeaderDot");
     const text = document.getElementById("chatHeaderStatusText");
@@ -1083,8 +1164,30 @@ function selectGroup(group) {
     socket.emit("join room", { room: activeRoom, user: me });
 
     const input = document.getElementById("msgInput");
-    input.value = "";
-    input.focus();
+    if (input) {
+        input.value = "";
+        input.focus();
+    }
+}
+
+function closeActiveChat() {
+    activeRecipientUsername = null;
+    activeRecipientDisplayName = null;
+    activeRecipientAvatar = null;
+    activeGroupId = null;
+    activeGroupObj = null;
+    activeRoom = null;
+
+    const chatWrapper = document.getElementById("activeChatWrapper");
+    if (chatWrapper) chatWrapper.style.display = "none";
+
+    const emptyChat = document.getElementById("emptyChatView");
+    if (emptyChat) emptyChat.style.display = "flex";
+
+    const chatPanel = document.getElementById("chatPanel");
+    if (chatPanel) chatPanel.classList.remove("mobile-active");
+
+    renderContacts();
 }
 
 function updateChatHeaderStatus() {
@@ -1099,7 +1202,7 @@ function updateChatHeaderStatus() {
     }
 
     if (!activeRecipientUsername) return;
-    const isOnline = onlineUserList.includes(activeRecipientUsername.toLowerCase());
+    const isOnline = activeRecipientUsername.toLowerCase() === "chatnut" || onlineUserList.includes(activeRecipientUsername.toLowerCase());
     const dot = document.getElementById("chatHeaderDot");
     const text = document.getElementById("chatHeaderStatusText");
 
@@ -1158,8 +1261,12 @@ async function confirmDeleteContact() {
     }
 
     if (activeRecipientUsername && activeRecipientUsername.toLowerCase() === targetUser.toLowerCase()) {
-        document.getElementById("activeChatWrapper").style.display = "none";
-        document.getElementById("emptyChatView").style.display = "flex";
+        const chatWrapper = document.getElementById("activeChatWrapper");
+        if (chatWrapper) chatWrapper.style.display = "none";
+        const emptyChat = document.getElementById("emptyChatView");
+        if (emptyChat) emptyChat.style.display = "flex";
+        const chatPanel = document.getElementById("chatPanel");
+        if (chatPanel) chatPanel.classList.remove("mobile-active");
         activeRecipientUsername = null;
         activeRecipientDisplayName = null;
         activeRoom = null;
@@ -2327,6 +2434,8 @@ function escapeHtml(str) {
 
 // Initialize
 initTheme();
+renderContacts();
+renderStatusSlider();
 loadData();
 </script>
 

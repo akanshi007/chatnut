@@ -596,17 +596,67 @@ app.post("/login", async (req, res) => {
     }
 });
 
+// Demo seed contacts
+const defaultSeedUsers = [
+    {
+        username: "chatnut",
+        fullname: "chatNut Bot",
+        email: "bot@chatnut.local",
+        avatarUrl: "https://cdn-icons-png.flaticon.com/512/8943/8943377.png",
+        bio: "Official assistant. Chat with me anytime!",
+        createdAt: new Date()
+    },
+    {
+        username: "alex",
+        fullname: "Alex Smith",
+        email: "alex@chatnut.local",
+        avatarUrl: null,
+        bio: "Hey there! I am using chatNut.",
+        createdAt: new Date()
+    },
+    {
+        username: "priya",
+        fullname: "Priya Sharma",
+        email: "priya@chatnut.local",
+        avatarUrl: null,
+        bio: "Working on the project demo!",
+        createdAt: new Date()
+    }
+];
+
+// Seed demo users in memory
+defaultSeedUsers.forEach(seed => {
+    if (!memoryUsers.some(u => u.username === seed.username)) {
+        memoryUsers.push(seed);
+    }
+});
+saveLocalJson("users.json", memoryUsers);
+
 // Users API
 app.get("/api/users", async (req, res) => {
     try {
+        let users = [];
         if (isMongoConnected) {
-            const users = await User.find({}, "username fullname email avatarUrl bio createdAt").sort({ username: 1 });
-            return res.json(users);
+            try {
+                users = await User.find({}, "username fullname email avatarUrl bio createdAt").sort({ username: 1 }).lean();
+            } catch (e) {
+                users = [];
+            }
         }
-        res.json(memoryUsers.map(u => ({ username: u.username, fullname: u.fullname, email: u.email, avatarUrl: u.avatarUrl || null, bio: u.bio || "Hey there! I am using chatNut.", createdAt: u.createdAt })));
+        if (!users || users.length === 0) {
+            users = memoryUsers.map(u => ({ username: u.username, fullname: u.fullname, email: u.email, avatarUrl: u.avatarUrl || null, bio: u.bio || "Hey there! I am using chatNut.", createdAt: u.createdAt }));
+        }
+
+        defaultSeedUsers.forEach(seed => {
+            if (!users.some(u => u.username.toLowerCase() === seed.username.toLowerCase())) {
+                users.push(seed);
+            }
+        });
+
+        res.json(users);
     } catch (err) {
         console.error("Error fetching users:", err);
-        res.json([]);
+        res.json(defaultSeedUsers);
     }
 });
 
@@ -869,6 +919,62 @@ io.on("connection", (socket) => {
                 memoryMessages.push(msgData);
                 saveLocalJson("messages.json", memoryMessages);
                 io.to(data.room).emit("chat message", msgData);
+            }
+
+            // Auto-reply if message sent to chatnut bot
+            const roomLower = (data.room || "").toLowerCase();
+            const senderLower = (data.username || "").toLowerCase();
+            if (roomLower.includes("chatnut") && senderLower !== "chatnut") {
+                io.to(data.room).emit("typing", "chatnut");
+                setTimeout(async () => {
+                    io.to(data.room).emit("stop typing", "chatnut");
+                    const userText = (data.message || "").toLowerCase().trim();
+                    let botReplyText = "Hello! 👋 I am chatNut Assistant. You can send messages, emojis, and media attachments right here!";
+
+                    if (userText.includes("hi") || userText.includes("hello") || userText.includes("hey")) {
+                        botReplyText = `Hey ${data.senderFullName || data.username}! 👋 How are you doing today?`;
+                    } else if (userText.includes("how are you")) {
+                        botReplyText = "I'm doing great, thank you! Ready to chat whenever you are. 😊";
+                    } else if (userText.includes("help") || userText.includes("feature")) {
+                        botReplyText = "Here are things you can try in chatNut: send text, attachments & emojis, post a 24-hour status update, create group chats, or switch themes using the icon at the top! 🚀";
+                    } else if (userText.includes("who are you")) {
+                        botReplyText = "I'm the built-in chatNut Assistant bot, designed to help you explore and test all real-time features. 🤖";
+                    } else if (userText.includes("bye") || userText.includes("good night")) {
+                        botReplyText = "Goodbye! Have an amazing day ahead! ✨";
+                    } else if (data.mediaUrl) {
+                        botReplyText = "Nice attachment! 👍 Thanks for sharing!";
+                    }
+
+                    const botMsg = {
+                        id: "msg-" + Date.now() + "-" + Math.random().toString(36).substr(2, 6),
+                        username: "chatnut",
+                        senderFullName: "chatNut Bot",
+                        avatarUrl: "https://cdn-icons-png.flaticon.com/512/8943/8943377.png",
+                        message: botReplyText,
+                        room: data.room,
+                        mediaUrl: null,
+                        mediaType: null,
+                        fileName: null,
+                        fileSize: null,
+                        isDeleted: false,
+                        deletedFor: [],
+                        time: new Date()
+                    };
+
+                    if (isMongoConnected) {
+                        try {
+                            const bMsg = new Message(botMsg);
+                            const savedBotMsg = await bMsg.save();
+                            io.to(data.room).emit("chat message", savedBotMsg);
+                        } catch (e) {
+                            io.to(data.room).emit("chat message", botMsg);
+                        }
+                    } else {
+                        memoryMessages.push(botMsg);
+                        saveLocalJson("messages.json", memoryMessages);
+                        io.to(data.room).emit("chat message", botMsg);
+                    }
+                }, 900);
             }
         } catch (err) {
             console.error("Error saving chat message:", err);

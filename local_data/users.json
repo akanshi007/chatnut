@@ -1,1 +1,26 @@
-[]
+[
+  {
+    "username": "chatnut",
+    "fullname": "chatNut Bot",
+    "email": "bot@chatnut.local",
+    "avatarUrl": "https://cdn-icons-png.flaticon.com/512/8943/8943377.png",
+    "bio": "Official assistant. Chat with me anytime!",
+    "createdAt": "2026-09-11T00:00:00.000Z"
+  },
+  {
+    "username": "alex",
+    "fullname": "Alex Smith",
+    "email": "alex@chatnut.local",
+    "avatarUrl": null,
+    "bio": "Hey there! I am using chatNut.",
+    "createdAt": "2026-09-11T00:00:00.000Z"
+  },
+  {
+    "username": "priya",
+    "fullname": "Priya Sharma",
+    "email": "priya@chatnut.local",
+    "avatarUrl": null,
+    "bio": "Working on the project demo!",
+    "createdAt": "2026-09-11T00:00:00.000Z"
+  }
+]

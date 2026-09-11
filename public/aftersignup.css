@@ -659,6 +659,28 @@ header {
     z-index: 10;
 }
 
+.chat-back-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 16px;
+    cursor: pointer;
+    margin-right: 2px;
+    flex-shrink: 0;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.chat-back-btn:hover {
+    background: var(--primary-accent-soft);
+    color: var(--primary-accent);
+}
+
 .chat-header-avatar {
     width: 42px;
     height: 42px;
@@ -2256,5 +2278,8 @@ input:checked + .toggle-slider:before {
         width: 100vw;
         height: calc(100vh - 60px);
         z-index: 400;
+    }
+    .chat-back-btn {
+        display: flex;
     }
 }
