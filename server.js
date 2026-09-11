@@ -56,35 +56,6 @@ function saveLocalJson(filename, data) {
 const memoryUsers = loadLocalJson("users.json", []);
 const memoryMessages = loadLocalJson("messages.json", []);
 const groups = loadLocalJson("groups.json", []);
-const defaultSeedGroups = [
-    {
-        id: "group-cst-official-2024-28",
-        name: "CST OFFICIAL Batch of 2024-28",
-        sublabel: "CST Batch Of 2024-28",
-        createdBy: "sujoy",
-        members: ["sujoy", "akanshi", "hitesh", "bhumika", "you"],
-        pinned: true,
-        lastMsgSnippet: "~~Sujoy: Everyone selected for Round ...",
-        lastMsgTime: "10:01 am",
-        createdAt: new Date("2026-09-11T00:00:00Z")
-    },
-    {
-        id: "group-lt-williams-hall-2026-27",
-        name: "Lt Williams Hall 2026-2027",
-        sublabel: "Lt Williams announcement 26-27",
-        createdBy: "akriti",
-        members: ["akriti", "akanshi", "hitesh", "you"],
-        muted: true,
-        lastMsgSnippet: "Akriti (CST): Chhole bhature",
-        lastMsgTime: "8:24 pm",
-        createdAt: new Date("2026-09-11T00:00:00Z")
-    }
-];
-defaultSeedGroups.forEach(seedG => {
-    if (!groups.some(g => g.id === seedG.id)) {
-        groups.push(seedG);
-    }
-});
 saveLocalJson("groups.json", groups);
 const memoryStatuses = loadLocalJson("statuses.json", []);
 const onlineUsers = new Map();
@@ -182,47 +153,17 @@ async function initDatabaseSeed() {
             await User.insertMany(initialUsers);
         }
 
-        // 2. Seed Groups in MongoDB if 0 exist
-        const groupCount = await Group.countDocuments();
-        if (groupCount === 0) {
-            console.log("Seeding initial groups into MongoDB...");
-            const initialGroups = [
-                {
-                    id: "group-cst-official-2024-28",
-                    name: "CST OFFICIAL Batch of 2024-28",
-                    sublabel: "CST Batch Of 2024-28",
-                    createdBy: "sujoy",
-                    members: ["sujoy", "akanshi", "hitesh", "bhumika", "you"],
-                    pinned: true,
-                    muted: false,
-                    groupIcon: "fa-solid fa-graduation-cap",
-                    groupColor: "#1e293b",
-                    subBadgeIcon: "fa-solid fa-file-lines"
-                },
-                {
-                    id: "group-lt-williams-hall-2026-27",
-                    name: "Lt Williams Hall 2026-2027",
-                    sublabel: "Lt Williams announcement 26-27",
-                    createdBy: "akriti",
-                    members: ["akriti", "akanshi", "hitesh", "you"],
-                    pinned: false,
-                    muted: true,
-                    groupIcon: "fa-solid fa-users",
-                    groupColor: "#573a08",
-                    subBadgeIcon: "fa-solid fa-shield-halved",
-                    subBadgeColor: "#e879f9"
-                }
-            ];
-            await Group.insertMany(initialGroups);
-        }
+        // 2. Clean up any remaining legacy groups from MongoDB
+        try {
+            await Group.deleteMany({});
+            await Message.deleteMany({ room: { $regex: /^group-/ } });
+        } catch (e) {}
 
-        // 3. Seed initial messages in MongoDB if 0 exist
+        // 3. Seed initial direct messages in MongoDB if 0 exist
         const messageCount = await Message.countDocuments();
         if (messageCount === 0) {
-            console.log("Seeding initial messages into MongoDB...");
+            console.log("Seeding initial direct messages into MongoDB...");
             const initialMessages = [
-                { username: "sujoy", senderFullName: "Sujoy", room: "group-cst-official-2024-28", message: "~~Sujoy: Everyone selected for Round 2 check your emails!", time: new Date(Date.now() - 3600000 * 12) },
-                { username: "akriti", senderFullName: "Akriti (CST)", room: "group-lt-williams-hall-2026-27", message: "Akriti (CST): Chhole bhature", time: new Date(Date.now() - 3600000 * 2) },
                 { username: "maa", senderFullName: "Maa 💕⭐", room: "akanshi--maa", message: "Ho Gaya gudiya", time: new Date(Date.now() - 3600000 * 24) },
                 { username: "bhumika", senderFullName: "Bhumika ⭐", room: "akanshi--bhumika", message: "Login to ho rha hai", time: new Date(Date.now() - 5 * 60000) },
                 { username: "hitesh", senderFullName: "Hitesh 🐝🐝", room: "akanshi--hitesh", message: "2 min ruko", time: new Date(Date.now() - 2 * 60000) },
@@ -926,59 +867,30 @@ app.post("/api/delete-conversation", async (req, res) => {
     }
 });
 
-// Groups API
-app.get("/api/groups", async (req, res) => {
-    try {
-        if (isMongoConnected) {
-            const dbGroups = await Group.find({}).sort({ createdAt: 1 }).lean();
-            return res.json(dbGroups || []);
-        }
-        res.json(groups || []);
-    } catch (err) {
-        console.error("Fetch groups error:", err);
-        res.json(groups || []);
-    }
+// Groups API (Disabled - pure direct messaging)
+app.get("/api/groups", (req, res) => {
+    res.json([]);
 });
 
-app.post("/api/groups", async (req, res) => {
+// Clear conversation chat history API
+app.post("/api/clear-chat", async (req, res) => {
     try {
-        const { name, sublabel, createdBy, members, groupIcon, groupColor, subBadgeIcon } = req.body;
-        if (!name || !name.trim()) {
-            return res.status(400).json({ success: false, message: "Group name is required." });
-        }
-
-        const id = "group-" + name.trim().toLowerCase().replace(/[^a-z0-9]/g, "-") + "-" + Math.floor(100 + Math.random() * 900);
-        const membersList = Array.isArray(members) ? members.map(m => m.toLowerCase()) : [];
-        if (createdBy && !membersList.includes(createdBy.toLowerCase())) {
-            membersList.push(createdBy.toLowerCase());
-        }
-
-        const newGroup = {
-            id,
-            name: name.trim(),
-            sublabel: sublabel || null,
-            createdBy: createdBy || "anonymous",
-            members: membersList,
-            pinned: false,
-            muted: false,
-            groupIcon: groupIcon || "fa-solid fa-users",
-            groupColor: groupColor || "#1e293b",
-            subBadgeIcon: subBadgeIcon || null
-        };
+        const { room, user } = req.body;
+        if (!room) return res.status(400).json({ success: false, message: "Room is required." });
 
         if (isMongoConnected) {
-            const saved = await Group.create(newGroup);
-            io.emit("group created", saved);
-            return res.json({ success: true, group: saved });
-        } else {
-            groups.push(newGroup);
-            saveLocalJson("groups.json", groups);
-            io.emit("group created", newGroup);
-            return res.json({ success: true, group: newGroup });
+            await Message.deleteMany({ room });
         }
+        const remaining = memoryMessages.filter(m => m.room !== room);
+        memoryMessages.length = 0;
+        memoryMessages.push(...remaining);
+        saveLocalJson("messages.json", memoryMessages);
+
+        io.to(room).emit("chat cleared", { room });
+        res.json({ success: true, message: "Chat history cleared." });
     } catch (err) {
-        console.error("Create group error:", err);
-        res.status(500).json({ success: false, message: "Failed to create group: " + err.message });
+        console.error("Clear chat error:", err);
+        res.status(500).json({ success: false, message: "Failed to clear chat." });
     }
 });
 
@@ -1261,6 +1173,35 @@ io.on("connection", (socket) => {
     socket.on("stop typing", (data) => {
         if (data && data.room) {
             socket.to(data.room).emit("stop typing", data.username);
+        }
+    });
+
+    // Audio & Video Call signaling
+    socket.on("call user", (data) => {
+        if (!data) return;
+        const targetUsername = (data.to || "").toLowerCase();
+        const callPayload = {
+            from: data.from,
+            callerFullName: data.callerFullName || data.from,
+            room: data.room,
+            callType: data.callType || "voice"
+        };
+        if (targetUsername && onlineUsers.has(targetUsername)) {
+            const socketIds = onlineUsers.get(targetUsername);
+            socketIds.forEach(sId => io.to(sId).emit("incoming call", callPayload));
+        } else if (data.room) {
+            socket.to(data.room).emit("incoming call", callPayload);
+        }
+    });
+
+    socket.on("end call", (data) => {
+        if (!data) return;
+        const targetUsername = (data.to || "").toLowerCase();
+        if (targetUsername && onlineUsers.has(targetUsername)) {
+            const socketIds = onlineUsers.get(targetUsername);
+            socketIds.forEach(sId => io.to(sId).emit("call ended", { room: data.room }));
+        } else if (data.room) {
+            socket.to(data.room).emit("call ended", { room: data.room });
         }
     });
 

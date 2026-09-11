@@ -79,11 +79,6 @@
           <a href="javascript:void(0)">All Status Updates</a>
         </li>
 
-        <li onclick="openNewGroupModal(); uncheckSidebar();">
-          <i class="fa-solid fa-users"></i>
-          <a href="javascript:void(0)">New Group</a>
-        </li>
-
         <li onclick="openContactModal(); uncheckSidebar();">
           <i class="fa-solid fa-user-plus"></i>
           <a href="javascript:void(0)">New Contact</a>
@@ -122,14 +117,8 @@
         <h2>Chats</h2>
         <div style="display: flex; gap: 14px; align-items: center;">
           <i class="fa-solid fa-circle-notch" onclick="openCreateStatusModal()" style="cursor: pointer; color: var(--primary-accent); font-size: 16px;" title="New Status"></i>
-          <i class="fa-solid fa-users" onclick="openNewGroupModal()" style="cursor: pointer; color: var(--primary-accent); font-size: 16px;" title="New Group"></i>
           <i class="fa-solid fa-user-plus" onclick="openContactModal()" style="cursor: pointer; color: var(--primary-accent); font-size: 16px;" title="Choose to Chat"></i>
         </div>
-      </div>
-      <div class="chat-type-tabs">
-        <button type="button" class="type-tab-btn active" onclick="switchChatFilter('all', this)">All</button>
-        <button type="button" class="type-tab-btn" onclick="switchChatFilter('direct', this)">Direct</button>
-        <button type="button" class="type-tab-btn" onclick="switchChatFilter('groups', this)">Groups</button>
       </div>
       <div class="search-bar-wrap">
         <i class="fa-solid fa-magnifying-glass"></i>
@@ -181,8 +170,8 @@
         <button type="button" class="chat-back-btn" id="chatBackBtn" onclick="closeActiveChat()" title="Back to contacts">
           <i class="fa-solid fa-arrow-left"></i>
         </button>
-        <div class="chat-header-avatar" id="chatHeaderAvatar">?</div>
-        <div class="chat-header-meta">
+        <div class="chat-header-avatar" id="chatHeaderAvatar" onclick="openRecipientProfileModal()" style="cursor: pointer;" title="View contact info">?</div>
+        <div class="chat-header-meta" onclick="openRecipientProfileModal()" style="cursor: pointer;" title="View contact info">
           <h3 id="chatHeaderName">Contact Name</h3>
           <div class="chat-header-status" id="chatHeaderStatus">
             <span class="status-dot online" id="chatHeaderDot"></span>
@@ -190,11 +179,46 @@
           </div>
         </div>
         <div class="chat-header-actions">
-          <button type="button" class="header-action-btn" id="deleteContactBtn" onclick="triggerHeaderDeleteContact()" title="Delete contact & chat history">
-            <i class="fa-regular fa-trash-can"></i>
+          <button type="button" class="header-action-btn" id="videoCallBtn" onclick="startCall('video')" title="Video call">
+            <i class="fa-solid fa-video"></i>
           </button>
+          <button type="button" class="header-action-btn" id="voiceCallBtn" onclick="startCall('voice')" title="Voice call">
+            <i class="fa-solid fa-phone"></i>
+          </button>
+          <button type="button" class="header-action-btn" id="searchChatBtn" onclick="toggleInChatSearch()" title="Search messages">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </button>
+          <div class="chat-header-menu-wrap" style="position: relative;">
+            <button type="button" class="header-action-btn" id="chatMenuBtn" onclick="toggleChatDropdown(event)" title="More options">
+              <i class="fa-solid fa-ellipsis-vertical"></i>
+            </button>
+            <div class="chat-dropdown-menu" id="chatDropdownMenu" style="display: none;">
+              <div class="chat-dropdown-item" onclick="openRecipientProfileModal()">
+                <i class="fa-solid fa-user"></i> <span>Contact info</span>
+              </div>
+              <div class="chat-dropdown-item" onclick="toggleInChatSearch()">
+                <i class="fa-solid fa-magnifying-glass"></i> <span>Search messages</span>
+              </div>
+              <div class="chat-dropdown-item" onclick="openClearChatModal()">
+                <i class="fa-solid fa-broom"></i> <span>Clear messages</span>
+              </div>
+              <div class="chat-dropdown-item danger" onclick="triggerHeaderDeleteContact()">
+                <i class="fa-regular fa-trash-can"></i> <span>Delete contact</span>
+              </div>
+            </div>
+          </div>
         </div>
       </header>
+
+      <!-- Expandable In-Chat Search Bar -->
+      <div class="in-chat-search-bar" id="inChatSearchBar" style="display: none;">
+        <i class="fa-solid fa-magnifying-glass search-bar-icon"></i>
+        <input type="text" id="inChatSearchInput" placeholder="Search in this conversation..." oninput="handleInChatSearch(this.value)">
+        <span class="search-match-count" id="searchMatchCount">0 matches</span>
+        <button type="button" class="search-nav-btn" onclick="navSearchMatch(-1)" title="Previous match"><i class="fa-solid fa-chevron-up"></i></button>
+        <button type="button" class="search-nav-btn" onclick="navSearchMatch(1)" title="Next match"><i class="fa-solid fa-chevron-down"></i></button>
+        <button type="button" class="search-close-btn" onclick="closeInChatSearch()" title="Close search"><i class="fa-solid fa-xmark"></i></button>
+      </div>
 
       <div class="messages-container" id="messagesContainer"></div>
 
@@ -230,9 +254,9 @@
         <button type="button" class="chat-tool-btn" id="attachBtn" onclick="const fi = document.getElementById('mediaFileInput'); fi.value = ''; fi.click();" title="Attach photo or file">
           <i class="fa-solid fa-paperclip"></i>
         </button>
-        <input type="text" id="msgInput" class="input-field" placeholder="Type a message..." autocomplete="off">
-        <button type="submit" class="send-button" title="Send message">
-          <i class="fa-solid fa-paper-plane"></i>
+        <input type="text" id="msgInput" class="input-field" placeholder="Type a message..." autocomplete="off" oninput="handleMsgInputChange(this)">
+        <button type="submit" class="send-button" id="sendBtn" title="Send or Voice note">
+          <i class="fa-solid fa-microphone" id="sendBtnIcon"></i>
         </button>
       </form>
     </div>
@@ -349,19 +373,92 @@
   </div>
 </div>
 
-<div id="newGroupModal" class="modal-overlay">
-  <div class="modal-box" style="max-width: 440px;">
+<div id="callModal" class="modal-overlay call-modal-overlay">
+  <div class="call-modal-box">
+    <div class="call-avatar-wrap">
+      <div class="call-avatar-pulse"></div>
+      <div class="avatar-badge call-avatar" id="callAvatar">?</div>
+    </div>
+    <h3 id="callContactName" class="call-contact-name">Contact Name</h3>
+    <p id="callStatusText" class="call-status-text">Calling...</p>
+    <div id="callTimer" class="call-timer" style="display: none;">00:00</div>
+
+    <div class="call-controls">
+      <button type="button" class="call-ctrl-btn" id="callMuteBtn" onclick="toggleCallMute()" title="Mute Microphone">
+        <i class="fa-solid fa-microphone"></i>
+      </button>
+      <button type="button" class="call-ctrl-btn" id="callVideoBtn" onclick="toggleCallVideo()" title="Camera On/Off">
+        <i class="fa-solid fa-video"></i>
+      </button>
+      <button type="button" class="call-ctrl-btn call-end-btn" onclick="endCall()" title="End Call">
+        <i class="fa-solid fa-phone-slash"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="clearChatModal" class="modal-overlay">
+  <div class="modal-box" style="max-width: 380px; text-align: center;">
     <div class="modal-header">
-      <h3><i class="fa-solid fa-users" style="color: var(--primary-accent); margin-right: 8px;"></i>Create New Group</h3>
+      <h3 style="margin: auto; color: #dc2626;"><i class="fa-solid fa-broom" style="margin-right: 8px;"></i>Clear Chat</h3>
       <button class="modal-close" onclick="closeModals()">&times;</button>
     </div>
-    <div class="input-card" style="margin-bottom: 14px; background: var(--search-bg); border-color: var(--border-color);">
-      <label style="font-size: 12px; color: var(--text-secondary);">Group Name</label>
-      <input type="text" id="groupNameInput" placeholder="e.g. Project Team, Friends" style="background: transparent; color: var(--text-primary); border: 1px solid var(--border-color); font-size: 13.5px; margin-top: 4px;">
+    <p style="color: var(--text-secondary); font-size: 13.5px; line-height: 1.5; margin: 14px 0 20px 0;">
+      Are you sure you want to clear all messages in this conversation?
+    </p>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <button type="button" class="modal-btn modal-btn-danger" style="margin-top: 0;" onclick="confirmClearChat()">Clear Messages</button>
+      <button type="button" class="modal-btn" style="background: transparent; color: var(--text-secondary); padding: 8px;" onclick="closeModals()">Cancel</button>
     </div>
-    <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px; display: block;">Select Members</label>
-    <div id="groupMembersList" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px;"></div>
-    <button type="button" class="modal-btn" onclick="submitCreateGroup()">Create Group</button>
+  </div>
+</div>
+
+<div id="contactInfoModal" class="modal-overlay">
+  <div class="modal-box" style="max-width: 380px; text-align: center;">
+    <div class="modal-header">
+      <h3 style="margin: auto;">Contact Info</h3>
+      <button class="modal-close" onclick="closeModals()">&times;</button>
+    </div>
+    <div style="margin: 16px auto 12px auto; width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; color: #fff; overflow: hidden;" id="contactInfoAvatar">
+      ?
+    </div>
+    <h4 id="contactInfoName" style="font-size: 17px; margin-bottom: 4px; color: var(--text-primary);">-</h4>
+    <p id="contactInfoUsername" style="color: var(--text-secondary); font-size: 13px; margin-bottom: 14px;">@-</p>
+    <div style="text-align: left; padding: 12px 14px; background: var(--search-bg); border-radius: 12px; margin-bottom: 12px;">
+      <span style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary); font-weight: 600; display: block; margin-bottom: 4px;">About</span>
+      <p id="contactInfoBio" style="font-size: 13.5px; color: var(--text-primary); margin: 0; line-height: 1.4;">-</p>
+    </div>
+    <div style="text-align: left; padding: 12px 14px; background: var(--search-bg); border-radius: 12px; margin-bottom: 20px;">
+      <span style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary); font-weight: 600; display: block; margin-bottom: 4px;">Email</span>
+      <p id="contactInfoEmail" style="font-size: 13px; color: var(--text-primary); margin: 0;">-</p>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <button type="button" class="modal-btn" style="flex: 1;" onclick="closeModals(); startCall('voice');">
+        <i class="fa-solid fa-phone" style="margin-right: 6px;"></i> Call
+      </button>
+      <button type="button" class="modal-btn" style="flex: 1;" onclick="closeModals(); startCall('video');">
+        <i class="fa-solid fa-video" style="margin-right: 6px;"></i> Video
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="incomingCallModal" class="modal-overlay call-modal-overlay">
+  <div class="call-modal-box">
+    <div class="call-avatar-wrap">
+      <div class="call-avatar-pulse"></div>
+      <div class="avatar-badge call-avatar" id="incomingCallAvatar">?</div>
+    </div>
+    <h3 id="incomingCallName" class="call-contact-name">Incoming Call</h3>
+    <p id="incomingCallType" class="call-status-text">Incoming audio call...</p>
+    <div class="call-controls" style="gap: 24px;">
+      <button type="button" class="call-ctrl-btn" style="background: #25d366; color: #fff; width: 56px; height: 56px; font-size: 22px; box-shadow: 0 4px 14px rgba(37, 211, 102, 0.4);" onclick="acceptIncomingCall()" title="Accept Call">
+        <i class="fa-solid fa-phone"></i>
+      </button>
+      <button type="button" class="call-ctrl-btn call-end-btn" onclick="declineIncomingCall()" title="Decline Call">
+        <i class="fa-solid fa-phone-slash"></i>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -582,19 +679,15 @@ function getAvatarGradient(name) {
 }
 
 let allUsers = [];
-let allGroups = [];
 let allStatuses = [];
 let onlineUserList = ["chatnut"];
 let lastMessagesMap = {};
-let currentFilter = "all"; // 'all' | 'direct' | 'groups'
 
 // Active conversation state
-let activeChatType = "direct"; // 'direct' | 'group'
+let activeChatType = "direct";
 let activeRecipientUsername = null;
 let activeRecipientDisplayName = null;
 let activeRecipientAvatar = null;
-let activeGroupId = null;
-let activeGroupObj = null;
 let activeRoom = null;
 
 // Target for delete contact modal
@@ -791,14 +884,6 @@ function openContactModal() {
     filterUsers();
 }
 
-// Filter tabs switcher
-function switchChatFilter(filter, btn) {
-    currentFilter = filter;
-    document.querySelectorAll(".type-tab-btn").forEach(b => b.classList.remove("active"));
-    if (btn) btn.classList.add("active");
-    renderContacts();
-}
-
 // Online status updates from server
 socket.on("online users", (users) => {
     onlineUserList = (users || []).map(u => u.toLowerCase());
@@ -824,13 +909,12 @@ function fetchWithTimeout(url, options = {}, timeoutMs = 4000) {
         });
 }
 
-// Load contacts, groups, statuses, and last messages
+// Load contacts, statuses, and last messages
 async function loadData() {
     try {
-        const [usersRes, lastMsgRes, groupsRes, statusesRes] = await Promise.all([
+        const [usersRes, lastMsgRes, statusesRes] = await Promise.all([
             fetchWithTimeout(`${API_BASE}/api/users`),
             fetchWithTimeout(`${API_BASE}/api/last-messages?user=${encodeURIComponent(me)}`),
-            fetchWithTimeout(`${API_BASE}/api/groups`),
             fetchWithTimeout(`${API_BASE}/api/statuses`)
         ]);
 
@@ -839,9 +923,6 @@ async function loadData() {
         }
         if (lastMsgRes && typeof lastMsgRes === "object" && !Array.isArray(lastMsgRes)) {
             lastMessagesMap = lastMsgRes;
-        }
-        if (Array.isArray(groupsRes)) {
-            allGroups = groupsRes;
         }
         if (Array.isArray(statusesRes)) {
             allStatuses = statusesRes;
@@ -878,14 +959,13 @@ async function loadData() {
     }
 }
 
-// Render Left Panel Contacts List (Filtered by All, Direct, Groups)
+// Render Left Panel Contacts List
 function renderContacts() {
     const container = document.getElementById("contactsContainer");
     if (!container) return;
 
     const deletedContacts = JSON.parse(localStorage.getItem("deletedContacts_" + me) || "[]");
     const others = (allUsers || []).filter(u => u && u.username && u.username.toLowerCase() !== me.toLowerCase() && !deletedContacts.includes(u.username.toLowerCase()));
-    const myGroups = (allGroups || []).filter(g => g && (!g.members || g.members.length === 0 || (g.id && g.id.startsWith("group-")) || g.members.some(m => (m || "").toLowerCase() === me.toLowerCase())));
 
     const searchVal = (document.getElementById("contactSearchInput")?.value || "").trim().toLowerCase();
 
@@ -893,20 +973,14 @@ function renderContacts() {
     const filteredUsers = others.filter(u =>
         (u.username || "").toLowerCase().includes(searchVal) || (u.fullname && u.fullname.toLowerCase().includes(searchVal))
     );
-    const filteredGroups = myGroups.filter(g =>
-        (g.name || "").toLowerCase().includes(searchVal) || (g.sublabel && g.sublabel.toLowerCase().includes(searchVal))
-    );
-
-    let showUsers = currentFilter === "all" || currentFilter === "direct";
-    let showGroups = currentFilter === "all" || currentFilter === "groups";
 
     container.innerHTML = "";
 
-    if ((!showUsers || filteredUsers.length === 0) && (!showGroups || filteredGroups.length === 0)) {
+    if (filteredUsers.length === 0) {
         container.innerHTML = `
             <div style="text-align: center; color: #888; font-size: 13px; padding: 40px 10px;">
                 <p>No conversations found.</p>
-                <small>Use + buttons above to add a contact or group!</small>
+                <small>Click "Choose to Chat" to start messaging friends!</small>
             </div>
         `;
         return;
@@ -914,93 +988,48 @@ function renderContacts() {
 
     const conversationList = [];
 
-    // Add groups
-    if (showGroups) {
-        filteredGroups.forEach(g => {
-            const room = g.id;
-            const lastMsgObj = lastMessagesMap[room];
-            let msgText = g.lastMsgSnippet || `${(g.members || []).length} members`;
-            let timeText = g.lastMsgTime || "";
-            let hasTicks = false;
-            let isRead = false;
-            let lastMsgTimestamp = 0;
+    // Add direct users
+    filteredUsers.forEach(u => {
+        const displayName = u.fullname || u.username;
+        const room = [me.toLowerCase(), u.username.toLowerCase()].sort().join("--");
+        const lastMsgObj = lastMessagesMap[room];
+        let msgText = u.bio || "No messages yet";
+        let timeText = u.defaultTime || "";
+        let hasTicks = !!u.hasTicks;
+        let isRead = !!u.isRead;
+        let hasDoc = !!u.hasDoc;
+        let lastMsgTimestamp = 0;
 
-            if (lastMsgObj) {
-                msgText = (lastMsgObj.username === me ? "You: " : `${lastMsgObj.username}: `) + (lastMsgObj.message || "");
-                const d = new Date(lastMsgObj.time);
-                timeText = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                lastMsgTimestamp = d.getTime();
-                if (lastMsgObj.username === me) {
-                    hasTicks = true;
-                    isRead = true;
-                }
-            } else if (g.updatedAt) {
-                lastMsgTimestamp = new Date(g.updatedAt).getTime();
+        if (lastMsgObj) {
+            msgText = (lastMsgObj.username === me ? "You: " : "") + (lastMsgObj.message || "");
+            const d = new Date(lastMsgObj.time);
+            timeText = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            lastMsgTimestamp = d.getTime();
+            if (lastMsgObj.username === me) {
+                hasTicks = true;
+                isRead = true;
             }
+        } else if (u.updatedAt) {
+            lastMsgTimestamp = new Date(u.updatedAt).getTime();
+        }
 
-            conversationList.push({
-                type: "group",
-                id: g.id,
-                name: g.name,
-                sublabel: g.sublabel || null,
-                timeText: timeText,
-                msgText: msgText,
-                pinned: !!g.pinned,
-                muted: !!g.muted,
-                hasTicks: hasTicks,
-                isRead: isRead,
-                hasDoc: false,
-                hasPhoto: false,
-                lastMsgTimestamp: lastMsgTimestamp,
-                groupObj: g
-            });
+        conversationList.push({
+            type: "direct",
+            id: u.username,
+            name: displayName,
+            sublabel: null,
+            timeText: timeText,
+            msgText: msgText,
+            pinned: !!u.pinned,
+            muted: false,
+            hasTicks: hasTicks,
+            isRead: isRead,
+            hasDoc: hasDoc,
+            hasPhoto: false,
+            lastMsgTimestamp: lastMsgTimestamp,
+            userObj: u
         });
-    }
-
-    // Add users
-    if (showUsers) {
-        filteredUsers.forEach(u => {
-            const displayName = u.fullname || u.username;
-            const room = [me.toLowerCase(), u.username.toLowerCase()].sort().join("--");
-            const lastMsgObj = lastMessagesMap[room];
-            let msgText = u.bio || "No messages yet";
-            let timeText = u.defaultTime || "";
-            let hasTicks = !!u.hasTicks;
-            let isRead = !!u.isRead;
-            let hasDoc = !!u.hasDoc;
-            let lastMsgTimestamp = 0;
-
-            if (lastMsgObj) {
-                msgText = (lastMsgObj.username === me ? "You: " : "") + (lastMsgObj.message || "");
-                const d = new Date(lastMsgObj.time);
-                timeText = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                lastMsgTimestamp = d.getTime();
-                if (lastMsgObj.username === me) {
-                    hasTicks = true;
-                    isRead = true;
-                }
-            } else if (u.updatedAt) {
-                lastMsgTimestamp = new Date(u.updatedAt).getTime();
-            }
-
-            conversationList.push({
-                type: "direct",
-                id: u.username,
-                name: displayName,
-                sublabel: null,
-                timeText: timeText,
-                msgText: msgText,
-                pinned: !!u.pinned,
-                muted: false,
-                hasTicks: hasTicks,
-                isRead: isRead,
-                hasDoc: hasDoc,
-                hasPhoto: false,
-                lastMsgTimestamp: lastMsgTimestamp,
-                userObj: u
-            });
-        });
-    }
+    });
 
     // Dynamic sorting: Pinned chats on top, followed by most recent activity timestamp
     conversationList.sort((a, b) => {
@@ -1017,65 +1046,43 @@ function renderContacts() {
         const card = document.createElement("div");
         card.className = "contact-card";
 
-        const isActive = (item.type === "group" && activeChatType === "group" && activeGroupId === item.id) ||
-                         (item.type === "direct" && activeChatType === "direct" && activeRecipientUsername && activeRecipientUsername.toLowerCase() === item.id.toLowerCase());
-
+        const isActive = activeRecipientUsername && activeRecipientUsername.toLowerCase() === item.id.toLowerCase();
         if (isActive) {
             card.classList.add("active-contact");
         }
 
         // Build avatar HTML
         let avatarHtml = "";
-        if (item.type === "group") {
-            const g = item.groupObj;
-            if (g.subBadgeIcon) {
-                avatarHtml = `
-                    <div class="avatar-badge group-composite" style="background: ${g.groupColor || '#1e293b'};">
-                        <i class="${g.groupIcon || 'fa-solid fa-users'}" style="color: ${g.groupIconColor || '#38bdf8'}; font-size: 19px;"></i>
-                        <span class="avatar-sub-badge" style="background: var(--card-bg);">
-                            <i class="${g.subBadgeIcon}" style="color: ${g.subBadgeColor || '#94a3b8'}; font-size: 9px;"></i>
-                        </span>
-                    </div>
-                `;
-            } else {
-                avatarHtml = `
-                    <div class="avatar-badge" style="background: linear-gradient(135deg, #128c7e, #075e54);">
-                        <i class="fa-solid fa-users" style="font-size: 18px;"></i>
-                    </div>
-                `;
-            }
+        const u = item.userObj;
+        const isOnline = (u.username || "").toLowerCase() === "chatnut" || onlineUserList.includes((u.username || "").toLowerCase());
+        const userStatus = (allStatuses || []).find(s => s && (s.username || "").toLowerCase() === (u.username || "").toLowerCase());
+        const hasStatus = !!userStatus;
+
+        let badgeContent = "";
+        let badgeBg = getAvatarGradient(u.username || "user");
+        let badgeStyle = `background: ${badgeBg};`;
+
+        if (u.avatarUrl) {
+            badgeContent = `<img src="${u.avatarUrl}" class="avatar-img" alt="${escapeHtml(item.name)}">`;
+        } else if (u.avatarIcon) {
+            badgeBg = u.avatarColor || "#4c1d42";
+            badgeStyle = `background: ${badgeBg};`;
+            badgeContent = `<i class="${u.avatarIcon}" style="color: ${u.avatarIconColor || '#f472b6'}; font-size: 19px;"></i>`;
+        } else if (u.avatarInitial) {
+            badgeBg = u.avatarColor || "#025144";
+            badgeStyle = `background: ${badgeBg};`;
+            badgeContent = `<span style="color: ${u.avatarTextColor || '#25d366'}; font-size: 21px; font-weight: 700;">${u.avatarInitial}</span>`;
         } else {
-            const u = item.userObj;
-            const isOnline = (u.username || "").toLowerCase() === "chatnut" || onlineUserList.includes((u.username || "").toLowerCase());
-            const userStatus = (allStatuses || []).find(s => s && (s.username || "").toLowerCase() === (u.username || "").toLowerCase());
-            const hasStatus = !!userStatus;
-
-            let badgeContent = "";
-            let badgeBg = getAvatarGradient(u.username || "user");
-            let badgeStyle = `background: ${badgeBg};`;
-
-            if (u.avatarUrl) {
-                badgeContent = `<img src="${u.avatarUrl}" class="avatar-img" alt="${escapeHtml(item.name)}">`;
-            } else if (u.avatarIcon) {
-                badgeBg = u.avatarColor || "#4c1d42";
-                badgeStyle = `background: ${badgeBg};`;
-                badgeContent = `<i class="${u.avatarIcon}" style="color: ${u.avatarIconColor || '#f472b6'}; font-size: 19px;"></i>`;
-            } else if (u.avatarInitial) {
-                badgeBg = u.avatarColor || "#025144";
-                badgeStyle = `background: ${badgeBg};`;
-                badgeContent = `<span style="color: ${u.avatarTextColor || '#25d366'}; font-size: 21px; font-weight: 700;">${u.avatarInitial}</span>`;
-            } else {
-                const initial = item.name.charAt(0).toUpperCase();
-                badgeContent = initial;
-            }
-
-            avatarHtml = `
-                <div class="avatar-badge ${hasStatus ? 'has-status' : ''}" style="${badgeStyle}" title="${hasStatus ? 'Click to view status' : ''}">
-                    ${badgeContent}
-                    <span class="online-status-dot ${isOnline ? 'online' : 'offline'}"></span>
-                </div>
-            `;
+            const initial = item.name.charAt(0).toUpperCase();
+            badgeContent = initial;
         }
+
+        avatarHtml = `
+            <div class="avatar-badge ${hasStatus ? 'has-status' : ''}" style="${badgeStyle}" title="${hasStatus ? 'Click to view status' : ''}">
+                ${badgeContent}
+                <span class="online-status-dot ${isOnline ? 'online' : 'offline'}"></span>
+            </div>
+        `;
 
         // Build Title & Subtitle HTML
         let topHtml = "";
@@ -1135,30 +1142,24 @@ function renderContacts() {
                     </div>
                 </div>
             </div>
-            ${item.type === "direct" ? `
             <button type="button" class="contact-card-delete" onclick="event.stopPropagation(); openDeleteContactModal('${escapeHtml(item.id)}', '${escapeHtml(item.name)}')" title="Delete chat">
                 <i class="fa-regular fa-trash-can"></i>
             </button>
-            ` : ''}
         `;
 
-        if (item.type === "group") {
-            card.onclick = () => selectGroup(item.groupObj);
-        } else {
-            const u = item.userObj;
-            // If user has a status, clicking avatar views status
-            const userStatus = (allStatuses || []).find(s => s && (s.username || "").toLowerCase() === (u.username || "").toLowerCase());
-            if (userStatus) {
-                const av = card.querySelector(".avatar-badge");
-                if (av) {
-                    av.onclick = (e) => {
-                        e.stopPropagation();
-                        viewStatus(userStatus.id);
-                    };
-                }
+        const u = item.userObj;
+        // If user has a status, clicking avatar views status
+        const userStatus = (allStatuses || []).find(s => s && (s.username || "").toLowerCase() === (u.username || "").toLowerCase());
+        if (userStatus) {
+            const av = card.querySelector(".avatar-badge");
+            if (av) {
+                av.onclick = (e) => {
+                    e.stopPropagation();
+                    viewStatus(userStatus.id);
+                };
             }
-            card.onclick = () => selectContact(u.username, item.name, u.avatarUrl);
         }
+        card.onclick = () => selectContact(u.username, item.name, u.avatarUrl);
 
         container.appendChild(card);
     });
@@ -1243,6 +1244,7 @@ function selectContact(targetUsername, targetDisplayName, targetAvatar) {
     const initial = activeRecipientDisplayName.charAt(0).toUpperCase();
     const targetUserObj = allUsers.find(u => (u.username || "").toLowerCase() === (targetUsername || "").toLowerCase());
     const finalAvatar = targetAvatar || (targetUserObj && targetUserObj.avatarUrl);
+    const avatarEl = document.getElementById("chatHeaderAvatar");
     if (avatarEl) {
         if (finalAvatar) {
             avatarEl.innerHTML = `<img src="${finalAvatar}" class="avatar-img" alt="avatar">`;
@@ -1259,10 +1261,23 @@ function selectContact(targetUsername, targetDisplayName, targetAvatar) {
         }
     }
 
+    // Reset header dropdown and in-chat search
+    const dropdown = document.getElementById("chatHeaderDropdown");
+    if (dropdown) dropdown.style.display = "none";
+    closeInChatSearch();
+
+    // Reset send button icon to microphone
+    const sendIcon = document.getElementById("sendBtnIcon");
+    if (sendIcon) sendIcon.className = "fa-solid fa-microphone";
+    const sendBtn = document.getElementById("sendBtn");
+    if (sendBtn) {
+        sendBtn.title = "Voice note";
+        sendBtn.classList.remove("send-active");
+    }
+
     const delBtn = document.getElementById("deleteContactBtn");
     if (delBtn) {
-        delBtn.style.display = "flex";
-        delBtn.title = "Delete contact & chat history";
+        delBtn.style.display = "none";
     }
 
     updateChatHeaderStatus();
@@ -1278,64 +1293,6 @@ function selectContact(targetUsername, targetDisplayName, targetAvatar) {
     }
 }
 
-// Select group chat
-function selectGroup(group) {
-    if (!group) return;
-
-    activeChatType = "group";
-    activeGroupId = group.id;
-    activeGroupObj = group;
-    activeRecipientUsername = null;
-    activeRecipientDisplayName = group.name;
-    activeRecipientAvatar = null;
-    activeRoom = group.id;
-
-    renderContacts();
-
-    const emptyChat = document.getElementById("emptyChatView");
-    if (emptyChat) emptyChat.style.display = "none";
-
-    const chatWrapper = document.getElementById("activeChatWrapper");
-    if (chatWrapper) chatWrapper.style.display = "flex";
-
-    const chatPanel = document.getElementById("chatPanel");
-    if (chatPanel) chatPanel.classList.add("mobile-active");
-
-    const nameEl = document.getElementById("chatHeaderName");
-    if (nameEl) nameEl.textContent = group.name;
-
-    const avatarEl = document.getElementById("chatHeaderAvatar");
-    if (avatarEl) {
-        if (group.groupIcon) {
-            avatarEl.innerHTML = `<i class="${group.groupIcon}" style="color: ${group.groupIconColor || '#38bdf8'}; font-size: 18px;"></i>`;
-            avatarEl.style.background = group.groupColor || "#1e293b";
-        } else {
-            avatarEl.innerHTML = `<i class="fa-solid fa-users" style="font-size: 16px;"></i>`;
-            avatarEl.style.background = "linear-gradient(135deg, #128c7e, #075e54)";
-        }
-    }
-
-    const dot = document.getElementById("chatHeaderDot");
-    const text = document.getElementById("chatHeaderStatusText");
-    if (dot && text) {
-        dot.className = "status-dot online";
-        text.textContent = `${(group.members || []).length} members`;
-    }
-
-    const delBtn = document.getElementById("deleteContactBtn");
-    if (delBtn) {
-        delBtn.style.display = "none";
-    }
-
-    socket.emit("join room", { room: activeRoom, user: me });
-
-    const input = document.getElementById("msgInput");
-    if (input) {
-        input.value = "";
-        input.focus();
-    }
-}
-
 function closeActiveChat() {
     activeRecipientUsername = null;
     activeRecipientDisplayName = null;
@@ -1343,6 +1300,10 @@ function closeActiveChat() {
     activeGroupId = null;
     activeGroupObj = null;
     activeRoom = null;
+
+    closeInChatSearch();
+    const dropdown = document.getElementById("chatHeaderDropdown");
+    if (dropdown) dropdown.style.display = "none";
 
     const chatWrapper = document.getElementById("activeChatWrapper");
     if (chatWrapper) chatWrapper.style.display = "none";
@@ -1357,16 +1318,6 @@ function closeActiveChat() {
 }
 
 function updateChatHeaderStatus() {
-    if (activeChatType === "group") {
-        const dot = document.getElementById("chatHeaderDot");
-        const text = document.getElementById("chatHeaderStatusText");
-        if (dot && text && activeGroupObj) {
-            dot.className = "status-dot online";
-            text.textContent = `${(activeGroupObj.members || []).length} members`;
-        }
-        return;
-    }
-
     if (!activeRecipientUsername) return;
     const isOnline = activeRecipientUsername.toLowerCase() === "chatnut" || onlineUserList.includes(activeRecipientUsername.toLowerCase());
     const dot = document.getElementById("chatHeaderDot");
@@ -1377,6 +1328,491 @@ function updateChatHeaderStatus() {
         text.textContent = isOnline ? "Online" : "Offline";
     }
 }
+
+// ---------------- CALLING SYSTEM ----------------
+let activeCall = null;
+let callTimerInterval = null;
+let callElapsedSeconds = 0;
+let isCallMuted = false;
+let isCallVideoOff = false;
+let ringToneInterval = null;
+let currentAudioCtx = null;
+let incomingCallData = null;
+
+function playRingTone() {
+    stopRingTone();
+    try {
+        currentAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function ringBurst() {
+            if (!currentAudioCtx) return;
+            const osc1 = currentAudioCtx.createOscillator();
+            const osc2 = currentAudioCtx.createOscillator();
+            const gain = currentAudioCtx.createGain();
+
+            osc1.type = "sine";
+            osc2.type = "sine";
+            osc1.frequency.setValueAtTime(440, currentAudioCtx.currentTime);
+            osc2.frequency.setValueAtTime(480, currentAudioCtx.currentTime);
+
+            gain.gain.setValueAtTime(0.06, currentAudioCtx.currentTime);
+            gain.gain.setValueAtTime(0.06, currentAudioCtx.currentTime + 1.2);
+            gain.gain.exponentialRampToValueAtTime(0.0001, currentAudioCtx.currentTime + 1.4);
+
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(currentAudioCtx.destination);
+
+            osc1.start(currentAudioCtx.currentTime);
+            osc2.start(currentAudioCtx.currentTime);
+            osc1.stop(currentAudioCtx.currentTime + 1.4);
+            osc2.stop(currentAudioCtx.currentTime + 1.4);
+        }
+        ringBurst();
+        ringToneInterval = setInterval(ringBurst, 3000);
+    } catch (e) {
+        console.warn("Ring audio unavailable:", e);
+    }
+}
+
+function stopRingTone() {
+    if (ringToneInterval) {
+        clearInterval(ringToneInterval);
+        ringToneInterval = null;
+    }
+    if (currentAudioCtx) {
+        try { currentAudioCtx.close(); } catch (e) {}
+        currentAudioCtx = null;
+    }
+}
+
+function startCall(type) {
+    if (!activeRecipientUsername) {
+        showToastBanner("Select a contact", "Please choose a contact to call.");
+        return;
+    }
+
+    activeCall = {
+        type: type,
+        targetUsername: activeRecipientUsername,
+        targetDisplayName: activeRecipientDisplayName,
+        state: "calling"
+    };
+
+    const callModal = document.getElementById("callModal");
+    const nameEl = document.getElementById("callContactName");
+    const avatarEl = document.getElementById("callAvatar");
+    const statusEl = document.getElementById("callStatusText");
+    const timerEl = document.getElementById("callTimer");
+
+    if (nameEl) nameEl.textContent = activeRecipientDisplayName;
+    if (statusEl) statusEl.textContent = type === "video" ? "Starting video call..." : "Calling...";
+    if (timerEl) {
+        timerEl.style.display = "none";
+        timerEl.textContent = "00:00";
+    }
+
+    if (avatarEl) {
+        const uObj = allUsers.find(u => u.username.toLowerCase() === activeRecipientUsername.toLowerCase());
+        if (uObj && uObj.avatarUrl) {
+            avatarEl.innerHTML = `<img src="${uObj.avatarUrl}" class="avatar-img" alt="avatar">`;
+        } else {
+            avatarEl.textContent = activeRecipientDisplayName.charAt(0).toUpperCase();
+            avatarEl.style.background = getAvatarGradient(activeRecipientUsername);
+        }
+    }
+
+    isCallMuted = false;
+    isCallVideoOff = false;
+    updateCallControlBtns();
+
+    if (callModal) callModal.style.display = "flex";
+    playRingTone();
+
+    // Signal call via socket
+    socket.emit("call user", {
+        to: activeRecipientUsername,
+        from: me,
+        callerFullName: myFullName || me,
+        callType: type,
+        room: activeRoom
+    });
+
+    // Simulate connection after ringing
+    setTimeout(() => {
+        if (!activeCall || activeCall.state !== "calling") return;
+        if (statusEl) statusEl.textContent = "Ringing...";
+    }, 2000);
+
+    setTimeout(() => {
+        if (!activeCall || activeCall.state !== "calling") return;
+        activeCall.state = "connected";
+        stopRingTone();
+        if (statusEl) statusEl.textContent = type === "video" ? "Video Connected" : "Call Connected";
+        if (timerEl) timerEl.style.display = "block";
+
+        callElapsedSeconds = 0;
+        if (callTimerInterval) clearInterval(callTimerInterval);
+        callTimerInterval = setInterval(() => {
+            callElapsedSeconds++;
+            const mins = String(Math.floor(callElapsedSeconds / 60)).padStart(2, "0");
+            const secs = String(callElapsedSeconds % 60).padStart(2, "0");
+            if (timerEl) timerEl.textContent = `${mins}:${secs}`;
+        }, 1000);
+    }, 4500);
+}
+
+function endCall(notify = true) {
+    stopRingTone();
+    if (callTimerInterval) {
+        clearInterval(callTimerInterval);
+        callTimerInterval = null;
+    }
+
+    const callModal = document.getElementById("callModal");
+    if (callModal) callModal.style.display = "none";
+
+    const incomingModal = document.getElementById("incomingCallModal");
+    if (incomingModal) incomingModal.style.display = "none";
+
+    if (notify && activeCall) {
+        socket.emit("end call", {
+            to: activeCall.targetUsername,
+            from: me,
+            room: activeRoom
+        });
+    }
+
+    activeCall = null;
+    incomingCallData = null;
+    callElapsedSeconds = 0;
+}
+
+function toggleCallMute() {
+    isCallMuted = !isCallMuted;
+    updateCallControlBtns();
+    showToastBanner(isCallMuted ? "Muted" : "Unmuted", isCallMuted ? "Microphone muted" : "Microphone active");
+}
+
+function toggleCallVideo() {
+    isCallVideoOff = !isCallVideoOff;
+    updateCallControlBtns();
+    showToastBanner(isCallVideoOff ? "Camera Off" : "Camera On", isCallVideoOff ? "Video is paused" : "Video resumed");
+}
+
+function updateCallControlBtns() {
+    const muteBtn = document.getElementById("callMuteBtn");
+    if (muteBtn) {
+        muteBtn.className = `call-ctrl-btn ${isCallMuted ? 'muted' : ''}`;
+        muteBtn.innerHTML = `<i class="fa-solid fa-microphone${isCallMuted ? '-slash' : ''}"></i>`;
+    }
+
+    const vidBtn = document.getElementById("callVideoBtn");
+    if (vidBtn) {
+        vidBtn.className = `call-ctrl-btn ${isCallVideoOff ? 'muted' : ''}`;
+        vidBtn.innerHTML = `<i class="fa-solid fa-video${isCallVideoOff ? '-slash' : ''}"></i>`;
+    }
+}
+
+// Incoming Call Handler
+socket.on("incoming call", (data) => {
+    if (!data || !data.from || data.from.toLowerCase() === me.toLowerCase()) return;
+    incomingCallData = data;
+
+    const modal = document.getElementById("incomingCallModal");
+    const nameEl = document.getElementById("incomingCallName");
+    const avatarEl = document.getElementById("incomingCallAvatar");
+    const typeEl = document.getElementById("incomingCallType");
+
+    if (nameEl) nameEl.textContent = data.callerFullName || data.from;
+    if (typeEl) typeEl.textContent = data.callType === "video" ? "Incoming video call..." : "Incoming audio call...";
+    if (avatarEl) {
+        const uObj = allUsers.find(u => u.username.toLowerCase() === data.from.toLowerCase());
+        if (uObj && uObj.avatarUrl) {
+            avatarEl.innerHTML = `<img src="${uObj.avatarUrl}" class="avatar-img" alt="avatar">`;
+        } else {
+            avatarEl.textContent = (data.callerFullName || data.from).charAt(0).toUpperCase();
+            avatarEl.style.background = getAvatarGradient(data.from);
+        }
+    }
+
+    playRingTone();
+    if (modal) modal.style.display = "flex";
+});
+
+socket.on("call ended", () => {
+    endCall(false);
+    showToastBanner("Call Ended", "The other person hung up.");
+});
+
+function acceptIncomingCall() {
+    if (!incomingCallData) return;
+    stopRingTone();
+
+    const callerUsername = incomingCallData.from;
+    const callerDisp = incomingCallData.callerFullName || callerUsername;
+    const callType = incomingCallData.callType || "voice";
+
+    const incomingModal = document.getElementById("incomingCallModal");
+    if (incomingModal) incomingModal.style.display = "none";
+
+    activeCall = {
+        type: callType,
+        targetUsername: callerUsername,
+        targetDisplayName: callerDisp,
+        state: "connected"
+    };
+
+    const callModal = document.getElementById("callModal");
+    const nameEl = document.getElementById("callContactName");
+    const avatarEl = document.getElementById("callAvatar");
+    const statusEl = document.getElementById("callStatusText");
+    const timerEl = document.getElementById("callTimer");
+
+    if (nameEl) nameEl.textContent = callerDisp;
+    if (statusEl) statusEl.textContent = callType === "video" ? "Video Connected" : "Call Connected";
+    if (timerEl) {
+        timerEl.style.display = "block";
+        timerEl.textContent = "00:00";
+    }
+
+    if (avatarEl) {
+        const uObj = allUsers.find(u => u.username.toLowerCase() === callerUsername.toLowerCase());
+        if (uObj && uObj.avatarUrl) {
+            avatarEl.innerHTML = `<img src="${uObj.avatarUrl}" class="avatar-img" alt="avatar">`;
+        } else {
+            avatarEl.textContent = callerDisp.charAt(0).toUpperCase();
+            avatarEl.style.background = getAvatarGradient(callerUsername);
+        }
+    }
+
+    isCallMuted = false;
+    isCallVideoOff = false;
+    updateCallControlBtns();
+
+    if (callModal) callModal.style.display = "flex";
+
+    callElapsedSeconds = 0;
+    if (callTimerInterval) clearInterval(callTimerInterval);
+    callTimerInterval = setInterval(() => {
+        callElapsedSeconds++;
+        const mins = String(Math.floor(callElapsedSeconds / 60)).padStart(2, "0");
+        const secs = String(callElapsedSeconds % 60).padStart(2, "0");
+        if (timerEl) timerEl.textContent = `${mins}:${secs}`;
+    }, 1000);
+}
+
+function declineIncomingCall() {
+    stopRingTone();
+    if (incomingCallData) {
+        socket.emit("end call", { to: incomingCallData.from, from: me });
+    }
+    const incomingModal = document.getElementById("incomingCallModal");
+    if (incomingModal) incomingModal.style.display = "none";
+    incomingCallData = null;
+}
+
+// ---------------- IN-CHAT MESSAGE SEARCH ----------------
+let currentSearchMatches = [];
+let currentSearchIndex = -1;
+
+function toggleInChatSearch() {
+    const bar = document.getElementById("inChatSearchBar");
+    const dropdown = document.getElementById("chatHeaderDropdown");
+    if (dropdown) dropdown.style.display = "none";
+
+    if (!bar) return;
+    if (bar.style.display === "none" || !bar.style.display) {
+        bar.style.display = "flex";
+        const input = document.getElementById("inChatSearchInput");
+        if (input) {
+            input.value = "";
+            input.focus();
+        }
+        clearInChatHighlights();
+        updateSearchMatchDisplay();
+    } else {
+        closeInChatSearch();
+    }
+}
+
+function closeInChatSearch() {
+    const bar = document.getElementById("inChatSearchBar");
+    if (bar) bar.style.display = "none";
+    const input = document.getElementById("inChatSearchInput");
+    if (input) input.value = "";
+    clearInChatHighlights();
+    currentSearchMatches = [];
+    currentSearchIndex = -1;
+    updateSearchMatchDisplay();
+}
+
+function clearInChatHighlights() {
+    const bubbles = document.querySelectorAll("#messagesContainer .message-text");
+    bubbles.forEach(p => {
+        if (p.dataset.rawText) {
+            p.textContent = p.dataset.rawText;
+            delete p.dataset.rawText;
+        }
+    });
+}
+
+function handleInChatSearch(query) {
+    clearInChatHighlights();
+    currentSearchMatches = [];
+    currentSearchIndex = -1;
+
+    const term = (query || "").trim().toLowerCase();
+    if (!term) {
+        updateSearchMatchDisplay();
+        return;
+    }
+
+    const textNodes = document.querySelectorAll("#messagesContainer .message-text");
+    textNodes.forEach(p => {
+        const text = p.textContent || "";
+        const lower = text.toLowerCase();
+        if (lower.includes(term)) {
+            p.dataset.rawText = text;
+            const regex = new RegExp(`(${escapeRegex(term)})`, "gi");
+            p.innerHTML = text.replace(regex, '<mark class="search-highlight">$1</mark>');
+            const marks = p.querySelectorAll(".search-highlight");
+            marks.forEach(m => currentSearchMatches.push(m));
+        }
+    });
+
+    if (currentSearchMatches.length > 0) {
+        currentSearchIndex = 0;
+        highlightCurrentMatch();
+    }
+    updateSearchMatchDisplay();
+}
+
+function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function highlightCurrentMatch() {
+    currentSearchMatches.forEach(m => m.classList.remove("search-active-match"));
+    if (currentSearchIndex >= 0 && currentSearchIndex < currentSearchMatches.length) {
+        const active = currentSearchMatches[currentSearchIndex];
+        active.classList.add("search-active-match");
+        active.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+}
+
+function navSearchMatch(direction) {
+    if (currentSearchMatches.length === 0) return;
+    currentSearchIndex += direction;
+    if (currentSearchIndex < 0) currentSearchIndex = currentSearchMatches.length - 1;
+    if (currentSearchIndex >= currentSearchMatches.length) currentSearchIndex = 0;
+    highlightCurrentMatch();
+    updateSearchMatchDisplay();
+}
+
+function updateSearchMatchDisplay() {
+    const countEl = document.getElementById("searchMatchCount");
+    if (!countEl) return;
+    if (currentSearchMatches.length === 0) {
+        const input = document.getElementById("inChatSearchInput");
+        countEl.textContent = input && input.value.trim() ? "No matches" : "0 matches";
+    } else {
+        countEl.textContent = `${currentSearchIndex + 1} of ${currentSearchMatches.length}`;
+    }
+}
+
+// ---------------- HEADER 3-DOTS MENU & ACTIONS ----------------
+function toggleChatDropdown(e) {
+    if (e) e.stopPropagation();
+    const dropdown = document.getElementById("chatHeaderDropdown");
+    if (!dropdown) return;
+    dropdown.style.display = (dropdown.style.display === "flex") ? "none" : "flex";
+}
+
+document.addEventListener("click", (e) => {
+    const dropdown = document.getElementById("chatHeaderDropdown");
+    const menuBtn = document.getElementById("chatMenuBtn");
+    if (dropdown && dropdown.style.display === "flex") {
+        if (!dropdown.contains(e.target) && (!menuBtn || !menuBtn.contains(e.target))) {
+            dropdown.style.display = "none";
+        }
+    }
+});
+
+function openContactInfoModal() {
+    const dropdown = document.getElementById("chatHeaderDropdown");
+    if (dropdown) dropdown.style.display = "none";
+
+    if (!activeRecipientUsername) return;
+    const uObj = allUsers.find(u => u.username.toLowerCase() === activeRecipientUsername.toLowerCase());
+    const dispName = (uObj && (uObj.fullname || uObj.username)) || activeRecipientDisplayName;
+    const bio = (uObj && uObj.bio) || "Hey there! I am using chatNut.";
+    const email = (uObj && uObj.email) || `${activeRecipientUsername}@example.com`;
+
+    const nameEl = document.getElementById("contactInfoName");
+    const userEl = document.getElementById("contactInfoUsername");
+    const bioEl = document.getElementById("contactInfoBio");
+    const emailEl = document.getElementById("contactInfoEmail");
+    const avatarEl = document.getElementById("contactInfoAvatar");
+
+    if (nameEl) nameEl.textContent = dispName;
+    if (userEl) userEl.textContent = `@${activeRecipientUsername}`;
+    if (bioEl) bioEl.textContent = bio;
+    if (emailEl) emailEl.textContent = email;
+
+    if (avatarEl) {
+        if (uObj && uObj.avatarUrl) {
+            avatarEl.innerHTML = `<img src="${uObj.avatarUrl}" class="avatar-img" alt="avatar">`;
+        } else {
+            avatarEl.textContent = dispName.charAt(0).toUpperCase();
+            avatarEl.style.background = getAvatarGradient(activeRecipientUsername);
+        }
+    }
+
+    document.getElementById("contactInfoModal").style.display = "flex";
+}
+
+function openClearChatModal() {
+    const dropdown = document.getElementById("chatHeaderDropdown");
+    if (dropdown) dropdown.style.display = "none";
+    if (!activeRoom) return;
+    document.getElementById("clearChatModal").style.display = "flex";
+}
+
+async function confirmClearChat() {
+    if (!activeRoom) return;
+    try {
+        await fetch(`${API_BASE}/api/clear-chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ room: activeRoom, username: me })
+        });
+    } catch (e) {
+        console.warn("Clear chat error:", e);
+    }
+
+    socket.emit("chat cleared", { room: activeRoom });
+
+    messagesContainer.innerHTML = `
+        <div style="text-align: center; color: var(--text-secondary); font-size: 13px; margin: auto; padding: 18px 24px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); z-index: 1;">
+            Chat cleared. Say hi to ${escapeHtml(activeRecipientDisplayName || 'your contact')}!
+        </div>
+    `;
+
+    delete lastMessagesMap[activeRoom];
+    renderContacts();
+    closeModals();
+    showToastBanner("Chat Cleared", "All messages in this conversation have been removed.");
+}
+
+socket.on("chat cleared", (data) => {
+    if (activeRoom && data && data.room === activeRoom) {
+        messagesContainer.innerHTML = `
+            <div style="text-align: center; color: var(--text-secondary); font-size: 13px; margin: auto; padding: 18px 24px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); z-index: 1;">
+                Chat cleared.
+            </div>
+        `;
+    }
+});
 
 // Delete contact
 function openDeleteContactModal(username, displayName) {
@@ -1399,7 +1835,10 @@ function openDeleteContactModal(username, displayName) {
 }
 
 function triggerHeaderDeleteContact() {
-    if (activeChatType === "direct" && activeRecipientUsername) {
+    const dropdown = document.getElementById("chatHeaderDropdown");
+    if (dropdown) dropdown.style.display = "none";
+
+    if (activeRecipientUsername) {
         openDeleteContactModal(activeRecipientUsername, activeRecipientDisplayName);
     }
 }
@@ -1427,15 +1866,7 @@ async function confirmDeleteContact() {
     }
 
     if (activeRecipientUsername && activeRecipientUsername.toLowerCase() === targetUser.toLowerCase()) {
-        const chatWrapper = document.getElementById("activeChatWrapper");
-        if (chatWrapper) chatWrapper.style.display = "none";
-        const emptyChat = document.getElementById("emptyChatView");
-        if (emptyChat) emptyChat.style.display = "flex";
-        const chatPanel = document.getElementById("chatPanel");
-        if (chatPanel) chatPanel.classList.remove("mobile-active");
-        activeRecipientUsername = null;
-        activeRecipientDisplayName = null;
-        activeRoom = null;
+        closeActiveChat();
     }
 
     closeModals();
@@ -1443,68 +1874,157 @@ async function confirmDeleteContact() {
     showToastBanner("Contact Deleted", `Contact "${targetDisp}" and chat history removed.`);
 }
 
-// New group modal
-function openNewGroupModal() {
-    const list = document.getElementById("groupMembersList");
-    if (!list) return;
-    list.innerHTML = "";
+// ---------------- TYPING INDICATOR & INPUT TOGGLE ----------------
+let typingDebounceTimer = null;
+let isTypingSent = false;
 
-    const others = allUsers.filter(u => u.username.toLowerCase() !== me.toLowerCase());
-    if (others.length === 0) {
-        list.innerHTML = "<p style='color: var(--text-secondary); font-size: 13px; text-align: center; padding: 10px;'>No other users available</p>";
+function handleMsgInputChange(input) {
+    const val = input ? input.value : "";
+    const hasText = val.trim().length > 0;
+    const sendIcon = document.getElementById("sendBtnIcon");
+    const sendBtn = document.getElementById("sendBtn");
+
+    if (hasText) {
+        if (sendIcon) sendIcon.className = "fa-solid fa-paper-plane";
+        if (sendBtn) {
+            sendBtn.title = "Send message";
+            sendBtn.classList.add("send-active");
+        }
+        if (!isTypingSent && activeRoom) {
+            isTypingSent = true;
+            socket.emit("typing", { room: activeRoom, username: me });
+        }
+        if (typingDebounceTimer) clearTimeout(typingDebounceTimer);
+        typingDebounceTimer = setTimeout(() => {
+            if (activeRoom && isTypingSent) {
+                socket.emit("stop typing", { room: activeRoom, username: me });
+                isTypingSent = false;
+            }
+        }, 2500);
     } else {
-        others.forEach(u => {
-            const item = document.createElement("label");
-            item.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--search-bg); border-radius: 8px; cursor: pointer;";
-            const disp = u.fullname || u.username;
-            item.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <div class="avatar-badge" style="width: 32px; height: 32px; font-size: 13px; background: ${getAvatarGradient(u.username)}">
-                        ${u.avatarUrl ? `<img src="${u.avatarUrl}" class="avatar-img">` : disp.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                        <strong style="font-size: 13px; color: var(--text-primary); display: block;">${escapeHtml(disp)}</strong>
-                        <small style="color: var(--text-secondary); font-size: 11px;">@${escapeHtml(u.username)}</small>
-                    </div>
-                </div>
-                <input type="checkbox" value="${escapeHtml(u.username)}" class="group-member-checkbox" style="width: 18px; height: 18px; accent-color: var(--primary-accent);">
-            `;
-            list.appendChild(item);
-        });
+        if (sendIcon) sendIcon.className = "fa-solid fa-microphone";
+        if (sendBtn) {
+            sendBtn.title = "Voice note";
+            sendBtn.classList.remove("send-active");
+        }
+        if (isTypingSent && activeRoom) {
+            socket.emit("stop typing", { room: activeRoom, username: me });
+            isTypingSent = false;
+        }
     }
-
-    document.getElementById("groupNameInput").value = "";
-    document.getElementById("newGroupModal").style.display = "flex";
 }
 
-async function submitCreateGroup() {
-    const name = document.getElementById("groupNameInput").value.trim();
-    if (!name) {
-        alert("Please enter a group name.");
-        return;
+socket.on("typing", (data) => {
+    if (activeRoom && data.room === activeRoom && data.username && data.username.toLowerCase() !== me.toLowerCase()) {
+        const textEl = document.getElementById("chatHeaderStatusText");
+        if (textEl) {
+            textEl.innerHTML = `<span class="typing-active-text"><i class="fa-solid fa-pen-nib"></i> typing...</span>`;
+        }
     }
+});
 
-    const checkboxes = document.querySelectorAll(".group-member-checkbox:checked");
-    const members = Array.from(checkboxes).map(cb => cb.value.toLowerCase());
-    members.push(me.toLowerCase());
+socket.on("stop typing", (data) => {
+    if (activeRoom && data.room === activeRoom) {
+        updateChatHeaderStatus();
+    }
+});
+
+// ---------------- VOICE NOTES ----------------
+function sendVoiceNote() {
+    if (!activeRoom) return;
+
+    const durations = ["0:04", "0:06", "0:08", "0:11"];
+    const randomDur = durations[Math.floor(Math.random() * durations.length)];
+    const localId = "msg-" + Date.now() + "-" + Math.random().toString(36).substr(2, 6);
+
+    const payload = {
+        id: localId,
+        _id: localId,
+        username: me,
+        senderFullName: myFullName || me,
+        avatarUrl: myAvatar || null,
+        message: `🎙️ Voice Note (${randomDur})`,
+        isVoiceNote: true,
+        voiceDuration: randomDur,
+        room: activeRoom,
+        time: new Date()
+    };
+
+    displayChatMessage(payload);
+    scrollToBottom();
+    socket.emit("chat message", payload);
+
+    lastMessagesMap[activeRoom] = {
+        message: `🎙️ Voice Note (${randomDur})`,
+        time: payload.time,
+        username: me
+    };
+    renderContacts();
+
+    // Play quick pleasant mic chime
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.connect(g);
+        g.connect(ctx.destination);
+        osc.frequency.setValueAtTime(659.25, ctx.currentTime);
+        g.gain.setValueAtTime(0.08, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.2);
+    } catch (e) {}
+
+    showToastBanner("Voice Note Sent", `Sent voice note (${randomDur}).`);
+}
+
+function playVoiceTone(btn) {
+    if (!btn) return;
+    const icon = btn.querySelector("i");
+    if (icon) icon.className = "fa-solid fa-pause";
 
     try {
-        const res = await fetch(`${API_BASE}/api/groups`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, createdBy: me, members })
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const chord = [330, 440, 554.37, 659.25];
+        chord.forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.connect(g);
+            g.connect(ctx.destination);
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.12);
+            g.gain.setValueAtTime(0.05, ctx.currentTime + idx * 0.12);
+            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.12 + 0.4);
+            osc.start(ctx.currentTime + idx * 0.12);
+            osc.stop(ctx.currentTime + idx * 0.12 + 0.4);
         });
-        const data = await res.json();
-        if (data.success) {
-            closeModals();
-            allGroups.unshift(data.group);
-            renderContacts();
-            selectGroup(data.group);
-            showToastBanner("Group Created", `Group "${name}" is ready.`);
+    } catch (e) {}
+
+    setTimeout(() => {
+        if (icon) icon.className = "fa-solid fa-play";
+    }, 1200);
+}
+
+function copyMessageText(text, btn) {
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+        if (btn) {
+            const i = btn.querySelector("i");
+            if (i) {
+                i.className = "fa-solid fa-check";
+                setTimeout(() => { i.className = "fa-regular fa-copy"; }, 1500);
+            }
         }
-    } catch (e) {
-        alert("Failed to create group.");
-    }
+        showToastBanner("Copied", "Message text copied to clipboard.");
+    }).catch(() => {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        showToastBanner("Copied", "Message text copied to clipboard.");
+    });
 }
 
 // Status updates
@@ -2317,6 +2837,31 @@ function showToastNotification(data) {
     }, 4500);
 }
 
+function showToastBanner(title, message) {
+    const container = document.getElementById("toastContainer");
+    if (!container) return;
+
+    const toast = document.createElement("div");
+    toast.className = "toast-notification";
+    toast.innerHTML = `
+        <div class="avatar-badge" style="width: 34px; height: 34px; font-size: 14px; background: var(--primary-accent); color: #fff; flex-shrink: 0;">
+            <i class="fa-solid fa-bell"></i>
+        </div>
+        <div style="flex: 1; overflow: hidden;">
+            <strong style="font-size: 13px; color: var(--text-primary); display: block;">${escapeHtml(title)}</strong>
+            <span style="font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">${escapeHtml(message)}</span>
+        </div>
+    `;
+
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateX(40px)";
+        toast.style.transition = "all 0.3s ease";
+        setTimeout(() => toast.remove(), 300);
+    }, 3500);
+}
+
 // Send message
 const chatForm = document.getElementById("chatForm");
 const messagesContainer = document.getElementById("messagesContainer");
@@ -2325,8 +2870,18 @@ chatForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const text = msgInput.value.trim();
 
+    // If empty text & no attachment, mic button sends a simulated voice note!
+    if (!text && !pendingMedia) {
+        if (activeRoom) {
+            sendVoiceNote();
+        }
+        return;
+    }
+
     if ((text || pendingMedia) && activeRoom) {
         socket.emit("stop typing", { room: activeRoom, username: me });
+        isTypingSent = false;
+        if (typingDebounceTimer) clearTimeout(typingDebounceTimer);
 
         const localId = "msg-" + Date.now() + "-" + Math.random().toString(36).substr(2, 6);
         const payload = {
@@ -2360,6 +2915,7 @@ chatForm.addEventListener("submit", (e) => {
         renderContacts();
 
         msgInput.value = "";
+        handleMsgInputChange(msgInput);
         cancelPendingMedia();
         msgInput.focus();
 
@@ -2377,9 +2933,7 @@ socket.on("load messages", (msgs) => {
     } else {
         const placeholder = document.createElement("div");
         placeholder.style.cssText = "text-align: center; color: var(--text-secondary); font-size: 13px; margin: auto; padding: 18px 24px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); z-index: 1;";
-        placeholder.textContent = activeChatType === "group"
-            ? `Welcome to ${activeRecipientDisplayName || 'the group'}! Start the conversation.`
-            : `No messages yet. Say hi to ${activeRecipientDisplayName || 'your contact'}!`;
+        placeholder.textContent = `No messages yet. Say hi to ${escapeHtml(activeRecipientDisplayName || 'your contact')}!`;
         messagesContainer.appendChild(placeholder);
     }
     scrollToBottom();
@@ -2421,7 +2975,7 @@ socket.on("chat message", (data) => {
 
     // Update last message in left panel
     lastMessagesMap[data.room] = {
-        message: data.mediaUrl ? (data.mediaType === "image" ? "📷 Photo" : "📎 Attachment") : data.message,
+        message: data.mediaUrl ? (data.mediaType === "image" ? "📷 Photo" : "📎 Attachment") : (data.isVoiceNote ? data.message : data.message),
         time: data.time || new Date(),
         username: data.username
     };
@@ -2436,16 +2990,6 @@ socket.on("conversation deleted", (data) => {
                 This conversation was deleted.
             </div>
         `;
-    }
-});
-
-// Real-time group creation sync
-socket.on("group created", (group) => {
-    if (group && (!group.members || group.members.includes(me.toLowerCase()))) {
-        if (!allGroups.some(g => g.id === group.id)) {
-            allGroups.unshift(group);
-            renderContacts();
-        }
     }
 });
 
@@ -2514,16 +3058,45 @@ function displayChatMessage(data) {
         }
     }
 
-    let textHtml = data.message ? `<p class="message-text">${escapeHtml(data.message)}</p>` : "";
+    let textHtml = "";
+    if (data.isVoiceNote) {
+        textHtml = `
+            <div class="voice-note-bubble-content">
+                <button type="button" class="voice-play-bubble-btn" onclick="playVoiceTone(this)" title="Play voice note">
+                    <i class="fa-solid fa-play"></i>
+                </button>
+                <div class="voice-wave-bars">
+                    <span style="height: 10px;"></span>
+                    <span style="height: 18px;"></span>
+                    <span style="height: 24px;"></span>
+                    <span style="height: 14px;"></span>
+                    <span style="height: 20px;"></span>
+                    <span style="height: 12px;"></span>
+                    <span style="height: 16px;"></span>
+                </div>
+                <span class="voice-bubble-duration">${escapeHtml(data.voiceDuration || '0:05')}</span>
+            </div>
+        `;
+    } else if (data.message) {
+        textHtml = `<p class="message-text">${escapeHtml(data.message)}</p>`;
+    }
 
-    const senderHeader = (activeChatType === "group" && !isMe)
-        ? `<span class="msg-group-sender"><i class="fa-solid fa-user" style="margin-right: 4px; font-size: 10px;"></i>${escapeHtml(data.senderFullName || data.username)}</span>`
-        : (!isMe ? `<span class="message-sender">${escapeHtml(data.senderFullName || data.username)}</span>` : '');
+    const senderHeader = !isMe ? `<span class="message-sender">${escapeHtml(data.senderFullName || data.username)}</span>` : '';
+
+    const safeCopyText = (data.message || "").replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    const copyBtn = data.message ? `
+        <button type="button" class="msg-action-icon-btn" onclick="copyMessageText('${safeCopyText}', this)" title="Copy message text">
+            <i class="fa-regular fa-copy"></i>
+        </button>
+    ` : '';
 
     bubble.innerHTML = `
-        <button type="button" class="msg-actions-btn" onclick="openDeleteModal('${msgId}', ${isMe})" title="Delete message">
-            <i class="fa-regular fa-trash-can"></i>
-        </button>
+        <div class="msg-actions-group">
+            ${copyBtn}
+            <button type="button" class="msg-action-icon-btn" onclick="openDeleteModal('${msgId}', ${isMe})" title="Delete message">
+                <i class="fa-regular fa-trash-can"></i>
+            </button>
+        </div>
         ${senderHeader}
         ${mediaHtml}
         ${textHtml}
