@@ -6,12 +6,47 @@
 
 <title>chatNut</title>
 
-<link rel="stylesheet" href="aftersignup.css">
+<link rel="stylesheet" href="aftersignup.css?v=2026.09.12.2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+<style>
+  /* Guaranteed bulletproof view toggling - overrides any external or cached stylesheet */
+  #emptyChatView.hidden,
+  .empty-chat-view.hidden,
+  #emptyChatView[style*="display: none"],
+  .empty-chat-view[style*="display: none"] {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    overflow: hidden !important;
+  }
+
+  #activeChatWrapper.active-view,
+  .active-chat-wrapper.active-view {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    width: 100% !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  #activeChatWrapper.hidden,
+  .active-chat-wrapper.hidden,
+  #activeChatWrapper[style*="display: none"],
+  .active-chat-wrapper[style*="display: none"] {
+    display: none !important;
+  }
+</style>
 </head>
 
 <body>
@@ -207,7 +242,7 @@
             <button type="button" class="header-action-btn" id="chatMenuBtn" onclick="toggleChatDropdown(event)" title="More options">
               <i class="fa-solid fa-ellipsis-vertical"></i>
             </button>
-            <div class="chat-dropdown-menu" id="chatDropdownMenu" style="display: none;">
+            <div class="chat-dropdown-menu" id="chatHeaderDropdown" style="display: none;">
               <div class="chat-dropdown-item" onclick="openRecipientProfileModal()">
                 <i class="fa-solid fa-user"></i> <span>Contact info</span>
               </div>
@@ -1172,18 +1207,29 @@ function selectGroup(group) {
     // Show Chat Panel
     const emptyChat = document.getElementById("emptyChatView");
     if (emptyChat) {
-        emptyChat.style.display = "none";
+        emptyChat.setAttribute("style", "display: none !important; visibility: hidden !important; height: 0 !important;");
         emptyChat.classList.add("hidden");
     }
 
     const chatWrapper = document.getElementById("activeChatWrapper");
     if (chatWrapper) {
-        chatWrapper.style.display = "flex";
+        chatWrapper.setAttribute("style", "display: flex !important; visibility: visible !important; height: 100% !important;");
         chatWrapper.classList.remove("hidden");
+        chatWrapper.classList.add("active-view");
     }
 
     const chatPanel = document.getElementById("chatPanel");
     if (chatPanel) chatPanel.classList.add("mobile-active");
+
+    const msgsContainer = document.getElementById("messagesContainer");
+    if (msgsContainer) {
+        msgsContainer.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary); font-size: 13px; gap: 8px;">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size: 22px; color: var(--primary-accent);"></i>
+                <span>Loading group messages...</span>
+            </div>
+        `;
+    }
 
     // Set Header
     const nameEl = document.getElementById("chatHeaderName");
@@ -1639,18 +1685,29 @@ function selectContact(targetUsername, targetDisplayName, targetAvatar) {
     // Show Chat Panel
     const emptyChat = document.getElementById("emptyChatView");
     if (emptyChat) {
-        emptyChat.style.display = "none";
+        emptyChat.setAttribute("style", "display: none !important; visibility: hidden !important; height: 0 !important;");
         emptyChat.classList.add("hidden");
     }
 
     const chatWrapper = document.getElementById("activeChatWrapper");
     if (chatWrapper) {
-        chatWrapper.style.display = "flex";
+        chatWrapper.setAttribute("style", "display: flex !important; visibility: visible !important; height: 100% !important;");
         chatWrapper.classList.remove("hidden");
+        chatWrapper.classList.add("active-view");
     }
 
     const chatPanel = document.getElementById("chatPanel");
     if (chatPanel) chatPanel.classList.add("mobile-active");
+
+    const msgsContainer = document.getElementById("messagesContainer");
+    if (msgsContainer) {
+        msgsContainer.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary); font-size: 13px; gap: 8px;">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size: 22px; color: var(--primary-accent);"></i>
+                <span>Loading messages...</span>
+            </div>
+        `;
+    }
 
     // Set Header
     const nameEl = document.getElementById("chatHeaderName");
@@ -1722,13 +1779,14 @@ function closeActiveChat() {
 
     const chatWrapper = document.getElementById("activeChatWrapper");
     if (chatWrapper) {
-        chatWrapper.style.display = "none";
+        chatWrapper.setAttribute("style", "display: none !important;");
         chatWrapper.classList.add("hidden");
+        chatWrapper.classList.remove("active-view");
     }
 
     const emptyChat = document.getElementById("emptyChatView");
     if (emptyChat) {
-        emptyChat.style.display = "flex";
+        emptyChat.setAttribute("style", "display: flex !important;");
         emptyChat.classList.remove("hidden");
     }
 
@@ -1736,6 +1794,10 @@ function closeActiveChat() {
     if (chatPanel) chatPanel.classList.remove("mobile-active");
 
     renderContacts();
+}
+
+function openRecipientProfileModal() {
+    openContactInfoModal();
 }
 
 function updateChatHeaderStatus() {

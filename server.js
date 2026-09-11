@@ -102,9 +102,9 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-// Prevent browser from aggressively caching HTML pages and API responses
+// Prevent browser from aggressively caching HTML, CSS, JS files and API responses
 app.use((req, res, next) => {
-    if (req.url.endsWith(".html") || req.url === "/" || req.url.startsWith("/api/")) {
+    if (req.url.endsWith(".html") || req.url.endsWith(".css") || req.url.endsWith(".js") || req.url === "/" || req.url.startsWith("/api/")) {
         res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
         res.setHeader("Pragma", "no-cache");
         res.setHeader("Expires", "0");

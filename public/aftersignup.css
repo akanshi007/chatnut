@@ -722,8 +722,16 @@ header {
 }
 
 .empty-chat-view[style*="display: none"],
-.empty-chat-view.hidden {
+.empty-chat-view.hidden,
+#emptyChatView.hidden {
     display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 .choose-chat-main-btn {
@@ -886,8 +894,17 @@ header {
 }
 
 .active-chat-wrapper[style*="display: none"],
-.active-chat-wrapper.hidden {
+.active-chat-wrapper.hidden,
+#activeChatWrapper.hidden {
     display: none !important;
+}
+
+.active-chat-wrapper.active-view,
+#activeChatWrapper.active-view {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    width: 100% !important;
 }
 
 /* Chat header */
