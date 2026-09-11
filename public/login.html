@@ -117,9 +117,7 @@
   </div>
 
   <script>
-    const API_BASE = (window.location.protocol === 'file:' || (window.location.port && window.location.port !== '8000'))
-      ? 'http://localhost:8000'
-      : '';
+    const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:8000' : '';
 
     // Auto-redirect or switch account
     const urlParams = new URLSearchParams(window.location.search);

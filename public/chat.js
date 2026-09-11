@@ -1,6 +1,4 @@
-const API_BASE = (window.location.protocol === 'file:' || (window.location.port && window.location.port !== '8000'))
-    ? 'http://localhost:8000'
-    : '';
+const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:8000' : '';
 const socket = API_BASE ? io(API_BASE) : io();
 const params = new URLSearchParams(window.location.search);
 

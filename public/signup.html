@@ -70,7 +70,7 @@
 
         <a href="javascript:void(0)" class="forgot-password-link" onclick="openForgotPasswordModal()">Forgot Password?</a>
 
-        <button type="submit" id="submitBtn" class="signup-btn">Verify Email & Sign Up</button>
+        <button type="submit" id="submitBtn" class="signup-btn">Sign Up</button>
         <p class="login-text">Already have an account? <a href="login.html">Log In</a></p>
       </form>
 
@@ -158,9 +158,7 @@
   </div>
 
   <script>
-    const API_BASE = (window.location.protocol === 'file:' || (window.location.port && window.location.port !== '8000'))
-      ? 'http://localhost:8000'
-      : '';
+    const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:8000' : '';
 
     const signupForm = document.getElementById("signupForm");
     const otpForm = document.getElementById("otpForm");
@@ -183,7 +181,7 @@
       alertBox.style.display = "block";
     }
 
-    // Request signup OTP
+    // Direct account registration
     signupForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       alertBox.style.display = "none";
@@ -210,10 +208,10 @@
       }
 
       submitBtn.classList.add("btn-disabled");
-      submitBtn.textContent = "Sending verification code...";
+      submitBtn.textContent = "Creating account...";
 
       try {
-        const res = await fetch(`${API_BASE}/api/send-signup-otp`, {
+        const res = await fetch(`${API_BASE}/signup`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ fullname, username, email, password })
@@ -222,37 +220,24 @@
         const data = await res.json();
 
         if (res.ok && data.success) {
-          registeredEmail = email;
-          sessionStorage.setItem("pendingSignup", JSON.stringify({ fullname, username, email, password }));
-          document.getElementById("otpEmailDisplay").textContent = email;
+          localStorage.setItem("chatUser", data.username);
+          if (data.fullname) localStorage.setItem("chatFullName", data.fullname);
+          if (data.email) localStorage.setItem("chatEmail", data.email);
 
-          signupForm.style.display = "none";
-          otpForm.style.display = "flex";
-          otpForm.style.flexDirection = "column";
-          document.getElementById("pageTitle").textContent = "Verify Your Email";
-          document.getElementById("pageSubtitle").textContent = "Enter the code sent to your inbox";
-
-          if (data.devOtp) {
-            devOtpCode.textContent = data.devOtp;
-            devOtpBanner.style.display = "block";
-            document.getElementById("otpInput").value = data.devOtp;
-          } else {
-            devOtpBanner.style.display = "none";
-          }
-
-          startResendCountdown();
-          document.getElementById("otpInput").focus();
-          showAlert(data.message || "Verification code sent!", false);
+          showAlert("Account created successfully! Redirecting to chat...", false);
+          setTimeout(() => {
+            window.location.href = "aftersignup.html";
+          }, 600);
         } else {
-          showAlert(data.message || "Failed to send code. Please try again.");
+          showAlert(data.message || "Signup failed. Please try again.");
           submitBtn.classList.remove("btn-disabled");
-          submitBtn.textContent = "Verify Email & Sign Up";
+          submitBtn.textContent = "Sign Up";
         }
       } catch (err) {
-        console.error("Signup OTP error:", err);
-        showAlert("Failed to connect to server. Please verify the server is running.");
+        console.error("Signup error:", err);
+        showAlert("Failed to connect to server. Please verify your connection.");
         submitBtn.classList.remove("btn-disabled");
-        submitBtn.textContent = "Verify Email & Sign Up";
+        submitBtn.textContent = "Sign Up";
       }
     });
 
