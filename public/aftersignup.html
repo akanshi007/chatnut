@@ -6,7 +6,7 @@
 
 <title>chatNut</title>
 
-<link rel="stylesheet" href="aftersignup.css?v=2026.09.12.2">
+<link rel="stylesheet" href="aftersignup.css?v=2026.09.12.3">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -46,12 +46,31 @@
   .active-chat-wrapper[style*="display: none"] {
     display: none !important;
   }
+
+  /* Chat header bar: must be relative flex inside active-chat-wrapper, never fixed */
+  .chat-header-bar {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 64px !important;
+    background: var(--chat-header-bg, #ffffff) !important;
+    padding: 10px 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 14px !important;
+    border-bottom: 1px solid var(--border-color, #e9edef) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03) !important;
+    z-index: 20 !important;
+    flex-shrink: 0 !important;
+  }
 </style>
 </head>
 
 <body>
 
-<header>
+<header class="main-header">
   <div class="header_left">
     <label for="check" class="header-menu-icon" title="Menu">
       <i class="fa-solid fa-bars"></i>
@@ -216,7 +235,7 @@
     </div>
 
     <div class="active-chat-wrapper hidden" id="activeChatWrapper" style="display: none;">
-      <header class="chat-header-bar">
+      <div class="chat-header-bar">
         <button type="button" class="chat-back-btn" id="chatBackBtn" onclick="closeActiveChat()" title="Back to contacts">
           <i class="fa-solid fa-arrow-left"></i>
         </button>
@@ -258,7 +277,7 @@
             </div>
           </div>
         </div>
-      </header>
+      </div>
 
       <!-- Expandable In-Chat Search Bar -->
       <div class="in-chat-search-bar" id="inChatSearchBar" style="display: none;">
@@ -2433,6 +2452,9 @@ function sendVoiceNote() {
         time: new Date()
     };
 
+    const placeholder = messagesContainer.querySelector(".chat-empty-placeholder");
+    if (placeholder) placeholder.remove();
+
     displayChatMessage(payload);
     scrollToBottom();
     socket.emit("chat message", payload);
@@ -3382,6 +3404,10 @@ chatForm.addEventListener("submit", (e) => {
             time: new Date()
         };
 
+        // Remove empty placeholder when sending first message
+        const placeholder = messagesContainer.querySelector(".chat-empty-placeholder");
+        if (placeholder) placeholder.remove();
+
         // Optimistic render
         displayChatMessage(payload);
         scrollToBottom();
@@ -3415,6 +3441,7 @@ socket.on("load messages", (msgs) => {
         msgs.forEach(displayChatMessage);
     } else {
         const placeholder = document.createElement("div");
+        placeholder.className = "chat-empty-placeholder";
         placeholder.style.cssText = "text-align: center; color: var(--text-secondary); font-size: 13px; margin: auto; padding: 18px 24px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); z-index: 1;";
         placeholder.textContent = `No messages yet. Say hi to ${escapeHtml(activeRecipientDisplayName || 'your contact')}!`;
         messagesContainer.appendChild(placeholder);
@@ -3428,19 +3455,28 @@ socket.on("chat message", (data) => {
     const isMe = data.username.toLowerCase() === me.toLowerCase();
 
     if (isCurrentRoom) {
-        // If sent by me, check if already optimistically rendered
-        const msgId = data._id || data.id;
-        const alreadyRendered = msgId ? document.querySelector(`.message-bubble[data-msg-id="${msgId}"]`) : null;
-
-        if (!alreadyRendered) {
+        if (isMe) {
+            // Check if already optimistically rendered in this tab
+            const msgId = data.id || data._id;
+            if (msgId && document.querySelector(`.message-bubble[data-msg-id="${msgId}"]`)) {
+                return;
+            }
+            // If from another tab by the same user
+            const placeholder = messagesContainer.querySelector(".chat-empty-placeholder");
+            if (placeholder) placeholder.remove();
             displayChatMessage(data);
             scrollToBottom();
+            return;
         }
 
-        if (!isMe) {
-            playChime();
-            updateChatHeaderStatus();
-        }
+        // Received from the other person
+        const placeholder = messagesContainer.querySelector(".chat-empty-placeholder");
+        if (placeholder) placeholder.remove();
+
+        displayChatMessage(data);
+        scrollToBottom();
+        playChime();
+        updateChatHeaderStatus();
     } else if (!isMe) {
         // Message arrived from another chat!
         playChime();

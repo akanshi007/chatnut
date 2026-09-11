@@ -113,8 +113,9 @@ body {
     overflow: hidden;
 }
 
-/* Header */
-header {
+/* Main Top Header */
+header.main-header,
+body > header {
     width: 100%;
     height: 60px;
     background: var(--bg-header);
@@ -909,14 +910,21 @@ header {
 
 /* Chat header */
 .chat-header-bar {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 64px !important;
     background: var(--chat-header-bg);
-    padding: 12px 24px;
-    display: flex;
+    padding: 10px 20px;
+    display: flex !important;
     align-items: center;
     gap: 14px;
     border-bottom: 1px solid var(--border-color);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
     z-index: 10;
+    flex-shrink: 0;
 }
 
 .chat-back-btn {

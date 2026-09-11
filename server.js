@@ -578,11 +578,22 @@ app.post("/login", async (req, res) => {
         let user = null;
 
         if (isMongoConnected) {
-            user = await User.findOne({
-                $or: [{ username: cleanLogin }, { email: cleanLogin }]
-            });
-        } else {
-            user = memoryUsers.find(u => u.username === cleanLogin || u.email === cleanLogin);
+            try {
+                user = await User.findOne({
+                    $or: [{ username: cleanLogin }, { email: cleanLogin }]
+                });
+            } catch (e) {}
+        }
+        if (!user) {
+            user = memoryUsers.find(u => (u.username || "").toLowerCase() === cleanLogin || (u.email || "").toLowerCase() === cleanLogin);
+        }
+        if (!user) {
+            const seed = defaultSeedUsers.find(u => (u.username || "").toLowerCase() === cleanLogin || (u.email || "").toLowerCase() === cleanLogin);
+            if (seed) {
+                user = { ...seed };
+                memoryUsers.push(user);
+                saveLocalJson("users.json", memoryUsers);
+            }
         }
 
         if (!user) {
@@ -619,6 +630,24 @@ app.post("/login", async (req, res) => {
             return res.json({
                 success: true,
                 message: "Account created successfully.",
+                username: user.username,
+                fullname: user.fullname,
+                email: user.email
+            });
+        }
+
+        // If user exists but has no password (e.g., demo seed user like Hitesh)
+        if (user && !user.password) {
+            user.password = await bcrypt.hash(password, 10);
+            if (isMongoConnected) {
+                try {
+                    await User.updateOne({ username: user.username }, { $set: { password: user.password } }, { upsert: true });
+                } catch (e) {}
+            } else {
+                saveLocalJson("users.json", memoryUsers);
+            }
+            return res.json({
+                success: true,
                 username: user.username,
                 fullname: user.fullname,
                 email: user.email
@@ -736,26 +765,52 @@ saveLocalJson("users.json", memoryUsers);
 // Users API
 app.get("/api/users", async (req, res) => {
     try {
-        let users = [];
-        if (isMongoConnected) {
-            try {
-                users = await User.find({}, "username fullname email avatarUrl bio createdAt").sort({ createdAt: 1 }).lean();
-            } catch (e) {
-                users = [];
-            }
-        }
-        if (!users || users.length === 0) {
-            users = memoryUsers.map(u => ({
+        const userMap = new Map();
+
+        // 1. Seed demo users
+        defaultSeedUsers.forEach(u => {
+            userMap.set((u.username || "").toLowerCase(), {
                 username: u.username,
                 fullname: u.fullname,
                 email: u.email,
                 avatarUrl: u.avatarUrl || null,
                 bio: u.bio || "Hey there! I am using chatNut.",
                 createdAt: u.createdAt
-            }));
+            });
+        });
+
+        // 2. Local memory users (includes newly signed up users in local mode)
+        memoryUsers.forEach(u => {
+            userMap.set((u.username || "").toLowerCase(), {
+                username: u.username,
+                fullname: u.fullname,
+                email: u.email,
+                avatarUrl: u.avatarUrl || null,
+                bio: u.bio || "Hey there! I am using chatNut.",
+                createdAt: u.createdAt
+            });
+        });
+
+        // 3. MongoDB users (if connected)
+        if (isMongoConnected) {
+            try {
+                const mongoUsers = await User.find({}, "username fullname email avatarUrl bio createdAt").lean();
+                mongoUsers.forEach(u => {
+                    userMap.set((u.username || "").toLowerCase(), {
+                        username: u.username,
+                        fullname: u.fullname,
+                        email: u.email,
+                        avatarUrl: u.avatarUrl || null,
+                        bio: u.bio || "Hey there! I am using chatNut.",
+                        createdAt: u.createdAt
+                    });
+                });
+            } catch (e) {
+                console.warn("Could not query mongo users for /api/users:", e.message);
+            }
         }
 
-        res.json(users || []);
+        res.json(Array.from(userMap.values()));
     } catch (err) {
         console.error("Error fetching users:", err);
         res.json([]);
@@ -967,11 +1022,17 @@ app.post("/api/contacts/add", async (req, res) => {
 
         let targetUser = null;
         if (isMongoConnected) {
-            targetUser = await User.findOne({
-                $or: [{ username: cleanTarget }, { email: cleanTarget }]
-            }, "username fullname email avatarUrl bio createdAt").lean();
-        } else {
+            try {
+                targetUser = await User.findOne({
+                    $or: [{ username: cleanTarget }, { email: cleanTarget }]
+                }, "username fullname email avatarUrl bio createdAt").lean();
+            } catch (e) {}
+        }
+        if (!targetUser) {
             targetUser = memoryUsers.find(u => (u.username || "").toLowerCase() === cleanTarget || (u.email || "").toLowerCase() === cleanTarget);
+        }
+        if (!targetUser) {
+            targetUser = defaultSeedUsers.find(u => (u.username || "").toLowerCase() === cleanTarget || (u.email || "").toLowerCase() === cleanTarget);
         }
 
         if (!targetUser) {
@@ -1156,7 +1217,7 @@ io.on("connection", (socket) => {
             if (!data || !data.room || (!data.message && !data.mediaUrl) || !data.username) return;
 
             const msgData = {
-                id: "msg-" + Date.now() + "-" + Math.random().toString(36).substr(2, 6),
+                id: data.id || ("msg-" + Date.now() + "-" + Math.random().toString(36).substr(2, 6)),
                 username: data.username,
                 senderFullName: data.senderFullName || data.username,
                 avatarUrl: data.avatarUrl || null,
