@@ -8,6 +8,8 @@ const { Server } = require("socket.io");
 
 const User = require("./models/User");
 const Message = require("./models/Message");
+const Group = require("./models/Group");
+const Status = require("./models/Status");
 const { sendOtpEmail } = require("./mailer");
 
 const app = express();
@@ -145,9 +147,10 @@ app.use(express.static(path.join(__dirname, "public")));
 const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/chatApp";
 mongoose.connect(MONGO_URI, {
     serverSelectionTimeoutMS: 2500
-}).then(() => {
+}).then(async () => {
     isMongoConnected = true;
     console.log("Connected to MongoDB");
+    await initDatabaseSeed();
 }).catch(err => {
     isMongoConnected = false;
     console.log("MongoDB unavailable, running in local storage fallback mode");
@@ -156,6 +159,81 @@ mongoose.connect(MONGO_URI, {
 mongoose.connection.on("connected", () => { isMongoConnected = true; });
 mongoose.connection.on("disconnected", () => { isMongoConnected = false; });
 mongoose.connection.on("error", () => { isMongoConnected = false; });
+
+// Pre-seed database once if collections are completely empty
+async function initDatabaseSeed() {
+    try {
+        if (!isMongoConnected) return;
+
+        // 1. Seed Users in MongoDB if 0 exist
+        const userCount = await User.countDocuments();
+        if (userCount === 0) {
+            console.log("Seeding initial users into MongoDB...");
+            const hashPassword = await bcrypt.hash("password123", 10);
+            const initialUsers = [
+                { username: "hitesh", fullname: "Hitesh 🐝🐝", email: "hitesh@chatnut.local", password: hashPassword, bio: "2 min ruko", avatarUrl: null },
+                { username: "you", fullname: "+91 90452 48418 (You)", email: "you@chatnut.local", password: hashPassword, bio: "akanshi_sharma_assignment.pdf", avatarUrl: null },
+                { username: "maa", fullname: "Maa 💕⭐", email: "maa@chatnut.local", password: hashPassword, bio: "Ho Gaya gudiya", avatarUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80" },
+                { username: "bhumika", fullname: "Bhumika ⭐", email: "bhumika@chatnut.local", password: hashPassword, bio: "Login to ho rha hai", avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" },
+                { username: "chatnut", fullname: "chatNut Bot 🤖", email: "bot@chatnut.local", password: hashPassword, bio: "Official assistant. Chat with me anytime!", avatarUrl: "https://cdn-icons-png.flaticon.com/512/8943/8943377.png" },
+                { username: "alex", fullname: "Alex Smith", email: "alex@chatnut.local", password: hashPassword, bio: "Hey there! I am using chatNut.", avatarUrl: null },
+                { username: "priya", fullname: "Priya Sharma", email: "priya@chatnut.local", password: hashPassword, bio: "Working on the project demo!", avatarUrl: null }
+            ];
+            await User.insertMany(initialUsers);
+        }
+
+        // 2. Seed Groups in MongoDB if 0 exist
+        const groupCount = await Group.countDocuments();
+        if (groupCount === 0) {
+            console.log("Seeding initial groups into MongoDB...");
+            const initialGroups = [
+                {
+                    id: "group-cst-official-2024-28",
+                    name: "CST OFFICIAL Batch of 2024-28",
+                    sublabel: "CST Batch Of 2024-28",
+                    createdBy: "sujoy",
+                    members: ["sujoy", "akanshi", "hitesh", "bhumika", "you"],
+                    pinned: true,
+                    muted: false,
+                    groupIcon: "fa-solid fa-graduation-cap",
+                    groupColor: "#1e293b",
+                    subBadgeIcon: "fa-solid fa-file-lines"
+                },
+                {
+                    id: "group-lt-williams-hall-2026-27",
+                    name: "Lt Williams Hall 2026-2027",
+                    sublabel: "Lt Williams announcement 26-27",
+                    createdBy: "akriti",
+                    members: ["akriti", "akanshi", "hitesh", "you"],
+                    pinned: false,
+                    muted: true,
+                    groupIcon: "fa-solid fa-users",
+                    groupColor: "#573a08",
+                    subBadgeIcon: "fa-solid fa-shield-halved",
+                    subBadgeColor: "#e879f9"
+                }
+            ];
+            await Group.insertMany(initialGroups);
+        }
+
+        // 3. Seed initial messages in MongoDB if 0 exist
+        const messageCount = await Message.countDocuments();
+        if (messageCount === 0) {
+            console.log("Seeding initial messages into MongoDB...");
+            const initialMessages = [
+                { username: "sujoy", senderFullName: "Sujoy", room: "group-cst-official-2024-28", message: "~~Sujoy: Everyone selected for Round 2 check your emails!", time: new Date(Date.now() - 3600000 * 12) },
+                { username: "akriti", senderFullName: "Akriti (CST)", room: "group-lt-williams-hall-2026-27", message: "Akriti (CST): Chhole bhature", time: new Date(Date.now() - 3600000 * 2) },
+                { username: "maa", senderFullName: "Maa 💕⭐", room: "akanshi--maa", message: "Ho Gaya gudiya", time: new Date(Date.now() - 3600000 * 24) },
+                { username: "bhumika", senderFullName: "Bhumika ⭐", room: "akanshi--bhumika", message: "Login to ho rha hai", time: new Date(Date.now() - 5 * 60000) },
+                { username: "hitesh", senderFullName: "Hitesh 🐝🐝", room: "akanshi--hitesh", message: "2 min ruko", time: new Date(Date.now() - 2 * 60000) },
+                { username: "chatnut", senderFullName: "chatNut Bot 🤖", room: "akanshi--chatnut", message: "Welcome to chatNut! How can I help you today?", time: new Date(Date.now() - 3600000 * 24) }
+            ];
+            await Message.insertMany(initialMessages);
+        }
+    } catch (err) {
+        console.warn("Database seed check error:", err.message);
+    }
+}
 
 // Page routes
 app.get("/", (req, res) => {
@@ -726,25 +804,47 @@ app.get("/api/users", async (req, res) => {
         let users = [];
         if (isMongoConnected) {
             try {
-                users = await User.find({}, "username fullname email avatarUrl bio createdAt").sort({ username: 1 }).lean();
+                users = await User.find({}, "username fullname email avatarUrl bio createdAt").sort({ createdAt: 1 }).lean();
             } catch (e) {
                 users = [];
             }
         }
         if (!users || users.length === 0) {
-            users = memoryUsers.map(u => ({ username: u.username, fullname: u.fullname, email: u.email, avatarUrl: u.avatarUrl || null, bio: u.bio || "Hey there! I am using chatNut.", createdAt: u.createdAt }));
+            users = memoryUsers.map(u => ({
+                username: u.username,
+                fullname: u.fullname,
+                email: u.email,
+                avatarUrl: u.avatarUrl || null,
+                bio: u.bio || "Hey there! I am using chatNut.",
+                createdAt: u.createdAt
+            }));
         }
 
-        defaultSeedUsers.forEach(seed => {
-            if (!users.some(u => u.username.toLowerCase() === seed.username.toLowerCase())) {
-                users.push(seed);
-            }
-        });
-
-        res.json(users);
+        res.json(users || []);
     } catch (err) {
         console.error("Error fetching users:", err);
-        res.json(defaultSeedUsers);
+        res.json([]);
+    }
+});
+
+// Messages history REST API
+app.get("/api/messages", async (req, res) => {
+    try {
+        const { room, user } = req.query;
+        if (!room) return res.json([]);
+        const requestingUser = (user || "").trim().toLowerCase();
+
+        if (isMongoConnected) {
+            const msgs = await Message.find({ room }).sort({ time: 1 }).lean();
+            const filtered = msgs.filter(m => !m.deletedFor || !m.deletedFor.includes(requestingUser));
+            return res.json(filtered || []);
+        } else {
+            const msgs = memoryMessages.filter(m => m.room === room && (!m.deletedFor || !m.deletedFor.includes(requestingUser)));
+            return res.json(msgs || []);
+        }
+    } catch (err) {
+        console.error("Fetch messages error:", err);
+        res.json([]);
     }
 });
 
@@ -827,13 +927,22 @@ app.post("/api/delete-conversation", async (req, res) => {
 });
 
 // Groups API
-app.get("/api/groups", (req, res) => {
-    res.json(groups);
+app.get("/api/groups", async (req, res) => {
+    try {
+        if (isMongoConnected) {
+            const dbGroups = await Group.find({}).sort({ createdAt: 1 }).lean();
+            return res.json(dbGroups || []);
+        }
+        res.json(groups || []);
+    } catch (err) {
+        console.error("Fetch groups error:", err);
+        res.json(groups || []);
+    }
 });
 
-app.post("/api/groups", (req, res) => {
+app.post("/api/groups", async (req, res) => {
     try {
-        const { name, createdBy, members } = req.body;
+        const { name, sublabel, createdBy, members, groupIcon, groupColor, subBadgeIcon } = req.body;
         if (!name || !name.trim()) {
             return res.status(400).json({ success: false, message: "Group name is required." });
         }
@@ -847,37 +956,56 @@ app.post("/api/groups", (req, res) => {
         const newGroup = {
             id,
             name: name.trim(),
+            sublabel: sublabel || null,
             createdBy: createdBy || "anonymous",
             members: membersList,
-            createdAt: new Date()
+            pinned: false,
+            muted: false,
+            groupIcon: groupIcon || "fa-solid fa-users",
+            groupColor: groupColor || "#1e293b",
+            subBadgeIcon: subBadgeIcon || null
         };
-        groups.push(newGroup);
-        saveLocalJson("groups.json", groups);
 
-        io.emit("group created", newGroup);
-        res.json({ success: true, group: newGroup });
+        if (isMongoConnected) {
+            const saved = await Group.create(newGroup);
+            io.emit("group created", saved);
+            return res.json({ success: true, group: saved });
+        } else {
+            groups.push(newGroup);
+            saveLocalJson("groups.json", groups);
+            io.emit("group created", newGroup);
+            return res.json({ success: true, group: newGroup });
+        }
     } catch (err) {
         console.error("Create group error:", err);
-        res.status(500).json({ success: false, message: "Failed to create group." });
+        res.status(500).json({ success: false, message: "Failed to create group: " + err.message });
     }
 });
 
 // Statuses API
-app.get("/api/statuses", (req, res) => {
-    const now = Date.now();
-    // Return active statuses within 24 hours
-    const active = memoryStatuses.filter(s => (now - new Date(s.createdAt).getTime()) < 24 * 60 * 60 * 1000);
-    res.json(active);
+app.get("/api/statuses", async (req, res) => {
+    try {
+        if (isMongoConnected) {
+            const active = await Status.find({ expiresAt: { $gt: new Date() } }).sort({ createdAt: -1 }).lean();
+            return res.json(active || []);
+        }
+        const now = Date.now();
+        const active = memoryStatuses.filter(s => (now - new Date(s.createdAt).getTime()) < 24 * 60 * 60 * 1000);
+        res.json(active || []);
+    } catch (err) {
+        console.error("Fetch statuses error:", err);
+        res.json([]);
+    }
 });
 
-app.post("/api/statuses", (req, res) => {
+app.post("/api/statuses", async (req, res) => {
     try {
         const { username, fullName, avatarUrl, text, mediaUrl, bgColor, fontStyle } = req.body;
         if (!username || (!text && !mediaUrl)) {
             return res.status(400).json({ success: false, message: "Status text or media is required." });
         }
 
-        const newStatus = {
+        const statusData = {
             id: "status-" + Date.now() + "-" + Math.random().toString(36).substr(2, 5),
             username: username.trim().toLowerCase(),
             fullName: fullName || username,
@@ -886,19 +1014,25 @@ app.post("/api/statuses", (req, res) => {
             mediaUrl: mediaUrl || null,
             bgColor: bgColor || "#00a884",
             fontStyle: fontStyle || "sans-serif",
-            createdAt: new Date()
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
         };
 
-        memoryStatuses.unshift(newStatus);
-        saveLocalJson("statuses.json", memoryStatuses);
-        io.emit("new status", newStatus);
-
-        res.json({ success: true, status: newStatus });
+        if (isMongoConnected) {
+            const saved = await Status.create(statusData);
+            io.emit("new status", saved);
+            return res.json({ success: true, status: saved });
+        } else {
+            memoryStatuses.unshift(statusData);
+            saveLocalJson("statuses.json", memoryStatuses);
+            io.emit("new status", statusData);
+            return res.json({ success: true, status: statusData });
+        }
     } catch (err) {
         console.error("Post status error:", err);
-        res.status(500).json({ success: false, message: "Failed to post status." });
+        res.status(500).json({ success: false, message: "Failed to post status: " + err.message });
     }
 });
+
 
 // Profile update API (avatar & bio)
 app.post("/api/update-profile", async (req, res) => {

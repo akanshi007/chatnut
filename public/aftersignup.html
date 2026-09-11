@@ -581,117 +581,8 @@ function getAvatarGradient(name) {
     return gradients[Math.abs(hash) % gradients.length];
 }
 
-const defaultSeedContacts = [
-    {
-        username: "you",
-        fullname: "+91 90452 48418 (You)",
-        avatarUrl: null,
-        avatarColor: "#4c1d42",
-        avatarIcon: "fa-solid fa-user",
-        avatarIconColor: "#f472b6",
-        bio: "akanshi_sharma_assignment.pdf",
-        defaultTime: "Yesterday",
-        hasTicks: true,
-        isRead: true,
-        hasDoc: true,
-        pinned: true
-    },
-    {
-        username: "maa",
-        fullname: "Maa 💕⭐",
-        avatarUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
-        bio: "Ho Gaya gudiya",
-        defaultTime: "Wednesday",
-        hasTicks: false,
-        pinned: true
-    },
-    {
-        username: "bhumika",
-        fullname: "Bhumika ⭐",
-        avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-        bio: "Login to ho rha hai",
-        defaultTime: "9:24 pm",
-        hasTicks: false,
-        pinned: false
-    },
-    {
-        username: "hitesh",
-        fullname: "Hitesh 🐝🐝",
-        avatarUrl: null,
-        avatarColor: "#025144",
-        avatarInitial: "H",
-        avatarTextColor: "#25d366",
-        bio: "2 min ruko",
-        defaultTime: "9:23 pm",
-        hasTicks: true,
-        isRead: false,
-        pinned: false
-    },
-    {
-        username: "chatnut",
-        fullname: "chatNut Bot 🤖",
-        avatarUrl: "https://cdn-icons-png.flaticon.com/512/8943/8943377.png",
-        bio: "Official assistant. Chat with me anytime!",
-        defaultTime: "Yesterday",
-        hasTicks: true,
-        isRead: true,
-        pinned: true
-    },
-    {
-        username: "alex",
-        fullname: "Alex Smith",
-        avatarUrl: null,
-        bio: "Hey there! I am using chatNut.",
-        defaultTime: "Yesterday",
-        hasTicks: true,
-        isRead: true,
-        pinned: false
-    },
-    {
-        username: "priya",
-        fullname: "Priya Sharma",
-        avatarUrl: null,
-        bio: "Working on the project demo!",
-        defaultTime: "8:45 pm",
-        hasTicks: false,
-        pinned: false
-    }
-];
-
-const defaultSeedGroups = [
-    {
-        id: "group-cst-official-2024-28",
-        name: "CST OFFICIAL Batch of 2024-28",
-        sublabel: "CST Batch Of 2024-28",
-        createdBy: "sujoy",
-        members: ["sujoy", "akanshi", "hitesh", "bhumika", "you"],
-        pinned: true,
-        lastMsgSnippet: "~~Sujoy: Everyone selected for Round ...",
-        lastMsgTime: "10:01 am",
-        groupIcon: "fa-solid fa-graduation-cap",
-        groupColor: "#1e293b",
-        groupIconColor: "#38bdf8",
-        subBadgeIcon: "fa-solid fa-file-lines"
-    },
-    {
-        id: "group-lt-williams-hall-2026-27",
-        name: "Lt Williams Hall 2026-2027",
-        sublabel: "Lt Williams announcement 26-27",
-        createdBy: "akriti",
-        members: ["akriti", "akanshi", "hitesh", "you"],
-        muted: true,
-        lastMsgSnippet: "Akriti (CST): Chhole bhature",
-        lastMsgTime: "8:24 pm",
-        groupIcon: "fa-solid fa-users",
-        groupColor: "#573a08",
-        groupIconColor: "#fde047",
-        subBadgeIcon: "fa-solid fa-shield-halved",
-        subBadgeColor: "#e879f9"
-    }
-];
-
-let allUsers = [...defaultSeedContacts];
-let allGroups = [...defaultSeedGroups];
+let allUsers = [];
+let allGroups = [];
 let allStatuses = [];
 let onlineUserList = ["chatnut"];
 let lastMessagesMap = {};
@@ -956,20 +847,6 @@ async function loadData() {
             allStatuses = statusesRes;
         }
 
-        // Ensure default demo groups exist
-        defaultSeedGroups.forEach(seedG => {
-            if (!allGroups.some(g => g.id === seedG.id)) {
-                allGroups.push(seedG);
-            }
-        });
-
-        // Ensure default demo contacts exist so chats can always be opened
-        defaultSeedContacts.forEach(seed => {
-            if (!allUsers.some(u => (u.username || "").toLowerCase() === seed.username.toLowerCase())) {
-                allUsers.push(seed);
-            }
-        });
-
         // Check if server has saved avatar for me
         const myRecord = allUsers.find(u => (u.username || "").toLowerCase() === me.toLowerCase());
         if (myRecord) {
@@ -991,12 +868,6 @@ async function loadData() {
             const matched = allUsers.find(u => (u.username || "").toLowerCase() === reqRecipient.toLowerCase() || (u.fullname && u.fullname.toLowerCase() === reqRecipient.toLowerCase()));
             if (matched) {
                 selectContact(matched.username, matched.fullname || matched.username, matched.avatarUrl);
-            }
-        } else if (window.innerWidth > 768 && !activeRecipientUsername && !activeGroupId) {
-            // Auto-select Hitesh by default on desktop to match WhatsApp layout
-            const hitesh = allUsers.find(u => (u.username || "").toLowerCase() === "hitesh");
-            if (hitesh) {
-                selectContact("hitesh", hitesh.fullname || "Hitesh 🐝🐝", hitesh.avatarUrl);
             }
         }
     } catch (e) {
@@ -1052,15 +923,19 @@ function renderContacts() {
             let timeText = g.lastMsgTime || "";
             let hasTicks = false;
             let isRead = false;
+            let lastMsgTimestamp = 0;
 
             if (lastMsgObj) {
-                msgText = (lastMsgObj.username === me ? "You: " : `${lastMsgObj.username}: `) + lastMsgObj.message;
+                msgText = (lastMsgObj.username === me ? "You: " : `${lastMsgObj.username}: `) + (lastMsgObj.message || "");
                 const d = new Date(lastMsgObj.time);
                 timeText = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                lastMsgTimestamp = d.getTime();
                 if (lastMsgObj.username === me) {
                     hasTicks = true;
                     isRead = true;
                 }
+            } else if (g.updatedAt) {
+                lastMsgTimestamp = new Date(g.updatedAt).getTime();
             }
 
             conversationList.push({
@@ -1076,6 +951,7 @@ function renderContacts() {
                 isRead: isRead,
                 hasDoc: false,
                 hasPhoto: false,
+                lastMsgTimestamp: lastMsgTimestamp,
                 groupObj: g
             });
         });
@@ -1092,15 +968,19 @@ function renderContacts() {
             let hasTicks = !!u.hasTicks;
             let isRead = !!u.isRead;
             let hasDoc = !!u.hasDoc;
+            let lastMsgTimestamp = 0;
 
             if (lastMsgObj) {
-                msgText = (lastMsgObj.username === me ? "You: " : "") + lastMsgObj.message;
+                msgText = (lastMsgObj.username === me ? "You: " : "") + (lastMsgObj.message || "");
                 const d = new Date(lastMsgObj.time);
                 timeText = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                lastMsgTimestamp = d.getTime();
                 if (lastMsgObj.username === me) {
                     hasTicks = true;
                     isRead = true;
                 }
+            } else if (u.updatedAt) {
+                lastMsgTimestamp = new Date(u.updatedAt).getTime();
             }
 
             conversationList.push({
@@ -1116,36 +996,21 @@ function renderContacts() {
                 isRead: isRead,
                 hasDoc: hasDoc,
                 hasPhoto: false,
+                lastMsgTimestamp: lastMsgTimestamp,
                 userObj: u
             });
         });
     }
 
-    // Authentic sequence matching reference screenshot
-    const exactOrder = [
-        "you",
-        "group-cst-official-2024-28",
-        "maa",
-        "bhumika",
-        "hitesh",
-        "group-lt-williams-hall-2026-27",
-        "chatnut",
-        "alex",
-        "priya"
-    ];
-
+    // Dynamic sorting: Pinned chats on top, followed by most recent activity timestamp
     conversationList.sort((a, b) => {
         if (a.pinned !== b.pinned) {
             return a.pinned ? -1 : 1;
         }
-        const indexA = exactOrder.indexOf(a.id);
-        const indexB = exactOrder.indexOf(b.id);
-        if (indexA !== -1 && indexB !== -1) {
-            return indexA - indexB;
+        if (a.lastMsgTimestamp !== b.lastMsgTimestamp) {
+            return b.lastMsgTimestamp - a.lastMsgTimestamp;
         }
-        if (indexA !== -1) return -1;
-        if (indexB !== -1) return 1;
-        return 0;
+        return a.name.localeCompare(b.name);
     });
 
     conversationList.forEach(item => {
@@ -1376,17 +1241,18 @@ function selectContact(targetUsername, targetDisplayName, targetAvatar) {
     if (nameEl) nameEl.textContent = activeRecipientDisplayName;
 
     const initial = activeRecipientDisplayName.charAt(0).toUpperCase();
-    const avatarEl = document.getElementById("chatHeaderAvatar");
+    const targetUserObj = allUsers.find(u => (u.username || "").toLowerCase() === (targetUsername || "").toLowerCase());
+    const finalAvatar = targetAvatar || (targetUserObj && targetUserObj.avatarUrl);
     if (avatarEl) {
-        if (targetAvatar) {
-            avatarEl.innerHTML = `<img src="${targetAvatar}" class="avatar-img" alt="avatar">`;
+        if (finalAvatar) {
+            avatarEl.innerHTML = `<img src="${finalAvatar}" class="avatar-img" alt="avatar">`;
             avatarEl.style.background = "transparent";
-        } else if ((targetUsername || "").toLowerCase() === "hitesh") {
-            avatarEl.innerHTML = `<span style="color: #25d366; font-size: 20px; font-weight: 700;">H</span>`;
-            avatarEl.style.background = "#025144";
-        } else if ((targetUsername || "").toLowerCase() === "you") {
-            avatarEl.innerHTML = `<i class="fa-solid fa-user" style="color: #f472b6; font-size: 18px;"></i>`;
-            avatarEl.style.background = "#4c1d42";
+        } else if (targetUserObj && targetUserObj.avatarIcon) {
+            avatarEl.innerHTML = `<i class="${targetUserObj.avatarIcon}" style="color: ${targetUserObj.avatarIconColor || '#38bdf8'}; font-size: 18px;"></i>`;
+            avatarEl.style.background = targetUserObj.avatarColor || getAvatarGradient(targetUsername);
+        } else if (targetUserObj && targetUserObj.avatarInitial) {
+            avatarEl.innerHTML = `<span style="color: ${targetUserObj.avatarTextColor || '#fff'}; font-size: 20px; font-weight: 700;">${targetUserObj.avatarInitial}</span>`;
+            avatarEl.style.background = targetUserObj.avatarColor || getAvatarGradient(targetUsername);
         } else {
             avatarEl.textContent = initial;
             avatarEl.style.background = getAvatarGradient(targetUsername);
@@ -2509,55 +2375,12 @@ socket.on("load messages", (msgs) => {
     if (msgs && msgs.length > 0) {
         msgs.forEach(displayChatMessage);
     } else {
-        // Pre-load authentic demo conversation matching WhatsApp screenshot
-        let seedMsgs = [];
-        const lowerRecipient = (activeRecipientUsername || "").toLowerCase();
-
-        if (lowerRecipient === "hitesh") {
-            seedMsgs = [
-                { username: me, senderFullName: myFullName || me, message: "Hii Hitesh, are you free for a quick call?", time: new Date(Date.now() - 5 * 60000) },
-                { username: "hitesh", senderFullName: "Hitesh 🐝🐝", message: "2 min ruko", time: new Date(Date.now() - 2 * 60000) }
-            ];
-        } else if (lowerRecipient === "you") {
-            seedMsgs = [
-                { username: me, senderFullName: myFullName || me, message: "Saved assignments and notes", time: new Date(Date.now() - 3600000 * 24) },
-                { username: me, senderFullName: myFullName || me, message: "akanshi_sharma_assignment.pdf", mediaUrl: "#", mediaType: "file", fileName: "akanshi_sharma_assignment.pdf", fileSize: "1.4 MB", time: new Date(Date.now() - 3600000 * 22) }
-            ];
-        } else if (lowerRecipient === "maa") {
-            seedMsgs = [
-                { username: "maa", senderFullName: "Maa 💕⭐", message: "Ghar kab aaogi beta? Khana kha liya?", time: new Date(Date.now() - 3600000 * 24) },
-                { username: me, senderFullName: myFullName || me, message: "Haan Maa, sab theek hai. Aapka kam ho gaya?", time: new Date(Date.now() - 3600000 * 20) },
-                { username: "maa", senderFullName: "Maa 💕⭐", message: "Ho Gaya gudiya", time: new Date(Date.now() - 3600000 * 18) }
-            ];
-        } else if (lowerRecipient === "bhumika") {
-            seedMsgs = [
-                { username: me, senderFullName: myFullName || me, message: "Hey Bhumika, portal check kiya kya?", time: new Date(Date.now() - 15 * 60000) },
-                { username: "bhumika", senderFullName: "Bhumika ⭐", message: "Login to ho rha hai", time: new Date(Date.now() - 5 * 60000) }
-            ];
-        } else if (lowerRecipient === "chatnut") {
-            seedMsgs = [
-                { username: "chatnut", senderFullName: "chatNut Bot 🤖", message: "Hello! Welcome to chatNut. How can I help you today?", time: new Date(Date.now() - 3600000 * 12) }
-            ];
-        } else if (activeGroupId === "group-cst-official-2024-28") {
-            seedMsgs = [
-                { username: "sujoy", senderFullName: "Sujoy", message: "~~Sujoy: Everyone selected for Round 2 check your emails!", time: new Date(Date.now() - 3600000 * 8) }
-            ];
-        } else if (activeGroupId === "group-lt-williams-hall-2026-27") {
-            seedMsgs = [
-                { username: "akriti", senderFullName: "Akriti (CST)", message: "Akriti (CST): Chhole bhature", time: new Date(Date.now() - 3600000 * 3) }
-            ];
-        }
-
-        if (seedMsgs.length > 0) {
-            seedMsgs.forEach(displayChatMessage);
-        } else {
-            const placeholder = document.createElement("div");
-            placeholder.style.cssText = "text-align: center; color: #888; font-size: 13px; margin: auto; padding: 20px; background: rgba(255,255,255,0.7); border-radius: 20px; z-index: 1;";
-            placeholder.textContent = activeChatType === "group"
-                ? `Welcome to ${activeRecipientDisplayName}! Start the group conversation.`
-                : `No messages yet. Say hi to ${activeRecipientDisplayName}!`;
-            messagesContainer.appendChild(placeholder);
-        }
+        const placeholder = document.createElement("div");
+        placeholder.style.cssText = "text-align: center; color: var(--text-secondary); font-size: 13px; margin: auto; padding: 18px 24px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); z-index: 1;";
+        placeholder.textContent = activeChatType === "group"
+            ? `Welcome to ${activeRecipientDisplayName || 'the group'}! Start the conversation.`
+            : `No messages yet. Say hi to ${activeRecipientDisplayName || 'your contact'}!`;
+        messagesContainer.appendChild(placeholder);
     }
     scrollToBottom();
 });

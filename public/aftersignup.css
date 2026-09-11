@@ -709,18 +709,23 @@ header {
 
 /* Empty state */
 .empty-chat-view {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
     margin: auto;
     text-align: center;
     padding: 30px 20px;
-    max-width: 580px;
+    max-width: 540px;
     width: 100%;
 }
 
 .choose-chat-main-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
-    margin: 18px auto 20px auto;
+    margin: 16px auto 20px auto;
     padding: 10px 24px;
     background: var(--primary-accent);
     color: #ffffff;
