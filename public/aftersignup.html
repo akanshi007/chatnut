@@ -533,7 +533,17 @@ const API_BASE = (window.location.protocol === 'file:' || (window.location.port 
 
 const socket = API_BASE ? io(API_BASE) : io();
 
-const me = localStorage.getItem("chatUser") || "";
+let rawUser = localStorage.getItem("chatUser") || "";
+if (typeof rawUser === "string" && rawUser.trim().startsWith("{")) {
+    try {
+        const parsed = JSON.parse(rawUser);
+        rawUser = parsed.username || parsed.fullname || parsed.email || rawUser;
+        localStorage.setItem("chatUser", rawUser);
+        if (parsed.fullname) localStorage.setItem("chatFullName", parsed.fullname);
+        if (parsed.email) localStorage.setItem("chatEmail", parsed.email);
+    } catch (e) {}
+}
+const me = rawUser;
 const myFullName = localStorage.getItem("chatFullName") || me;
 
 if (!me) {

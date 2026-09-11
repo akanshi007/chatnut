@@ -33,9 +33,10 @@ body {
 }
 
 .signup-wrapper {
-  width: 400px;
+  width: 420px;
+  max-width: 100%;
   background: rgba(255, 255, 255, 1);
-  padding: 30px 35px;
+  padding: 30px 32px;
   border-radius: 20px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
   display: flex;
@@ -47,6 +48,13 @@ body {
 .signup-wrapper:hover {
   transform: translateY(-5px);
   box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+}
+
+.signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
 }
 
 .input-card {
@@ -156,6 +164,25 @@ body {
   color: #222;
 }
 
+.dev-otp-banner {
+  background: #f0fdf4;
+  border: 1.5px dashed #00a884;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  color: #008069;
+  text-align: center;
+  width: 100%;
+}
+
+.dev-otp-banner strong {
+  font-family: monospace;
+  font-size: 16px;
+  letter-spacing: 2px;
+  color: #00a884;
+  margin-left: 4px;
+}
+
 .resend-row {
   display: flex;
   justify-content: space-between;
@@ -234,6 +261,13 @@ body {
   gap: 16px;
   position: relative;
   animation: modalPop 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fp-modal-content form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
 }
 
 @keyframes modalPop {

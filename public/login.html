@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Log In | chatNut</title>
-  <link rel="stylesheet" href="signup.css">
+  <link rel="stylesheet" href="signup.css?v=2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -86,7 +86,7 @@
           <strong id="fpTargetEmailDisplay" style="display: block; color: #00a884; margin-top: 2px;">email@example.com</strong>
         </div>
 
-        <div id="fpDevOtpBanner" style="display: none; background: #f0fdf4; border: 1px dashed #00a884; border-radius: 8px; padding: 8px; font-size: 13px; color: #00a884; text-align: center; margin-bottom: 6px;">
+        <div id="fpDevOtpBanner" style="display: none;" class="dev-otp-banner">
           🔑 Reset Code: <strong id="fpDevOtpCode">-</strong>
         </div>
 
@@ -128,14 +128,26 @@
       localStorage.removeItem("chatFullName");
       localStorage.removeItem("chatEmail");
     } else if (localStorage.getItem("chatUser")) {
-      const currentUser = localStorage.getItem("chatUser");
+      let currentUser = localStorage.getItem("chatUser");
+      if (typeof currentUser === "string" && currentUser.trim().startsWith("{")) {
+        try {
+          const parsed = JSON.parse(currentUser);
+          currentUser = parsed.username || parsed.fullname || parsed.email || currentUser;
+          localStorage.setItem("chatUser", currentUser);
+          if (parsed.fullname) localStorage.setItem("chatFullName", parsed.fullname);
+          if (parsed.email) localStorage.setItem("chatEmail", parsed.email);
+        } catch (e) {}
+      }
+
       const switchBanner = document.createElement("div");
-      switchBanner.style.cssText = "margin-bottom: 14px; padding: 10px 14px; background: #f0fdf4; border: 1px solid #00a884; border-radius: 10px; font-size: 13px; color: #111b21; display: flex; align-items: center; justify-content: space-between;";
+      switchBanner.style.cssText = "width: 100%; box-sizing: border-box; margin-bottom: 16px; padding: 12px 14px; background: #f0fdf4; border: 1px solid #00a884; border-radius: 12px; font-size: 13px; color: #111b21; display: flex; flex-direction: column; gap: 8px; text-align: left;";
       switchBanner.innerHTML = `
-        <span>Logged in as <strong>${currentUser}</strong></span>
-        <div style="display: flex; gap: 10px; align-items: center;">
-          <a href="aftersignup.html" style="color: #00a884; font-weight: 600; text-decoration: none;">Continue &rarr;</a>
-          <a href="javascript:void(0)" onclick="clearSessionAndStay()" style="color: #ef4444; font-weight: 500; text-decoration: underline;">Switch Account</a>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+          <span style="font-size: 13px; color: #374151;">Logged in as <strong style="color: #00a884;">${currentUser}</strong></span>
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <a href="aftersignup.html" style="color: #00a884; font-weight: 600; text-decoration: none; font-size: 13px;">Continue &rarr;</a>
+            <a href="javascript:void(0)" onclick="clearSessionAndStay()" style="color: #ef4444; font-weight: 500; text-decoration: underline; font-size: 13px;">Switch Account</a>
+          </div>
         </div>
       `;
       document.getElementById("loginForm")?.prepend(switchBanner);

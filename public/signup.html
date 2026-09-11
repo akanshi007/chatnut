@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign Up | chatNut</title>
-  <link rel="stylesheet" href="signup.css">
+  <link rel="stylesheet" href="signup.css?v=2">
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -74,13 +74,13 @@
         <p class="login-text">Already have an account? <a href="login.html">Log In</a></p>
       </form>
 
-      <form id="otpForm" class="signup-form" style="display: none;">
+      <form id="otpForm" class="signup-form" style="display: none; flex-direction: column; gap: 16px; width: 100%;">
         <div class="otp-meta-info">
           We've sent a 6-digit verification code to:
           <strong id="otpEmailDisplay" style="display: block; margin-top: 4px; color: #00a884;">user@example.com</strong>
         </div>
 
-        <div id="devOtpBanner" style="display: none; background: #f0fdf4; border: 1px dashed #00a884; border-radius: 8px; padding: 8px; font-size: 13px; color: #00a884; text-align: center; margin-bottom: 6px;">
+        <div id="devOtpBanner" style="display: none;" class="dev-otp-banner">
           🔑 Verification code: <strong id="devOtpCode">-</strong>
         </div>
 
@@ -94,7 +94,7 @@
           <button type="button" id="resendBtn" class="resend-btn" disabled onclick="handleResendOtp()">Resend Code</button>
         </div>
 
-        <button type="submit" id="verifyBtn" class="signup-btn" style="margin-top: 10px;">Verify & Complete Registration</button>
+        <button type="submit" id="verifyBtn" class="signup-btn">Verify & Complete Registration</button>
         <button type="button" class="signup-btn btn-secondary" onclick="backToStep1()">Edit Details</button>
       </form>
 
@@ -127,7 +127,7 @@
           <strong id="fpTargetEmailDisplay" style="display: block; color: #00a884; margin-top: 2px;">email@example.com</strong>
         </div>
 
-        <div id="fpDevOtpBanner" style="display: none; background: #f0fdf4; border: 1px dashed #00a884; border-radius: 8px; padding: 8px; font-size: 13px; color: #00a884; text-align: center; margin-bottom: 6px;">
+        <div id="fpDevOtpBanner" style="display: none;" class="dev-otp-banner">
           🔑 Reset Code: <strong id="fpDevOtpCode">-</strong>
         </div>
 
@@ -227,6 +227,7 @@
 
           signupForm.style.display = "none";
           otpForm.style.display = "flex";
+          otpForm.style.flexDirection = "column";
           document.getElementById("pageTitle").textContent = "Verify Your Email";
           document.getElementById("pageSubtitle").textContent = "Enter the code sent to your inbox";
 
@@ -365,6 +366,7 @@
       alertBox.style.display = "none";
       otpForm.style.display = "none";
       signupForm.style.display = "flex";
+      signupForm.style.flexDirection = "column";
       document.getElementById("pageTitle").textContent = "Create Your Account";
       document.getElementById("pageSubtitle").textContent = "Join chatNut to connect with friends";
       submitBtn.classList.remove("btn-disabled");

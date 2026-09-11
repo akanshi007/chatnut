@@ -6,6 +6,13 @@ const params = new URLSearchParams(window.location.search);
 
 // User and room details
 let username = params.get("username") || localStorage.getItem("chatUser");
+if (typeof username === "string" && username.trim().startsWith("{")) {
+    try {
+        const parsed = JSON.parse(username);
+        username = parsed.username || parsed.fullname || username;
+        localStorage.setItem("chatUser", username);
+    } catch (e) {}
+}
 if (!username) {
     username = "User" + Math.floor(1000 + Math.random() * 9000);
     localStorage.setItem("chatUser", username);
