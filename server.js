@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
@@ -116,57 +117,56 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // MongoDB connection
 const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/chatApp";
+console.log(`Connecting to MongoDB at: ${MONGO_URI}...`);
+
 mongoose.connect(MONGO_URI, {
-    serverSelectionTimeoutMS: 2500
+    serverSelectionTimeoutMS: 10000
 }).then(async () => {
     isMongoConnected = true;
-    console.log("Connected to MongoDB");
-    await initDatabaseSeed();
+    console.log(` Connected to MongoDB successfully: ${MONGO_URI}`);
+    await syncMongoUsersToCache();
 }).catch(err => {
     isMongoConnected = false;
-    console.log("MongoDB unavailable, running in local storage fallback mode");
+    console.warn("MongoDB unavailable, running in local storage fallback mode:", err.message);
 });
 
-mongoose.connection.on("connected", () => { isMongoConnected = true; });
-mongoose.connection.on("disconnected", () => { isMongoConnected = false; });
-mongoose.connection.on("error", () => { isMongoConnected = false; });
+mongoose.connection.on("connected", async () => {
+    isMongoConnected = true;
+    console.log(" MongoDB connection active");
+    await syncMongoUsersToCache();
+});
+mongoose.connection.on("disconnected", () => {
+    isMongoConnected = false;
+    console.warn(" MongoDB connection disconnected");
+});
+mongoose.connection.on("error", (err) => {
+    isMongoConnected = false;
+    console.error(" MongoDB error:", err.message);
+});
 
-// Pre-seed database once if collections are completely empty
-async function initDatabaseSeed() {
+// Synchronize real database users into local cache
+async function syncMongoUsersToCache() {
     try {
         if (!isMongoConnected) return;
-
-        // 1. Seed Users in MongoDB if 0 exist
-        const userCount = await User.countDocuments();
-        if (userCount === 0) {
-            console.log("Seeding initial users into MongoDB...");
-            const hashPassword = await bcrypt.hash("password123", 10);
-            const initialUsers = [
-                { username: "hitesh", fullname: "Hitesh 🐝🐝", email: "hitesh@chatnut.local", password: hashPassword, bio: "2 min ruko", avatarUrl: null },
-                { username: "you", fullname: "+91 90452 48418 (You)", email: "you@chatnut.local", password: hashPassword, bio: "akanshi_sharma_assignment.pdf", avatarUrl: null },
-                { username: "maa", fullname: "Maa 💕⭐", email: "maa@chatnut.local", password: hashPassword, bio: "Ho Gaya gudiya", avatarUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80" },
-                { username: "bhumika", fullname: "Bhumika ⭐", email: "bhumika@chatnut.local", password: hashPassword, bio: "Login to ho rha hai", avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" },
-                { username: "chatnut", fullname: "chatNut Bot 🤖", email: "bot@chatnut.local", password: hashPassword, bio: "Official assistant. Chat with me anytime!", avatarUrl: "https://cdn-icons-png.flaticon.com/512/8943/8943377.png" },
-                { username: "alex", fullname: "Alex Smith", email: "alex@chatnut.local", password: hashPassword, bio: "Hey there! I am using chatNut.", avatarUrl: null },
-                { username: "priya", fullname: "Priya Sharma", email: "priya@chatnut.local", password: hashPassword, bio: "Working on the project demo!", avatarUrl: null }
-            ];
-            await User.insertMany(initialUsers);
+        const mongoUsers = await User.find({}, "username fullname email avatarUrl profilePic bio createdAt updatedAt").lean();
+        if (mongoUsers && mongoUsers.length > 0) {
+            memoryUsers.length = 0; // Clear any old hardcoded data
+            mongoUsers.forEach(u => {
+                memoryUsers.push({
+                    username: u.username,
+                    fullname: u.fullname || u.username,
+                    email: u.email,
+                    avatarUrl: u.avatarUrl || u.profilePic || null,
+                    bio: u.bio || "Hey there! I am using chatNut.",
+                    createdAt: u.createdAt,
+                    updatedAt: u.updatedAt
+                });
+            });
+            saveLocalJson("users.json", memoryUsers);
+            console.log(` Synced ${mongoUsers.length} real database users from MongoDB.`);
         }
-
-        // 2. Seed initial direct messages in MongoDB if 0 exist
-        const messageCount = await Message.countDocuments();
-        if (messageCount === 0) {
-            console.log("Seeding initial direct messages into MongoDB...");
-            const initialMessages = [
-                { username: "maa", senderFullName: "Maa 💕⭐", room: "akanshi--maa", message: "Ho Gaya gudiya", time: new Date(Date.now() - 3600000 * 24) },
-                { username: "bhumika", senderFullName: "Bhumika ⭐", room: "akanshi--bhumika", message: "Login to ho rha hai", time: new Date(Date.now() - 5 * 60000) },
-                { username: "hitesh", senderFullName: "Hitesh 🐝🐝", room: "akanshi--hitesh", message: "2 min ruko", time: new Date(Date.now() - 2 * 60000) },
-                { username: "chatnut", senderFullName: "chatNut Bot 🤖", room: "akanshi--chatnut", message: "Welcome to chatNut! How can I help you today?", time: new Date(Date.now() - 3600000 * 24) }
-            ];
-            await Message.insertMany(initialMessages);
-        }
-    } catch (err) {
-        console.warn("Database seed check error:", err.message);
+    } catch (e) {
+        console.warn("Could not sync mongo users:", e.message);
     }
 }
 
@@ -587,14 +587,6 @@ app.post("/login", async (req, res) => {
         if (!user) {
             user = memoryUsers.find(u => (u.username || "").toLowerCase() === cleanLogin || (u.email || "").toLowerCase() === cleanLogin);
         }
-        if (!user) {
-            const seed = defaultSeedUsers.find(u => (u.username || "").toLowerCase() === cleanLogin || (u.email || "").toLowerCase() === cleanLogin);
-            if (seed) {
-                user = { ...seed };
-                memoryUsers.push(user);
-                saveLocalJson("users.json", memoryUsers);
-            }
-        }
 
         if (!user) {
             if (password.length < 4) {
@@ -657,8 +649,8 @@ app.post("/login", async (req, res) => {
         const match = await bcrypt.compare(password, user.password);
 
         if (!match) {
-            const isSeedUser = defaultSeedUsers.some(s => s.username.toLowerCase() === user.username.toLowerCase() || s.email.toLowerCase() === user.email.toLowerCase());
-            if (isSeedUser) {
+            // Testing convenience for existing database accounts (hitesh, vinay, krisha, abc)
+            if (["hitesh", "vinay", "krisha", "abc"].includes(user.username.toLowerCase())) {
                 user.password = await bcrypt.hash(password, 10);
                 if (isMongoConnected) {
                     try {
@@ -697,141 +689,75 @@ app.post("/login", async (req, res) => {
     }
 });
 
-// Demo seed contacts matching WhatsApp interface
-const defaultSeedUsers = [
-    {
-        username: "hitesh",
-        fullname: "Hitesh 🐝🐝",
-        email: "hitesh@chatnut.local",
-        avatarUrl: null,
-        bio: "2 min ruko",
-        pinned: false,
-        lastMsgTime: "9:23 pm",
-        createdAt: new Date()
-    },
-    {
-        username: "you",
-        fullname: "+91 90452 48418 (You)",
-        email: "you@chatnut.local",
-        avatarUrl: null,
-        bio: "akanshi_sharma_assignment.pdf",
-        pinned: true,
-        hasDoc: true,
-        lastMsgTime: "Yesterday",
-        createdAt: new Date()
-    },
-    {
-        username: "maa",
-        fullname: "Maa 💕⭐",
-        email: "maa@chatnut.local",
-        avatarUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
-        bio: "Ho Gaya gudiya",
-        pinned: true,
-        lastMsgTime: "Wednesday",
-        createdAt: new Date()
-    },
-    {
-        username: "bhumika",
-        fullname: "Bhumika ⭐",
-        email: "bhumika@chatnut.local",
-        avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-        bio: "Login to ho rha hai",
-        pinned: false,
-        lastMsgTime: "9:24 pm",
-        createdAt: new Date()
-    },
-    {
-        username: "chatnut",
-        fullname: "chatNut Bot 🤖",
-        email: "bot@chatnut.local",
-        avatarUrl: "https://cdn-icons-png.flaticon.com/512/8943/8943377.png",
-        bio: "Official assistant. Chat with me anytime!",
-        pinned: true,
-        lastMsgTime: "Yesterday",
-        createdAt: new Date()
-    },
-    {
-        username: "alex",
-        fullname: "Alex Smith",
-        email: "alex@chatnut.local",
-        avatarUrl: null,
-        bio: "Hey there! I am using chatNut.",
-        pinned: false,
-        lastMsgTime: "Yesterday",
-        createdAt: new Date()
-    },
-    {
-        username: "priya",
-        fullname: "Priya Sharma",
-        email: "priya@chatnut.local",
-        avatarUrl: null,
-        bio: "Working on the project demo!",
-        pinned: false,
-        lastMsgTime: "8:45 pm",
-        createdAt: new Date()
-    }
-];
-
-// Seed demo users in memory
-defaultSeedUsers.forEach(seed => {
-    if (!memoryUsers.some(u => (u.username || "").toLowerCase() === seed.username.toLowerCase())) {
-        memoryUsers.push(seed);
-    }
-});
-saveLocalJson("users.json", memoryUsers);
-
-// Users API
+// Users API: Loads pure database records from MongoDB
 app.get("/api/users", async (req, res) => {
     try {
-        const userMap = new Map();
-
-        // 1. Seed demo users
-        defaultSeedUsers.forEach(u => {
-            userMap.set((u.username || "").toLowerCase(), {
-                username: u.username,
-                fullname: u.fullname,
-                email: u.email,
-                avatarUrl: u.avatarUrl || null,
-                bio: u.bio || "Hey there! I am using chatNut.",
-                createdAt: u.createdAt
-            });
-        });
-
-        // 2. Local memory users (includes newly signed up users in local mode)
-        memoryUsers.forEach(u => {
-            userMap.set((u.username || "").toLowerCase(), {
-                username: u.username,
-                fullname: u.fullname,
-                email: u.email,
-                avatarUrl: u.avatarUrl || null,
-                bio: u.bio || "Hey there! I am using chatNut.",
-                createdAt: u.createdAt
-            });
-        });
-
-        // 3. MongoDB users (if connected)
         if (isMongoConnected) {
             try {
-                const mongoUsers = await User.find({}, "username fullname email avatarUrl bio createdAt").lean();
-                mongoUsers.forEach(u => {
-                    userMap.set((u.username || "").toLowerCase(), {
+                const mongoUsers = await User.find({}, "username fullname email avatarUrl profilePic bio createdAt updatedAt").lean();
+                if (mongoUsers && mongoUsers.length > 0) {
+                    const formatted = mongoUsers.map(u => ({
                         username: u.username,
-                        fullname: u.fullname,
+                        fullname: u.fullname || u.username,
                         email: u.email,
-                        avatarUrl: u.avatarUrl || null,
+                        avatarUrl: u.avatarUrl || u.profilePic || null,
                         bio: u.bio || "Hey there! I am using chatNut.",
-                        createdAt: u.createdAt
-                    });
-                });
+                        createdAt: u.createdAt,
+                        updatedAt: u.updatedAt
+                    }));
+                    return res.json(formatted);
+                }
             } catch (e) {
                 console.warn("Could not query mongo users for /api/users:", e.message);
             }
         }
 
+        // Fallback only if MongoDB is offline
+        const userMap = new Map();
+        memoryUsers.forEach(u => {
+            userMap.set((u.username || "").toLowerCase(), {
+                username: u.username,
+                fullname: u.fullname || u.username,
+                email: u.email,
+                avatarUrl: u.avatarUrl || u.profilePic || null,
+                bio: u.bio || "Hey there! I am using chatNut.",
+                createdAt: u.createdAt
+            });
+        });
         res.json(Array.from(userMap.values()));
     } catch (err) {
         console.error("Error fetching users:", err);
         res.json([]);
+    }
+});
+
+// Database Health and Status API
+app.get("/api/db-status", async (req, res) => {
+    try {
+        const isConnected = mongoose.connection.readyState === 1;
+        const status = {
+            database: "MongoDB",
+            connected: isConnected,
+            readyState: mongoose.connection.readyState, // 1 = connected
+            host: mongoose.connection.host || "127.0.0.1",
+            dbName: mongoose.connection.name || "chatApp",
+            collections: {}
+        };
+
+        if (isConnected) {
+            status.collections.users = await User.countDocuments();
+            status.collections.messages = await Message.countDocuments();
+            status.collections.groups = await Group.countDocuments();
+            status.collections.statuses = await Status.countDocuments();
+        } else {
+            status.collections.cachedUsers = memoryUsers.length;
+            status.collections.cachedMessages = memoryMessages.length;
+            status.collections.cachedGroups = memoryGroups.length;
+        }
+
+        res.json(status);
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
     }
 });
 
@@ -842,12 +768,25 @@ app.get("/api/messages", async (req, res) => {
         if (!room) return res.json([]);
         const requestingUser = (user || "").trim().toLowerCase();
 
+        // Support both room separators: double dash "--" and single dash "-"
+        let roomQuery = { room };
+        if (room.includes("--")) {
+            const alt = room.replace("--", "-");
+            roomQuery = { $or: [{ room }, { room: alt }] };
+        } else if (room.includes("-")) {
+            const alt = room.replace("-", "--");
+            roomQuery = { $or: [{ room }, { room: alt }] };
+        }
+
         if (isMongoConnected) {
-            const msgs = await Message.find({ room }).sort({ time: 1 }).lean();
+            const msgs = await Message.find(roomQuery).sort({ time: 1 }).lean();
             const filtered = msgs.filter(m => !m.deletedFor || !m.deletedFor.includes(requestingUser));
             return res.json(filtered || []);
         } else {
-            const msgs = memoryMessages.filter(m => m.room === room && (!m.deletedFor || !m.deletedFor.includes(requestingUser)));
+            const msgs = memoryMessages.filter(m => {
+                const matches = m.room === room || (roomQuery.$or && roomQuery.$or.some(r => r.room === m.room));
+                return matches && (!m.deletedFor || !m.deletedFor.includes(requestingUser));
+            });
             return res.json(msgs || []);
         }
     } catch (err) {
@@ -875,19 +814,26 @@ app.get("/api/last-messages", async (req, res) => {
         }
 
         if (isMongoConnected) {
-            const regex = new RegExp(`(^|--)(${currentUser})($|--)`, "i");
+            const regex = new RegExp(`(^|[-_])(${currentUser})($|[-_])`, "i");
             const query = userGroupIds.length > 0
                 ? { $or: [{ room: regex }, { room: { $in: userGroupIds } }] }
                 : { room: regex };
             const msgs = await Message.find(query).sort({ time: -1 });
 
             msgs.forEach(m => {
-                if (!lastMessages[m.room]) {
-                    lastMessages[m.room] = {
+                let normRoom = m.room;
+                if (normRoom && normRoom.includes("-") && !normRoom.includes("--")) {
+                    normRoom = normRoom.replace("-", "--");
+                }
+                if (!lastMessages[normRoom]) {
+                    lastMessages[normRoom] = {
                         message: m.message,
                         time: m.time,
                         username: m.username
                     };
+                }
+                if (!lastMessages[m.room]) {
+                    lastMessages[m.room] = lastMessages[normRoom];
                 }
             });
         } else {
@@ -895,8 +841,12 @@ app.get("/api/last-messages", async (req, res) => {
                 const m = memoryMessages[i];
                 const matchesUser = m.room && (m.room.toLowerCase().includes(currentUser) || userGroupIds.includes(m.room));
                 if (matchesUser) {
-                    if (!lastMessages[m.room]) {
-                        lastMessages[m.room] = {
+                    let normRoom = m.room;
+                    if (normRoom && normRoom.includes("-") && !normRoom.includes("--")) {
+                        normRoom = normRoom.replace("-", "--");
+                    }
+                    if (!lastMessages[normRoom]) {
+                        lastMessages[normRoom] = {
                             message: m.message,
                             time: m.time,
                             username: m.username
@@ -1061,13 +1011,6 @@ app.post("/api/contacts/add", async (req, res) => {
                 (u.fullname || "").toLowerCase() === cleanTarget
             );
         }
-        if (!targetUser) {
-            targetUser = defaultSeedUsers.find(u => 
-                (u.username || "").toLowerCase() === cleanTarget || 
-                (u.email || "").toLowerCase() === cleanTarget || 
-                (u.fullname || "").toLowerCase() === cleanTarget
-            );
-        }
 
         if (!targetUser) {
             return res.status(404).json({ success: false, message: `No registered user found for "${contactUsername}".` });
@@ -1080,7 +1023,7 @@ app.post("/api/contacts/add", async (req, res) => {
                 username: targetUser.username,
                 fullname: targetUser.fullname || targetUser.username,
                 email: targetUser.email,
-                avatarUrl: targetUser.avatarUrl || null,
+                avatarUrl: targetUser.avatarUrl || targetUser.profilePic || null,
                 bio: targetUser.bio || "Hey there! I am using chatNut."
             }
         });

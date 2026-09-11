@@ -36,6 +36,11 @@ const userSchema = new mongoose.Schema({
         default: null
     },
 
+    profilePic: {
+        type: String,
+        default: null
+    },
+
     bio: {
         type: String,
         default: "Hey there! I am using chatNut."
