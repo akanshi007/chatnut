@@ -79,9 +79,14 @@
           <a href="javascript:void(0)">All Status Updates</a>
         </li>
 
-        <li onclick="openContactModal(); uncheckSidebar();">
-          <i class="fa-solid fa-user-plus"></i>
-          <a href="javascript:void(0)">New Contact</a>
+        <li onclick="openNewChatModal(); uncheckSidebar();">
+          <i class="fa-solid fa-comment-medical"></i>
+          <a href="javascript:void(0)">New Chat / Add Contact</a>
+        </li>
+
+        <li onclick="openNewGroupModal(); uncheckSidebar();">
+          <i class="fa-solid fa-users-rectangle"></i>
+          <a href="javascript:void(0)">New Group</a>
         </li>
 
         <li onclick="openProfileModal(); uncheckSidebar();">
@@ -116,13 +121,19 @@
       <div class="contacts-header-top">
         <h2>Chats</h2>
         <div style="display: flex; gap: 14px; align-items: center;">
+          <i class="fa-solid fa-user-group" onclick="openNewGroupModal()" style="cursor: pointer; color: var(--primary-accent); font-size: 15px;" title="New Group"></i>
           <i class="fa-solid fa-circle-notch" onclick="openCreateStatusModal()" style="cursor: pointer; color: var(--primary-accent); font-size: 16px;" title="New Status"></i>
-          <i class="fa-solid fa-user-plus" onclick="openContactModal()" style="cursor: pointer; color: var(--primary-accent); font-size: 16px;" title="Choose to Chat"></i>
+          <i class="fa-solid fa-comment-medical" onclick="openNewChatModal()" style="cursor: pointer; color: var(--primary-accent); font-size: 16px;" title="New Chat / Add Contact"></i>
         </div>
       </div>
       <div class="search-bar-wrap">
         <i class="fa-solid fa-magnifying-glass"></i>
         <input type="text" id="contactSearchInput" class="search-input" placeholder="Search conversations..." oninput="handleContactSearch()">
+      </div>
+      <div class="chat-filter-tabs">
+        <button type="button" class="filter-tab-pill active" id="filterTabAll" onclick="setChatFilter('all')">All</button>
+        <button type="button" class="filter-tab-pill" id="filterTabDirect" onclick="setChatFilter('direct')">Direct</button>
+        <button type="button" class="filter-tab-pill" id="filterTabGroups" onclick="setChatFilter('groups')">Groups</button>
       </div>
     </div>
 
@@ -148,6 +159,10 @@
     <div class="contacts-scroll" id="contactsContainer">
       <p style="text-align: center; color: #888; font-size: 13px; padding-top: 30px;">Loading contacts...</p>
     </div>
+
+    <button type="button" class="chat-fab-btn" onclick="openNewChatModal()" title="New Chat / Add Contact">
+      <i class="fa-solid fa-message"></i>
+    </button>
   </aside>
 
   <main class="chat-panel" id="chatPanel">
@@ -158,7 +173,7 @@
       </div>
       <h3>Welcome to chatNut</h3>
       <p>Choose a contact below or pick from the left panel to start chatting in real time.</p>
-      <button type="button" class="choose-chat-main-btn" onclick="openContactModal()" title="Choose to Chat">
+      <button type="button" class="choose-chat-main-btn" onclick="openNewChatModal()" title="Choose to Chat">
         <i class="fa-solid fa-comment-dots"></i>
         <span>Choose to Chat</span>
       </button>
@@ -596,14 +611,84 @@
   </div>
 </div>
 
-<div id="contactModal" class="modal-overlay">
-  <div class="modal-box">
+<div id="newChatModal" class="modal-overlay">
+  <div class="modal-box new-chat-modal-box">
     <div class="modal-header">
-      <h3>Choose to Chat</h3>
+      <h3><i class="fa-solid fa-comments" style="color: var(--primary-accent); margin-right: 8px;"></i>New Chat</h3>
       <button class="modal-close" onclick="closeModals()">&times;</button>
     </div>
-    <input type="text" id="userSearchInput" class="modal-input" placeholder="Search or choose a contact to chat with..." oninput="filterUsers()">
-    <div id="searchResults" class="search-results"></div>
+
+    <!-- Quick Action: Create New Group -->
+    <div class="new-chat-actions">
+      <div class="new-chat-action-card" onclick="closeModals(); openNewGroupModal();">
+        <div class="action-card-icon group-icon-bg">
+          <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="action-card-text">
+          <strong>New Group</strong>
+          <small>Create a group with your contacts</small>
+        </div>
+        <i class="fa-solid fa-chevron-right action-card-arrow"></i>
+      </div>
+    </div>
+
+    <!-- WhatsApp-style Add Contact Section -->
+    <div class="add-contact-section">
+      <label class="add-contact-label"><i class="fa-solid fa-user-plus"></i> Add Contact by Username or Email</label>
+      <div class="add-contact-input-wrap">
+        <input type="text" id="addContactInput" class="modal-input add-contact-input" placeholder="Enter username or email address..." onkeydown="if(event.key === 'Enter') handleAddContact()">
+        <button type="button" class="add-contact-submit-btn" onclick="handleAddContact()">
+          <i class="fa-solid fa-plus"></i> Add
+        </button>
+      </div>
+    </div>
+
+    <!-- Registered Users on chatNut Section -->
+    <div class="registered-users-section">
+      <div class="section-subheading-wrap">
+        <label class="add-contact-label"><i class="fa-solid fa-address-book"></i> Contacts on chatNut</label>
+        <span class="users-count-badge" id="registeredUsersCount">0 users</span>
+      </div>
+      <input type="text" id="userSearchInput" class="modal-input" placeholder="Search contacts on chatNut..." oninput="filterUsers()">
+      <div id="searchResults" class="search-results"></div>
+    </div>
+  </div>
+</div>
+
+<div id="newGroupModal" class="modal-overlay">
+  <div class="modal-box new-group-modal-box">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-users-rectangle" style="color: var(--primary-accent); margin-right: 8px;"></i>Create New Group</h3>
+      <button class="modal-close" onclick="closeModals()">&times;</button>
+    </div>
+
+    <div class="group-form-group">
+      <label class="group-form-label"><i class="fa-solid fa-tag"></i> Group Name</label>
+      <div class="group-name-input-wrap">
+        <div class="group-name-icon-preview">
+          <i class="fa-solid fa-users"></i>
+        </div>
+        <input type="text" id="groupNameInput" class="modal-input group-name-input" placeholder="e.g. Project Team, Friends, Study Group..." maxlength="40" onkeydown="if(event.key === 'Enter') submitCreateGroup()">
+      </div>
+    </div>
+
+    <div class="group-form-group" style="margin-top: 16px;">
+      <div class="group-members-header-row">
+        <label class="group-form-label" style="margin-bottom: 0;"><i class="fa-solid fa-user-check"></i> Add Group Members</label>
+        <span class="group-selected-count" id="groupSelectedCount">0 selected</span>
+      </div>
+      <input type="text" id="groupMemberSearchInput" class="modal-input" placeholder="Filter users to add..." oninput="filterGroupMembersList(this.value)" style="margin-top: 8px; margin-bottom: 10px;">
+      <div class="group-members-checklist" id="groupMembersChecklist">
+        <!-- Dynamically populated checklist -->
+      </div>
+    </div>
+
+    <div class="group-modal-footer">
+      <button type="button" class="modal-btn" style="background: transparent; color: var(--text-secondary); padding: 8px 16px;" onclick="closeModals()">Cancel</button>
+      <button type="button" class="modal-btn modal-btn-create-group" id="btnCreateGroup" onclick="submitCreateGroup()">
+        <i class="fa-solid fa-check" style="margin-right: 6px;"></i> Create Group
+      </button>
+    </div>
   </div>
 </div>
 
@@ -679,15 +764,21 @@ function getAvatarGradient(name) {
 }
 
 let allUsers = [];
+let allGroups = [];
 let allStatuses = [];
 let onlineUserList = ["chatnut"];
 let lastMessagesMap = {};
 
+// Filter state: 'all' | 'direct' | 'groups'
+let currentChatFilter = "all";
+
 // Active conversation state
-let activeChatType = "direct";
+let activeChatType = "direct"; // 'direct' | 'group'
 let activeRecipientUsername = null;
 let activeRecipientDisplayName = null;
 let activeRecipientAvatar = null;
+let activeGroupId = null;
+let activeGroupObj = null;
 let activeRoom = null;
 
 // Target for delete contact modal
@@ -744,6 +835,17 @@ document.addEventListener("keydown", function(e) {
 
 function closeModals() {
     document.querySelectorAll(".modal-overlay").forEach(m => m.style.display = "none");
+}
+
+function setChatFilter(filter) {
+    currentChatFilter = filter;
+    const tabAll = document.getElementById("filterTabAll");
+    const tabDirect = document.getElementById("filterTabDirect");
+    const tabGroups = document.getElementById("filterTabGroups");
+    if (tabAll) tabAll.classList.toggle("active", filter === "all");
+    if (tabDirect) tabDirect.classList.toggle("active", filter === "direct");
+    if (tabGroups) tabGroups.classList.toggle("active", filter === "groups");
+    renderContacts();
 }
 
 // Theme management
@@ -878,10 +980,238 @@ function logout() {
     window.location.href = "login.html?switch=true";
 }
 
-function openContactModal() {
-    document.getElementById("contactModal").style.display = "flex";
-    document.getElementById("userSearchInput").value = "";
+function openNewChatModal() {
+    closeModals();
+    const modal = document.getElementById("newChatModal");
+    if (!modal) return;
+    const addInput = document.getElementById("addContactInput");
+    if (addInput) addInput.value = "";
+    const userSearchInput = document.getElementById("userSearchInput");
+    if (userSearchInput) userSearchInput.value = "";
+    modal.style.display = "flex";
     filterUsers();
+    if (addInput) addInput.focus();
+}
+
+function openContactModal() {
+    openNewChatModal();
+}
+
+async function handleAddContact() {
+    const input = document.getElementById("addContactInput");
+    const query = input ? input.value.trim() : "";
+    if (!query) {
+        showToastBanner("Input Required", "Please enter a username or email to add.");
+        return;
+    }
+
+    if (query.toLowerCase() === me.toLowerCase()) {
+        showToastBanner("Self Contact", "You cannot add yourself as a contact.");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/api/contacts/add`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user: me, contactUsername: query })
+        });
+        const data = await res.json();
+        if (data.success && data.contact) {
+            const target = data.contact;
+            if (!allUsers.some(u => u.username.toLowerCase() === target.username.toLowerCase())) {
+                allUsers.push(target);
+            }
+            let deleted = JSON.parse(localStorage.getItem("deletedContacts_" + me) || "[]");
+            deleted = deleted.filter(u => u !== target.username.toLowerCase());
+            localStorage.setItem("deletedContacts_" + me, JSON.stringify(deleted));
+
+            closeModals();
+            renderContacts();
+            selectContact(target.username, target.fullname || target.username, target.avatarUrl);
+            showToastBanner("Contact Added", `Now chatting with ${target.fullname || target.username}!`);
+        } else {
+            showToastBanner("User Not Found", data.message || `No user found with "${query}".`);
+        }
+    } catch (e) {
+        showToastBanner("Error", "Failed to add contact: " + e.message);
+    }
+}
+
+function openNewGroupModal() {
+    closeModals();
+    const modal = document.getElementById("newGroupModal");
+    if (!modal) return;
+
+    const nameInput = document.getElementById("groupNameInput");
+    if (nameInput) nameInput.value = "";
+
+    const searchInput = document.getElementById("groupMemberSearchInput");
+    if (searchInput) searchInput.value = "";
+
+    renderGroupMembersChecklist();
+    updateGroupSelectedCount();
+    modal.style.display = "flex";
+    if (nameInput) nameInput.focus();
+}
+
+function renderGroupMembersChecklist(searchQuery = "") {
+    const container = document.getElementById("groupMembersChecklist");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const cleanQuery = searchQuery.trim().toLowerCase();
+    const others = (allUsers || []).filter(u => 
+        u && u.username && u.username.toLowerCase() !== me.toLowerCase() &&
+        ((u.username || "").toLowerCase().includes(cleanQuery) || (u.fullname && u.fullname.toLowerCase().includes(cleanQuery)))
+    );
+
+    if (others.length === 0) {
+        container.innerHTML = `<p style="padding: 16px; color: var(--text-secondary); text-align: center; font-size: 13px;">No contacts found</p>`;
+        return;
+    }
+
+    others.forEach(u => {
+        const row = document.createElement("label");
+        row.className = "group-member-item";
+        const displayName = u.fullname || u.username;
+        const initial = displayName.charAt(0).toUpperCase();
+
+        row.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
+                <div class="avatar-badge" style="width: 34px; height: 34px; font-size: 13px; background: ${getAvatarGradient(u.username)}; flex-shrink: 0;">
+                    ${u.avatarUrl ? `<img src="${u.avatarUrl}" class="avatar-img" alt="avatar">` : initial}
+                </div>
+                <div style="overflow: hidden; text-align: left;">
+                    <strong style="font-size: 13.5px; color: var(--text-primary); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(displayName)}</strong>
+                    <small style="color: var(--text-secondary); font-size: 11.5px; display: block;">@${escapeHtml(u.username)}</small>
+                </div>
+            </div>
+            <input type="checkbox" class="group-member-checkbox" value="${escapeHtml(u.username)}" onchange="updateGroupSelectedCount()">
+        `;
+        container.appendChild(row);
+    });
+}
+
+function filterGroupMembersList(val) {
+    renderGroupMembersChecklist(val);
+}
+
+function updateGroupSelectedCount() {
+    const checked = document.querySelectorAll(".group-member-checkbox:checked");
+    const countEl = document.getElementById("groupSelectedCount");
+    if (countEl) {
+        countEl.textContent = `${checked.length} selected`;
+    }
+}
+
+async function submitCreateGroup() {
+    const nameInput = document.getElementById("groupNameInput");
+    const name = nameInput ? nameInput.value.trim() : "";
+
+    if (!name) {
+        showToastBanner("Group Name Required", "Please enter a name for the group.");
+        if (nameInput) nameInput.focus();
+        return;
+    }
+
+    const checkedInputs = Array.from(document.querySelectorAll(".group-member-checkbox:checked"));
+    const selectedMembers = checkedInputs.map(cb => cb.value.trim().toLowerCase());
+
+    const btn = document.getElementById("btnCreateGroup");
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Creating...`;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/api/groups`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                name,
+                createdBy: me,
+                members: [me, ...selectedMembers]
+            })
+        });
+        const data = await res.json();
+        if (data.success && data.group) {
+            if (!allGroups.some(g => g.id === data.group.id)) {
+                allGroups.unshift(data.group);
+            }
+            closeModals();
+            renderContacts();
+            selectGroup(data.group);
+            showToastBanner("Group Created", `Group "${data.group.name}" created successfully!`);
+        } else {
+            showToastBanner("Failed", data.message || "Failed to create group.");
+        }
+    } catch (e) {
+        showToastBanner("Error", "Error creating group: " + e.message);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-solid fa-check" style="margin-right: 6px;"></i> Create Group`;
+        }
+    }
+}
+
+function selectGroup(group) {
+    if (!group || !group.id) return;
+
+    activeChatType = "group";
+    activeGroupId = group.id;
+    activeGroupObj = group;
+    activeRecipientUsername = null;
+    activeRecipientDisplayName = group.name;
+    activeRecipientAvatar = null;
+    activeRoom = group.id;
+
+    renderContacts();
+
+    // Show Chat Panel
+    const emptyChat = document.getElementById("emptyChatView");
+    if (emptyChat) emptyChat.style.display = "none";
+
+    const chatWrapper = document.getElementById("activeChatWrapper");
+    if (chatWrapper) chatWrapper.style.display = "flex";
+
+    const chatPanel = document.getElementById("chatPanel");
+    if (chatPanel) chatPanel.classList.add("mobile-active");
+
+    // Set Header
+    const nameEl = document.getElementById("chatHeaderName");
+    if (nameEl) nameEl.textContent = group.name;
+
+    const avatarEl = document.getElementById("chatHeaderAvatar");
+    if (avatarEl) {
+        avatarEl.innerHTML = `<i class="${group.groupIcon || 'fa-solid fa-users'}" style="color: #fff; font-size: 18px;"></i>`;
+        avatarEl.style.background = group.groupColor || "linear-gradient(135deg, #128c7e, #075e54)";
+    }
+
+    const dot = document.getElementById("chatHeaderDot");
+    if (dot) dot.className = "status-dot online";
+    const text = document.getElementById("chatHeaderStatusText");
+    if (text) {
+        const memCount = (group.members || []).length;
+        const memPreview = (group.members || []).slice(0, 3).join(", ") + (memCount > 3 ? ` +${memCount - 3} more` : "");
+        text.textContent = `${memCount} members: ${memPreview}`;
+    }
+
+    // Reset header dropdown and in-chat search
+    const dropdown = document.getElementById("chatHeaderDropdown");
+    if (dropdown) dropdown.style.display = "none";
+    closeInChatSearch();
+
+    // Join Socket Room
+    socket.emit("join room", { room: activeRoom, user: me });
+
+    // Focus input
+    const input = document.getElementById("msgInput");
+    if (input) {
+        input.value = "";
+        input.focus();
+    }
 }
 
 // Online status updates from server
@@ -912,14 +1242,18 @@ function fetchWithTimeout(url, options = {}, timeoutMs = 4000) {
 // Load contacts, statuses, and last messages
 async function loadData() {
     try {
-        const [usersRes, lastMsgRes, statusesRes] = await Promise.all([
+        const [usersRes, groupsRes, lastMsgRes, statusesRes] = await Promise.all([
             fetchWithTimeout(`${API_BASE}/api/users`),
+            fetchWithTimeout(`${API_BASE}/api/groups?user=${encodeURIComponent(me)}`),
             fetchWithTimeout(`${API_BASE}/api/last-messages?user=${encodeURIComponent(me)}`),
             fetchWithTimeout(`${API_BASE}/api/statuses`)
         ]);
 
         if (Array.isArray(usersRes)) {
             allUsers = usersRes;
+        }
+        if (Array.isArray(groupsRes)) {
+            allGroups = groupsRes;
         }
         if (lastMsgRes && typeof lastMsgRes === "object" && !Array.isArray(lastMsgRes)) {
             lastMessagesMap = lastMsgRes;
@@ -942,13 +1276,20 @@ async function loadData() {
             }
         }
 
-        // Check if query param requests a specific contact
+        // Check if query param requests a specific contact or group
         const params = new URLSearchParams(window.location.search);
         const reqRecipient = params.get("recipient") || params.get("contact");
         if (reqRecipient) {
             const matched = allUsers.find(u => (u.username || "").toLowerCase() === reqRecipient.toLowerCase() || (u.fullname && u.fullname.toLowerCase() === reqRecipient.toLowerCase()));
             if (matched) {
                 selectContact(matched.username, matched.fullname || matched.username, matched.avatarUrl);
+            }
+        }
+        const reqGroup = params.get("group");
+        if (reqGroup) {
+            const matchedG = allGroups.find(g => g.id === reqGroup || g.name.toLowerCase() === reqGroup.toLowerCase());
+            if (matchedG) {
+                selectGroup(matchedG);
             }
         }
     } catch (e) {
@@ -969,67 +1310,111 @@ function renderContacts() {
 
     const searchVal = (document.getElementById("contactSearchInput")?.value || "").trim().toLowerCase();
 
-    // Filter by search term
-    const filteredUsers = others.filter(u =>
-        (u.username || "").toLowerCase().includes(searchVal) || (u.fullname && u.fullname.toLowerCase().includes(searchVal))
-    );
+    const conversationList = [];
+
+    // 1. Direct chats (if filter is 'all' or 'direct')
+    if (currentChatFilter === "all" || currentChatFilter === "direct") {
+        const filteredUsers = others.filter(u =>
+            (u.username || "").toLowerCase().includes(searchVal) || (u.fullname && u.fullname.toLowerCase().includes(searchVal))
+        );
+
+        filteredUsers.forEach(u => {
+            const displayName = u.fullname || u.username;
+            const room = [me.toLowerCase(), u.username.toLowerCase()].sort().join("--");
+            const lastMsgObj = lastMessagesMap[room];
+            let msgText = u.bio || "No messages yet";
+            let timeText = u.defaultTime || "";
+            let hasTicks = !!u.hasTicks;
+            let isRead = !!u.isRead;
+            let hasDoc = !!u.hasDoc;
+            let lastMsgTimestamp = 0;
+
+            if (lastMsgObj) {
+                msgText = (lastMsgObj.username === me ? "You: " : "") + (lastMsgObj.message || "");
+                const d = new Date(lastMsgObj.time);
+                timeText = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                lastMsgTimestamp = d.getTime();
+                if (lastMsgObj.username === me) {
+                    hasTicks = true;
+                    isRead = true;
+                }
+            } else if (u.updatedAt) {
+                lastMsgTimestamp = new Date(u.updatedAt).getTime();
+            }
+
+            conversationList.push({
+                type: "direct",
+                id: u.username,
+                name: displayName,
+                sublabel: null,
+                timeText: timeText,
+                msgText: msgText,
+                pinned: !!u.pinned,
+                muted: false,
+                hasTicks: hasTicks,
+                isRead: isRead,
+                hasDoc: hasDoc,
+                hasPhoto: false,
+                lastMsgTimestamp: lastMsgTimestamp,
+                userObj: u
+            });
+        });
+    }
+
+    // 2. Groups (if filter is 'all' or 'groups')
+    if (currentChatFilter === "all" || currentChatFilter === "groups") {
+        const myGroups = (allGroups || []).filter(g => {
+            const mems = (g.members || []).map(m => (m || "").toLowerCase());
+            const matchesSearch = !searchVal || (g.name || "").toLowerCase().includes(searchVal);
+            return mems.includes(me.toLowerCase()) && matchesSearch;
+        });
+
+        myGroups.forEach(g => {
+            const room = g.id;
+            const lastMsgObj = lastMessagesMap[room];
+            let msgText = `Group created by ${g.createdBy || 'member'}`;
+            let timeText = "";
+            let lastMsgTimestamp = g.updatedAt ? new Date(g.updatedAt).getTime() : (g.createdAt ? new Date(g.createdAt).getTime() : 0);
+
+            if (lastMsgObj) {
+                msgText = (lastMsgObj.username === me ? "You: " : `${lastMsgObj.username}: `) + (lastMsgObj.message || "");
+                const d = new Date(lastMsgObj.time);
+                timeText = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                lastMsgTimestamp = d.getTime();
+            }
+
+            conversationList.push({
+                type: "group",
+                id: g.id,
+                name: g.name,
+                sublabel: `${(g.members || []).length} members`,
+                timeText: timeText,
+                msgText: msgText,
+                pinned: !!g.pinned,
+                muted: !!g.muted,
+                hasTicks: false,
+                isRead: false,
+                hasDoc: false,
+                hasPhoto: false,
+                lastMsgTimestamp: lastMsgTimestamp,
+                groupObj: g
+            });
+        });
+    }
 
     container.innerHTML = "";
 
-    if (filteredUsers.length === 0) {
+    if (conversationList.length === 0) {
+        const emptyMsg = currentChatFilter === "groups"
+            ? `<p>No group chats yet.</p><small>Click "New Group" to create one!</small>`
+            : `<p>No conversations found.</p><small>Click "Choose to Chat" to start messaging friends!</small>`;
         container.innerHTML = `
             <div style="text-align: center; color: #888; font-size: 13px; padding: 40px 10px;">
-                <p>No conversations found.</p>
-                <small>Click "Choose to Chat" to start messaging friends!</small>
+                ${emptyMsg}
             </div>
         `;
         return;
     }
-
-    const conversationList = [];
-
-    // Add direct users
-    filteredUsers.forEach(u => {
-        const displayName = u.fullname || u.username;
-        const room = [me.toLowerCase(), u.username.toLowerCase()].sort().join("--");
-        const lastMsgObj = lastMessagesMap[room];
-        let msgText = u.bio || "No messages yet";
-        let timeText = u.defaultTime || "";
-        let hasTicks = !!u.hasTicks;
-        let isRead = !!u.isRead;
-        let hasDoc = !!u.hasDoc;
-        let lastMsgTimestamp = 0;
-
-        if (lastMsgObj) {
-            msgText = (lastMsgObj.username === me ? "You: " : "") + (lastMsgObj.message || "");
-            const d = new Date(lastMsgObj.time);
-            timeText = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            lastMsgTimestamp = d.getTime();
-            if (lastMsgObj.username === me) {
-                hasTicks = true;
-                isRead = true;
-            }
-        } else if (u.updatedAt) {
-            lastMsgTimestamp = new Date(u.updatedAt).getTime();
-        }
-
-        conversationList.push({
-            type: "direct",
-            id: u.username,
-            name: displayName,
-            sublabel: null,
-            timeText: timeText,
-            msgText: msgText,
-            pinned: !!u.pinned,
-            muted: false,
-            hasTicks: hasTicks,
-            isRead: isRead,
-            hasDoc: hasDoc,
-            hasPhoto: false,
-            lastMsgTimestamp: lastMsgTimestamp,
-            userObj: u
-        });
-    });
 
     // Dynamic sorting: Pinned chats on top, followed by most recent activity timestamp
     conversationList.sort((a, b) => {
@@ -1046,43 +1431,54 @@ function renderContacts() {
         const card = document.createElement("div");
         card.className = "contact-card";
 
-        const isActive = activeRecipientUsername && activeRecipientUsername.toLowerCase() === item.id.toLowerCase();
+        const isActive = item.type === "group"
+            ? (activeChatType === "group" && activeGroupId === item.id)
+            : (activeChatType === "direct" && activeRecipientUsername && activeRecipientUsername.toLowerCase() === item.id.toLowerCase());
+
         if (isActive) {
             card.classList.add("active-contact");
         }
 
         // Build avatar HTML
         let avatarHtml = "";
-        const u = item.userObj;
-        const isOnline = (u.username || "").toLowerCase() === "chatnut" || onlineUserList.includes((u.username || "").toLowerCase());
-        const userStatus = (allStatuses || []).find(s => s && (s.username || "").toLowerCase() === (u.username || "").toLowerCase());
-        const hasStatus = !!userStatus;
-
-        let badgeContent = "";
-        let badgeBg = getAvatarGradient(u.username || "user");
-        let badgeStyle = `background: ${badgeBg};`;
-
-        if (u.avatarUrl) {
-            badgeContent = `<img src="${u.avatarUrl}" class="avatar-img" alt="${escapeHtml(item.name)}">`;
-        } else if (u.avatarIcon) {
-            badgeBg = u.avatarColor || "#4c1d42";
-            badgeStyle = `background: ${badgeBg};`;
-            badgeContent = `<i class="${u.avatarIcon}" style="color: ${u.avatarIconColor || '#f472b6'}; font-size: 19px;"></i>`;
-        } else if (u.avatarInitial) {
-            badgeBg = u.avatarColor || "#025144";
-            badgeStyle = `background: ${badgeBg};`;
-            badgeContent = `<span style="color: ${u.avatarTextColor || '#25d366'}; font-size: 21px; font-weight: 700;">${u.avatarInitial}</span>`;
+        if (item.type === "group") {
+            avatarHtml = `
+                <div class="avatar-badge" style="background: ${item.groupObj.groupColor || 'linear-gradient(135deg, #128c7e, #075e54)'};">
+                    <i class="${item.groupObj.groupIcon || 'fa-solid fa-users'}" style="color: #fff; font-size: 16px;"></i>
+                </div>
+            `;
         } else {
-            const initial = item.name.charAt(0).toUpperCase();
-            badgeContent = initial;
-        }
+            const u = item.userObj;
+            const isOnline = (u.username || "").toLowerCase() === "chatnut" || onlineUserList.includes((u.username || "").toLowerCase());
+            const userStatus = (allStatuses || []).find(s => s && (s.username || "").toLowerCase() === (u.username || "").toLowerCase());
+            const hasStatus = !!userStatus;
 
-        avatarHtml = `
-            <div class="avatar-badge ${hasStatus ? 'has-status' : ''}" style="${badgeStyle}" title="${hasStatus ? 'Click to view status' : ''}">
-                ${badgeContent}
-                <span class="online-status-dot ${isOnline ? 'online' : 'offline'}"></span>
-            </div>
-        `;
+            let badgeContent = "";
+            let badgeBg = getAvatarGradient(u.username || "user");
+            let badgeStyle = `background: ${badgeBg};`;
+
+            if (u.avatarUrl) {
+                badgeContent = `<img src="${u.avatarUrl}" class="avatar-img" alt="${escapeHtml(item.name)}">`;
+            } else if (u.avatarIcon) {
+                badgeBg = u.avatarColor || "#4c1d42";
+                badgeStyle = `background: ${badgeBg};`;
+                badgeContent = `<i class="${u.avatarIcon}" style="color: ${u.avatarIconColor || '#f472b6'}; font-size: 19px;"></i>`;
+            } else if (u.avatarInitial) {
+                badgeBg = u.avatarColor || "#025144";
+                badgeStyle = `background: ${badgeBg};`;
+                badgeContent = `<span style="color: ${u.avatarTextColor || '#25d366'}; font-size: 21px; font-weight: 700;">${u.avatarInitial}</span>`;
+            } else {
+                const initial = item.name.charAt(0).toUpperCase();
+                badgeContent = initial;
+            }
+
+            avatarHtml = `
+                <div class="avatar-badge ${hasStatus ? 'has-status' : ''}" style="${badgeStyle}" title="${hasStatus ? 'Click to view status' : ''}">
+                    ${badgeContent}
+                    <span class="online-status-dot ${isOnline ? 'online' : 'offline'}"></span>
+                </div>
+            `;
+        }
 
         // Build Title & Subtitle HTML
         let topHtml = "";
@@ -1126,6 +1522,12 @@ function renderContacts() {
             if (item.muted) rightMetaIcons += `<span class="contact-mute-icon" title="Muted"><i class="fa-solid fa-bell-slash"></i></span>`;
         }
 
+        const deleteButtonHtml = item.type === "direct"
+            ? `<button type="button" class="contact-card-delete" onclick="event.stopPropagation(); openDeleteContactModal('${escapeHtml(item.id)}', '${escapeHtml(item.name)}')" title="Delete chat">
+                <i class="fa-regular fa-trash-can"></i>
+            </button>`
+            : ``;
+
         card.innerHTML = `
             ${avatarHtml}
             <div class="contact-info">
@@ -1142,24 +1544,25 @@ function renderContacts() {
                     </div>
                 </div>
             </div>
-            <button type="button" class="contact-card-delete" onclick="event.stopPropagation(); openDeleteContactModal('${escapeHtml(item.id)}', '${escapeHtml(item.name)}')" title="Delete chat">
-                <i class="fa-regular fa-trash-can"></i>
-            </button>
+            ${deleteButtonHtml}
         `;
 
-        const u = item.userObj;
-        // If user has a status, clicking avatar views status
-        const userStatus = (allStatuses || []).find(s => s && (s.username || "").toLowerCase() === (u.username || "").toLowerCase());
-        if (userStatus) {
-            const av = card.querySelector(".avatar-badge");
-            if (av) {
-                av.onclick = (e) => {
-                    e.stopPropagation();
-                    viewStatus(userStatus.id);
-                };
+        if (item.type === "group") {
+            card.onclick = () => selectGroup(item.groupObj);
+        } else {
+            const u = item.userObj;
+            const userStatus = (allStatuses || []).find(s => s && (s.username || "").toLowerCase() === (u.username || "").toLowerCase());
+            if (userStatus) {
+                const av = card.querySelector(".avatar-badge");
+                if (av) {
+                    av.onclick = (e) => {
+                        e.stopPropagation();
+                        viewStatus(userStatus.id);
+                    };
+                }
             }
+            card.onclick = () => selectContact(u.username, item.name, u.avatarUrl);
         }
-        card.onclick = () => selectContact(u.username, item.name, u.avatarUrl);
 
         container.appendChild(card);
     });
@@ -3145,6 +3548,11 @@ function filterUsers() {
         ((u.username || "").toLowerCase().includes(val) || (u.fullname && u.fullname.toLowerCase().includes(val)))
     );
 
+    const countEl = document.getElementById("registeredUsersCount");
+    if (countEl) {
+        countEl.textContent = `${matches.length} user${matches.length === 1 ? '' : 's'}`;
+    }
+
     if (matches.length === 0) {
         results.innerHTML = "<p style='padding: 16px; color: var(--text-secondary); text-align: center;'>No matching contacts found</p>";
         return;
@@ -3174,6 +3582,19 @@ function filterUsers() {
         results.appendChild(div);
     });
 }
+
+// Socket: New group created
+socket.on("group created", (group) => {
+    if (!group) return;
+    const cleanMembers = (group.members || []).map(m => (m || "").toLowerCase());
+    if (cleanMembers.includes(me.toLowerCase())) {
+        if (!allGroups.some(g => g.id === group.id)) {
+            allGroups.unshift(group);
+            renderContacts();
+            showToastBanner("New Group", `You were added to group "${group.name}".`);
+        }
+    }
+});
 
 function escapeHtml(str) {
     if (!str) return "";

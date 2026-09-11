@@ -55,8 +55,8 @@ function saveLocalJson(filename, data) {
 
 const memoryUsers = loadLocalJson("users.json", []);
 const memoryMessages = loadLocalJson("messages.json", []);
-const groups = loadLocalJson("groups.json", []);
-saveLocalJson("groups.json", groups);
+const memoryGroups = loadLocalJson("groups.json", []);
+const groups = memoryGroups;
 const memoryStatuses = loadLocalJson("statuses.json", []);
 const onlineUsers = new Map();
 const otpStore = new Map();
@@ -153,13 +153,7 @@ async function initDatabaseSeed() {
             await User.insertMany(initialUsers);
         }
 
-        // 2. Clean up any remaining legacy groups from MongoDB
-        try {
-            await Group.deleteMany({});
-            await Message.deleteMany({ room: { $regex: /^group-/ } });
-        } catch (e) {}
-
-        // 3. Seed initial direct messages in MongoDB if 0 exist
+        // 2. Seed initial direct messages in MongoDB if 0 exist
         const messageCount = await Message.countDocuments();
         if (messageCount === 0) {
             console.log("Seeding initial direct messages into MongoDB...");
@@ -797,9 +791,22 @@ app.get("/api/last-messages", async (req, res) => {
 
         const lastMessages = {};
 
+        let userGroupIds = [];
+        if (isMongoConnected) {
+            try {
+                const gList = await Group.find({ members: currentUser }, 'id').lean();
+                userGroupIds = gList.map(g => g.id);
+            } catch (e) {}
+        } else {
+            userGroupIds = memoryGroups.filter(g => (g.members || []).map(m => (m || '').toLowerCase()).includes(currentUser)).map(g => g.id);
+        }
+
         if (isMongoConnected) {
             const regex = new RegExp(`(^|--)(${currentUser})($|--)`, "i");
-            const msgs = await Message.find({ room: regex }).sort({ time: -1 });
+            const query = userGroupIds.length > 0
+                ? { $or: [{ room: regex }, { room: { $in: userGroupIds } }] }
+                : { room: regex };
+            const msgs = await Message.find(query).sort({ time: -1 });
 
             msgs.forEach(m => {
                 if (!lastMessages[m.room]) {
@@ -813,7 +820,8 @@ app.get("/api/last-messages", async (req, res) => {
         } else {
             for (let i = memoryMessages.length - 1; i >= 0; i--) {
                 const m = memoryMessages[i];
-                if (m.room && m.room.toLowerCase().includes(currentUser)) {
+                const matchesUser = m.room && (m.room.toLowerCase().includes(currentUser) || userGroupIds.includes(m.room));
+                if (matchesUser) {
                     if (!lastMessages[m.room]) {
                         lastMessages[m.room] = {
                             message: m.message,
@@ -867,9 +875,124 @@ app.post("/api/delete-conversation", async (req, res) => {
     }
 });
 
-// Groups API (Disabled - pure direct messaging)
-app.get("/api/groups", (req, res) => {
-    res.json([]);
+// Groups API
+app.get("/api/groups", async (req, res) => {
+    try {
+        const currentUser = (req.query.user || "").trim().toLowerCase();
+        let groupList = [];
+        if (isMongoConnected) {
+            try {
+                if (currentUser) {
+                    groupList = await Group.find({ members: currentUser }).sort({ updatedAt: -1 }).lean();
+                } else {
+                    groupList = await Group.find({}).sort({ updatedAt: -1 }).lean();
+                }
+            } catch (e) {
+                groupList = [];
+            }
+        }
+        if (!groupList || groupList.length === 0) {
+            if (currentUser) {
+                groupList = memoryGroups.filter(g => (g.members || []).map(m => (m || "").toLowerCase()).includes(currentUser));
+            } else {
+                groupList = memoryGroups;
+            }
+        }
+        res.json(groupList || []);
+    } catch (err) {
+        console.error("Error fetching groups:", err);
+        res.json([]);
+    }
+});
+
+app.post("/api/groups", async (req, res) => {
+    try {
+        const { name, createdBy, members, groupIcon, groupColor } = req.body;
+        if (!name || !name.trim()) {
+            return res.status(400).json({ success: false, message: "Group name is required." });
+        }
+
+        const cleanMembers = Array.isArray(members)
+            ? members.map(m => String(m).trim().toLowerCase())
+            : [];
+        const cleanCreator = (createdBy || "").trim().toLowerCase();
+        if (cleanCreator && !cleanMembers.includes(cleanCreator)) {
+            cleanMembers.push(cleanCreator);
+        }
+
+        const groupId = "group-" + Date.now() + "-" + Math.random().toString(36).substr(2, 6);
+        const groupData = {
+            id: groupId,
+            name: name.trim(),
+            createdBy: cleanCreator,
+            members: cleanMembers,
+            groupIcon: groupIcon || "fa-solid fa-users",
+            groupColor: groupColor || "linear-gradient(135deg, #128c7e, #075e54)",
+            sublabel: `${cleanMembers.length} members`,
+            pinned: false,
+            muted: false,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        };
+
+        if (isMongoConnected) {
+            const saved = await Group.create(groupData);
+            io.emit("group created", saved);
+            return res.json({ success: true, group: saved });
+        } else {
+            memoryGroups.unshift(groupData);
+            saveLocalJson("groups.json", memoryGroups);
+            io.emit("group created", groupData);
+            return res.json({ success: true, group: groupData });
+        }
+    } catch (err) {
+        console.error("Create group error:", err);
+        res.status(500).json({ success: false, message: "Failed to create group: " + err.message });
+    }
+});
+
+// Add contact API
+app.post("/api/contacts/add", async (req, res) => {
+    try {
+        const { user, contactUsername } = req.body;
+        if (!user || !contactUsername) {
+            return res.status(400).json({ success: false, message: "User and contact username/email are required." });
+        }
+        const cleanUser = user.trim().toLowerCase();
+        const cleanTarget = contactUsername.trim().toLowerCase();
+
+        if (cleanUser === cleanTarget) {
+            return res.status(400).json({ success: false, message: "You cannot add yourself as a contact." });
+        }
+
+        let targetUser = null;
+        if (isMongoConnected) {
+            targetUser = await User.findOne({
+                $or: [{ username: cleanTarget }, { email: cleanTarget }]
+            }, "username fullname email avatarUrl bio createdAt").lean();
+        } else {
+            targetUser = memoryUsers.find(u => (u.username || "").toLowerCase() === cleanTarget || (u.email || "").toLowerCase() === cleanTarget);
+        }
+
+        if (!targetUser) {
+            return res.status(404).json({ success: false, message: `No registered user found for "${contactUsername}".` });
+        }
+
+        res.json({
+            success: true,
+            message: `Contact "${targetUser.fullname || targetUser.username}" ready to chat!`,
+            contact: {
+                username: targetUser.username,
+                fullname: targetUser.fullname || targetUser.username,
+                email: targetUser.email,
+                avatarUrl: targetUser.avatarUrl || null,
+                bio: targetUser.bio || "Hey there! I am using chatNut."
+            }
+        });
+    } catch (err) {
+        console.error("Add contact error:", err);
+        res.status(500).json({ success: false, message: "Server error adding contact." });
+    }
 });
 
 // Clear conversation chat history API
@@ -993,6 +1116,9 @@ io.on("connection", (socket) => {
         const clean = username.trim().toLowerCase();
         currentSocketUser = clean;
 
+        // Automatically join private user room for direct cross-room notifications
+        socket.join("user:" + clean);
+
         if (!onlineUsers.has(clean)) {
             onlineUsers.set(clean, new Set());
         }
@@ -1045,14 +1171,44 @@ io.on("connection", (socket) => {
                 time: new Date()
             };
 
+            let outMessage = msgData;
             if (isMongoConnected) {
                 const message = new Message(msgData);
-                const saved = await message.save();
-                io.to(data.room).emit("chat message", saved);
+                outMessage = await message.save();
             } else {
                 memoryMessages.push(msgData);
                 saveLocalJson("messages.json", memoryMessages);
-                io.to(data.room).emit("chat message", msgData);
+            }
+
+            // 1. Deliver to all clients currently inside this chat room
+            io.to(data.room).emit("chat message", outMessage);
+
+            // 2. Also deliver to recipient's personal user room so they receive real-time notifications anywhere in the app
+            const roomStr = data.room || "";
+            if (roomStr.includes("--")) {
+                const parts = roomStr.split("--");
+                parts.forEach(u => {
+                    const cleanU = (u || "").trim().toLowerCase();
+                    if (cleanU && cleanU !== data.username.toLowerCase()) {
+                        io.to("user:" + cleanU).emit("chat message", outMessage);
+                    }
+                });
+            } else if (roomStr.startsWith("group-")) {
+                let gObj = null;
+                if (isMongoConnected) {
+                    try { gObj = await Group.findOne({ id: roomStr }).lean(); } catch (e) {}
+                }
+                if (!gObj) {
+                    gObj = memoryGroups.find(g => g.id === roomStr);
+                }
+                if (gObj && Array.isArray(gObj.members)) {
+                    gObj.members.forEach(member => {
+                        const cleanM = (member || "").trim().toLowerCase();
+                        if (cleanM && cleanM !== data.username.toLowerCase()) {
+                            io.to("user:" + cleanM).emit("chat message", outMessage);
+                        }
+                    });
+                }
             }
 
             // Auto-reply if message sent to chatnut bot
