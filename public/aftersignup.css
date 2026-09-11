@@ -710,15 +710,20 @@ header {
 
 /* Empty state */
 .empty-chat-view {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     margin: auto;
     text-align: center;
     padding: 30px 20px;
     max-width: 540px;
     width: 100%;
+}
+
+.empty-chat-view[style*="display: none"],
+.empty-chat-view.hidden {
+    display: none !important;
 }
 
 .choose-chat-main-btn {
@@ -878,6 +883,11 @@ header {
     flex-direction: column;
     height: 100%;
     width: 100%;
+}
+
+.active-chat-wrapper[style*="display: none"],
+.active-chat-wrapper.hidden {
+    display: none !important;
 }
 
 /* Chat header */

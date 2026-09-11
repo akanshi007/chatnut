@@ -180,7 +180,7 @@
       <div class="quick-contacts-container" id="quickContactsCenter"></div>
     </div>
 
-    <div class="active-chat-wrapper" id="activeChatWrapper" style="display: none;">
+    <div class="active-chat-wrapper hidden" id="activeChatWrapper" style="display: none;">
       <header class="chat-header-bar">
         <button type="button" class="chat-back-btn" id="chatBackBtn" onclick="closeActiveChat()" title="Back to contacts">
           <i class="fa-solid fa-arrow-left"></i>
@@ -1171,10 +1171,16 @@ function selectGroup(group) {
 
     // Show Chat Panel
     const emptyChat = document.getElementById("emptyChatView");
-    if (emptyChat) emptyChat.style.display = "none";
+    if (emptyChat) {
+        emptyChat.style.display = "none";
+        emptyChat.classList.add("hidden");
+    }
 
     const chatWrapper = document.getElementById("activeChatWrapper");
-    if (chatWrapper) chatWrapper.style.display = "flex";
+    if (chatWrapper) {
+        chatWrapper.style.display = "flex";
+        chatWrapper.classList.remove("hidden");
+    }
 
     const chatPanel = document.getElementById("chatPanel");
     if (chatPanel) chatPanel.classList.add("mobile-active");
@@ -1632,10 +1638,16 @@ function selectContact(targetUsername, targetDisplayName, targetAvatar) {
 
     // Show Chat Panel
     const emptyChat = document.getElementById("emptyChatView");
-    if (emptyChat) emptyChat.style.display = "none";
+    if (emptyChat) {
+        emptyChat.style.display = "none";
+        emptyChat.classList.add("hidden");
+    }
 
     const chatWrapper = document.getElementById("activeChatWrapper");
-    if (chatWrapper) chatWrapper.style.display = "flex";
+    if (chatWrapper) {
+        chatWrapper.style.display = "flex";
+        chatWrapper.classList.remove("hidden");
+    }
 
     const chatPanel = document.getElementById("chatPanel");
     if (chatPanel) chatPanel.classList.add("mobile-active");
@@ -1709,10 +1721,16 @@ function closeActiveChat() {
     if (dropdown) dropdown.style.display = "none";
 
     const chatWrapper = document.getElementById("activeChatWrapper");
-    if (chatWrapper) chatWrapper.style.display = "none";
+    if (chatWrapper) {
+        chatWrapper.style.display = "none";
+        chatWrapper.classList.add("hidden");
+    }
 
     const emptyChat = document.getElementById("emptyChatView");
-    if (emptyChat) emptyChat.style.display = "flex";
+    if (emptyChat) {
+        emptyChat.style.display = "flex";
+        emptyChat.classList.remove("hidden");
+    }
 
     const chatPanel = document.getElementById("chatPanel");
     if (chatPanel) chatPanel.classList.remove("mobile-active");
