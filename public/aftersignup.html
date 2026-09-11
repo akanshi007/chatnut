@@ -72,9 +72,9 @@
 
 <header class="main-header">
   <div class="header_left">
-    <label for="check" class="header-menu-icon" title="Menu">
+    <button type="button" class="header-menu-icon" onclick="toggleSidebar(event)" title="Menu" aria-label="Toggle Navigation Menu">
       <i class="fa-solid fa-bars"></i>
-    </label>
+    </button>
     <div class="header_logo">
       <a href="aftersignup.html">
         <span class="logo-icon"><i class="fa-solid fa-comment-dots"></i></span>
@@ -102,23 +102,15 @@
 <div class="main_box">
   <input type="checkbox" id="check">
 
-  <label for="check" class="sidebar_overlay" id="sidebarOverlay" title="Close Menu"></label>
-
-  <div class="btn_one">
-    <label for="check">
-      <i class="fa-solid fa-bars"></i>
-    </label>
-  </div>
+  <div class="sidebar_overlay" id="sidebarOverlay" onclick="uncheckSidebar()" title="Close Menu"></div>
 
   <div class="sidebar_menu">
     <div class="logo">
-      <a href="javascript:void(0)">Explore</a>
+      <a href="javascript:void(0)"><i class="fa-solid fa-compass" style="color: var(--primary-accent); margin-right: 8px;"></i>Explore</a>
     </div>
 
-    <div class="btn_two">
-      <label for="check">
-        <i class="fa-solid fa-xmark"></i>
-      </label>
+    <div class="btn_two" onclick="uncheckSidebar()" title="Close Menu" role="button" tabindex="0">
+      <i class="fa-solid fa-xmark"></i>
     </div>
 
     <div class="menu">
@@ -859,24 +851,47 @@ updateMyAvatarDisplay();
 // Notify online status
 socket.emit("user online", me);
 
+function toggleSidebar(e) {
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    const sidebar = document.querySelector(".sidebar_menu");
+    const overlay = document.querySelector(".sidebar_overlay");
+    const chk = document.getElementById("check");
+    const isOpen = (sidebar && sidebar.classList.contains("open")) || (chk && chk.checked);
+
+    if (isOpen) {
+        uncheckSidebar();
+    } else {
+        if (chk) chk.checked = true;
+        if (sidebar) sidebar.classList.add("open");
+        if (overlay) overlay.classList.add("open");
+    }
+}
+
 function uncheckSidebar() {
     const chk = document.getElementById("check");
     if (chk) chk.checked = false;
+    const sidebar = document.querySelector(".sidebar_menu");
+    if (sidebar) sidebar.classList.remove("open");
+    const overlay = document.querySelector(".sidebar_overlay");
+    if (overlay) overlay.classList.remove("open");
 }
 
 // Close sidebar when clicking anywhere outside or pressing Escape
 document.addEventListener("click", function(e) {
-    const chk = document.getElementById("check");
-    if (!chk || !chk.checked) return;
-
     const sidebar = document.querySelector(".sidebar_menu");
     const menuBtn = document.querySelector(".header-menu-icon");
-    const btnOne = document.querySelector(".btn_one");
+    const chk = document.getElementById("check");
+
+    const isOpen = (sidebar && sidebar.classList.contains("open")) || (chk && chk.checked);
+    if (!isOpen) return;
 
     if (sidebar && !sidebar.contains(e.target) &&
         (!menuBtn || !menuBtn.contains(e.target)) &&
-        (!btnOne || !btnOne.contains(e.target))) {
-        chk.checked = false;
+        e.target !== chk) {
+        uncheckSidebar();
     }
 });
 
@@ -1034,7 +1049,7 @@ function logout() {
     window.location.href = "login.html?switch=true";
 }
 
-function openNewChatModal() {
+async function openNewChatModal() {
     closeModals();
     const modal = document.getElementById("newChatModal");
     if (!modal) return;
@@ -1045,6 +1060,15 @@ function openNewChatModal() {
     modal.style.display = "flex";
     filterUsers();
     if (addInput) addInput.focus();
+
+    // Auto-refresh contacts from server in background
+    try {
+        const users = await fetchWithTimeout(`${API_BASE}/api/users`);
+        if (Array.isArray(users) && users.length > 0) {
+            allUsers = users;
+            filterUsers();
+        }
+    } catch (e) {}
 }
 
 function openContactModal() {
@@ -1059,16 +1083,39 @@ async function handleAddContact() {
         return;
     }
 
-    if (query.toLowerCase() === me.toLowerCase()) {
+    const cleanTarget = query.replace(/^@/, '').toLowerCase();
+    if (cleanTarget === me.toLowerCase()) {
         showToastBanner("Self Contact", "You cannot add yourself as a contact.");
         return;
     }
 
+    // 1. Instant match against local allUsers
+    const localMatch = (allUsers || []).find(u =>
+        u && (
+            (u.username && u.username.toLowerCase() === cleanTarget) ||
+            (u.email && u.email.toLowerCase() === cleanTarget) ||
+            (u.fullname && u.fullname.toLowerCase() === cleanTarget)
+        )
+    );
+
+    if (localMatch) {
+        let deleted = JSON.parse(localStorage.getItem("deletedContacts_" + me) || "[]");
+        deleted = deleted.filter(u => u !== localMatch.username.toLowerCase());
+        localStorage.setItem("deletedContacts_" + me, JSON.stringify(deleted));
+
+        closeModals();
+        renderContacts();
+        selectContact(localMatch.username, localMatch.fullname || localMatch.username, localMatch.avatarUrl);
+        showToastBanner("Contact Added", `Now chatting with ${localMatch.fullname || localMatch.username}!`);
+        return;
+    }
+
+    // 2. Query backend database / server
     try {
         const res = await fetch(`${API_BASE}/api/contacts/add`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user: me, contactUsername: query })
+            body: JSON.stringify({ user: me, contactUsername: cleanTarget })
         });
         const data = await res.json();
         if (data.success && data.contact) {
@@ -1385,8 +1432,14 @@ function renderContacts() {
 
     // 1. Direct chats (if filter is 'all' or 'direct')
     if (currentChatFilter === "all" || currentChatFilter === "direct") {
-        const filteredUsers = others.filter(u =>
-            (u.username || "").toLowerCase().includes(searchVal) || (u.fullname && u.fullname.toLowerCase().includes(searchVal))
+        const usersToSearch = searchVal
+            ? (allUsers || []).filter(u => u && u.username && u.username.toLowerCase() !== me.toLowerCase())
+            : others;
+
+        const filteredUsers = usersToSearch.filter(u =>
+            (u.username || "").toLowerCase().includes(searchVal) ||
+            (u.fullname && u.fullname.toLowerCase().includes(searchVal)) ||
+            (u.email && u.email.toLowerCase().includes(searchVal))
         );
 
         filteredUsers.forEach(u => {
@@ -1476,14 +1529,24 @@ function renderContacts() {
     container.innerHTML = "";
 
     if (conversationList.length === 0) {
-        const emptyMsg = currentChatFilter === "groups"
-            ? `<p>No group chats yet.</p><small>Click "New Group" to create one!</small>`
-            : `<p>No conversations found.</p><small>Click "Choose to Chat" to start messaging friends!</small>`;
-        container.innerHTML = `
-            <div style="text-align: center; color: #888; font-size: 13px; padding: 40px 10px;">
-                ${emptyMsg}
-            </div>
-        `;
+        let emptyMsg;
+        if (searchVal) {
+            emptyMsg = `
+                <div style="padding: 24px 12px; text-align: center;">
+                    <i class="fa-solid fa-magnifying-glass" style="font-size: 26px; color: var(--text-secondary); opacity: 0.6; margin-bottom: 10px; display: block;"></i>
+                    <p style="color: var(--text-primary); font-weight: 500; margin-bottom: 6px;">No chats matching "${escapeHtml(searchVal)}"</p>
+                    <small style="color: var(--text-secondary); display: block; margin-bottom: 14px;">Looking for someone new?</small>
+                    <button type="button" class="choose-chat-pill-btn" onclick="openNewChatModal()" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; margin: 0 auto; cursor: pointer;">
+                        <i class="fa-solid fa-user-plus"></i> Search on chatNut or Add
+                    </button>
+                </div>
+            `;
+        } else {
+            emptyMsg = currentChatFilter === "groups"
+                ? `<div style="padding: 40px 10px;"><p>No group chats yet.</p><small>Click "New Group" to create one!</small></div>`
+                : `<div style="padding: 40px 10px;"><p>No conversations found.</p><small>Click "Choose to Chat" to start messaging friends!</small></div>`;
+        }
+        container.innerHTML = `<div style="text-align: center; color: #888; font-size: 13px;">${emptyMsg}</div>`;
         return;
     }
 
@@ -3652,16 +3715,17 @@ function playChime() {
 
 // Contact search
 function filterUsers() {
-    const val = (document.getElementById("userSearchInput")?.value || "").trim().toLowerCase();
+    const rawVal = (document.getElementById("userSearchInput")?.value || "").trim().toLowerCase();
+    const val = rawVal.replace(/^@/, '');
     const results = document.getElementById("searchResults");
     if (!results) return;
     results.innerHTML = "";
 
-    const deletedContacts = JSON.parse(localStorage.getItem("deletedContacts_" + me) || "[]");
     const matches = (allUsers || []).filter(u => 
         u && u.username && u.username.toLowerCase() !== me.toLowerCase() &&
-        !deletedContacts.includes(u.username.toLowerCase()) &&
-        ((u.username || "").toLowerCase().includes(val) || (u.fullname && u.fullname.toLowerCase().includes(val)))
+        ((u.username || "").toLowerCase().includes(val) || 
+         (u.fullname && u.fullname.toLowerCase().includes(val)) ||
+         (u.email && u.email.toLowerCase().includes(val)))
     );
 
     const countEl = document.getElementById("registeredUsersCount");

@@ -148,6 +148,10 @@ body > header {
     font-size: 20px;
     cursor: pointer;
     transition: all 0.2s ease;
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 0;
 }
 
 .header-menu-icon:hover {
@@ -274,7 +278,7 @@ body > header {
     background: rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(3px);
     -webkit-backdrop-filter: blur(3px);
-    z-index: 1050;
+    z-index: 1250;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -289,7 +293,7 @@ body > header {
     background: var(--sidebar-bg);
     border-right: 1px solid var(--border-color);
     transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 1100;
+    z-index: 1300;
     box-shadow: 4px 0 25px rgba(0, 0, 0, 0.15);
     display: flex;
     flex-direction: column;
@@ -388,17 +392,22 @@ body > header {
     display: none;
 }
 
+.sidebar_overlay.open,
 #check:checked ~ .sidebar_overlay {
-    opacity: 1;
-    pointer-events: auto;
+    opacity: 1 !important;
+    pointer-events: auto !important;
 }
 
+.sidebar_menu.open,
 #check:checked ~ .sidebar_menu {
-    left: 0;
+    left: 0 !important;
 }
 
+.sidebar_menu.open .btn_two,
 #check:checked ~ .sidebar_menu .btn_two {
-    opacity: 1;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
 }
 
 /* Split layout */

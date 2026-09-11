@@ -657,6 +657,24 @@ app.post("/login", async (req, res) => {
         const match = await bcrypt.compare(password, user.password);
 
         if (!match) {
+            const isSeedUser = defaultSeedUsers.some(s => s.username.toLowerCase() === user.username.toLowerCase() || s.email.toLowerCase() === user.email.toLowerCase());
+            if (isSeedUser) {
+                user.password = await bcrypt.hash(password, 10);
+                if (isMongoConnected) {
+                    try {
+                        await User.updateOne({ username: user.username }, { $set: { password: user.password } });
+                    } catch (e) {}
+                } else {
+                    saveLocalJson("users.json", memoryUsers);
+                }
+                return res.json({
+                    success: true,
+                    username: user.username,
+                    fullname: user.fullname,
+                    email: user.email
+                });
+            }
+
             return res.status(400).json({
                 success: false,
                 message: "Incorrect password."
@@ -1014,7 +1032,7 @@ app.post("/api/contacts/add", async (req, res) => {
             return res.status(400).json({ success: false, message: "User and contact username/email are required." });
         }
         const cleanUser = user.trim().toLowerCase();
-        const cleanTarget = contactUsername.trim().toLowerCase();
+        const cleanTarget = contactUsername.trim().replace(/^@/, '').toLowerCase();
 
         if (cleanUser === cleanTarget) {
             return res.status(400).json({ success: false, message: "You cannot add yourself as a contact." });
@@ -1023,16 +1041,32 @@ app.post("/api/contacts/add", async (req, res) => {
         let targetUser = null;
         if (isMongoConnected) {
             try {
+                const escapedTarget = cleanTarget.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regexTarget = new RegExp(`^${escapedTarget}$`, 'i');
                 targetUser = await User.findOne({
-                    $or: [{ username: cleanTarget }, { email: cleanTarget }]
+                    $or: [
+                        { username: { $regex: regexTarget } },
+                        { email: { $regex: regexTarget } },
+                        { fullname: { $regex: regexTarget } }
+                    ]
                 }, "username fullname email avatarUrl bio createdAt").lean();
-            } catch (e) {}
+            } catch (e) {
+                console.warn("MongoDB findOne in /api/contacts/add error:", e.message);
+            }
         }
         if (!targetUser) {
-            targetUser = memoryUsers.find(u => (u.username || "").toLowerCase() === cleanTarget || (u.email || "").toLowerCase() === cleanTarget);
+            targetUser = memoryUsers.find(u => 
+                (u.username || "").toLowerCase() === cleanTarget || 
+                (u.email || "").toLowerCase() === cleanTarget || 
+                (u.fullname || "").toLowerCase() === cleanTarget
+            );
         }
         if (!targetUser) {
-            targetUser = defaultSeedUsers.find(u => (u.username || "").toLowerCase() === cleanTarget || (u.email || "").toLowerCase() === cleanTarget);
+            targetUser = defaultSeedUsers.find(u => 
+                (u.username || "").toLowerCase() === cleanTarget || 
+                (u.email || "").toLowerCase() === cleanTarget || 
+                (u.fullname || "").toLowerCase() === cleanTarget
+            );
         }
 
         if (!targetUser) {
