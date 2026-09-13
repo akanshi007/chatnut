@@ -805,11 +805,13 @@ const me = rawUser;
 const myFullName = localStorage.getItem("chatFullName") || me;
 
 if (!me) {
-    window.location.href = "signup.html";
+    window.location.replace("login.html");
 }
 
 // Update top bar user info
-document.getElementById("topUserName").textContent = myFullName || me;
+if (document.getElementById("topUserName")) {
+    document.getElementById("topUserName").textContent = myFullName || me;
+}
 
 let myAvatar = localStorage.getItem("chatNutAvatar_" + me) || null;
 let myBio = localStorage.getItem("chatNutBio_" + me) || "Hey there! I am using chatNut.";
@@ -841,7 +843,15 @@ function cleanAvatarString(url) {
     return clean;
 }
 
+// Pre-load cached users for 0ms instant display upon page open
 let allUsers = [];
+try {
+    const cachedUsers = localStorage.getItem("chatNutCachedUsers");
+    if (cachedUsers) {
+        const parsed = JSON.parse(cachedUsers);
+        if (Array.isArray(parsed) && parsed.length > 0) allUsers = parsed;
+    }
+} catch (e) {}
 let allGroups = [];
 let allStatuses = [];
 let onlineUserList = ["chatnut"];
@@ -1117,14 +1127,21 @@ async function openNewChatModal() {
     const userSearchInput = document.getElementById("userSearchInput");
     if (userSearchInput) userSearchInput.value = "";
     modal.style.display = "flex";
-    filterUsers();
+
+    const results = document.getElementById("searchResults");
+    if (results && (!allUsers || allUsers.length === 0)) {
+        results.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin" style="font-size: 20px; color: var(--primary-accent); margin-bottom: 8px; display: block;"></i>Loading contacts on chatNut...</div>`;
+    } else {
+        filterUsers();
+    }
     if (addInput) addInput.focus();
 
-    // Auto-refresh contacts from server in background
+    // Auto-refresh contacts from server
     try {
-        const users = await fetchWithTimeout(`${API_BASE}/api/users`);
+        const users = await fetchWithTimeout(`${API_BASE}/api/users`, {}, 2500);
         if (Array.isArray(users) && users.length > 0) {
             allUsers = users;
+            try { localStorage.setItem("chatNutCachedUsers", JSON.stringify(users)); } catch(e) {}
             filterUsers();
         }
     } catch (e) {}
@@ -1138,7 +1155,7 @@ async function handleAddContact() {
     const input = document.getElementById("addContactInput");
     const query = input ? input.value.trim() : "";
     if (!query) {
-        showToastBanner("Input Required", "Please enter a username or email to add.");
+        showToastBanner("Input Required", "Please enter a username, name, or email to add.");
         return;
     }
 
@@ -1148,19 +1165,38 @@ async function handleAddContact() {
         return;
     }
 
-    // 1. Instant match against local allUsers
+    // 1. Instant match against local allUsers (exact or substring)
     const localMatch = (allUsers || []).find(u =>
         u && (
             (u.username && u.username.toLowerCase() === cleanTarget) ||
             (u.email && u.email.toLowerCase() === cleanTarget) ||
             (u.fullname && u.fullname.toLowerCase() === cleanTarget)
         )
+    ) || (allUsers || []).find(u =>
+        u && (
+            (u.username && u.username.toLowerCase().includes(cleanTarget)) ||
+            (u.fullname && u.fullname.toLowerCase().includes(cleanTarget)) ||
+            (u.email && u.email.toLowerCase().includes(cleanTarget))
+        )
     );
 
     if (localMatch) {
+        // Persist to database in background
+        fetch(`${API_BASE}/api/contacts/add`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user: me, contactUsername: localMatch.username })
+        }).catch(() => {});
+
         let deleted = JSON.parse(localStorage.getItem("deletedContacts_" + me) || "[]");
         deleted = deleted.filter(u => u !== localMatch.username.toLowerCase());
         localStorage.setItem("deletedContacts_" + me, JSON.stringify(deleted));
+
+        let myContacts = JSON.parse(localStorage.getItem("myContacts_" + me) || "[]");
+        if (!myContacts.includes(localMatch.username.toLowerCase())) {
+            myContacts.push(localMatch.username.toLowerCase());
+            localStorage.setItem("myContacts_" + me, JSON.stringify(myContacts));
+        }
 
         closeModals();
         renderContacts();
@@ -1181,17 +1217,24 @@ async function handleAddContact() {
             const target = data.contact;
             if (!allUsers.some(u => u.username.toLowerCase() === target.username.toLowerCase())) {
                 allUsers.push(target);
+                try { localStorage.setItem("chatNutCachedUsers", JSON.stringify(allUsers)); } catch(e) {}
             }
             let deleted = JSON.parse(localStorage.getItem("deletedContacts_" + me) || "[]");
             deleted = deleted.filter(u => u !== target.username.toLowerCase());
             localStorage.setItem("deletedContacts_" + me, JSON.stringify(deleted));
+
+            let myContacts = JSON.parse(localStorage.getItem("myContacts_" + me) || "[]");
+            if (!myContacts.includes(target.username.toLowerCase())) {
+                myContacts.push(target.username.toLowerCase());
+                localStorage.setItem("myContacts_" + me, JSON.stringify(myContacts));
+            }
 
             closeModals();
             renderContacts();
             selectContact(target.username, target.fullname || target.username, cleanAvatarString(target.avatarUrl));
             showToastBanner("Contact Added", `Now chatting with ${target.fullname || target.username}!`);
         } else {
-            showToastBanner("User Not Found", data.message || `No user found with "${query}".`);
+            showToastBanner("User Not Found", data.message || `No user found for "${query}".`);
         }
     } catch (e) {
         showToastBanner("Error", "Failed to add contact: " + e.message);
@@ -1387,6 +1430,24 @@ function selectGroup(group) {
     // Join Socket Room
     socket.emit("join room", { room: activeRoom, user: me });
 
+    // Simultaneous instant REST fetch so group messages load with 0 waiting
+    const currentRequestedRoom = activeRoom;
+    fetch(`${API_BASE}/api/messages?room=${encodeURIComponent(currentRequestedRoom)}&user=${encodeURIComponent(me)}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(msgs => {
+            if (activeRoom === currentRequestedRoom && Array.isArray(msgs) && msgsContainer && msgsContainer.querySelector(".fa-spinner")) {
+                renderLoadedMessages(msgs, currentRequestedRoom);
+            }
+        })
+        .catch(() => {});
+
+    // Safety timeout: never stay stuck on spinner
+    setTimeout(() => {
+        if (activeRoom === currentRequestedRoom && msgsContainer && msgsContainer.querySelector(".fa-spinner")) {
+            renderLoadedMessages([], currentRequestedRoom);
+        }
+    }, 1200);
+
     // Focus input
     const input = document.getElementById("msgInput");
     if (input) {
@@ -1420,70 +1481,94 @@ function fetchWithTimeout(url, options = {}, timeoutMs = 4000) {
         });
 }
 
-// Load contacts, statuses, and last messages
+// Load contacts, statuses, and last messages asynchronously with progressive rendering
 async function loadData() {
-    try {
-        const [usersRes, groupsRes, lastMsgRes, statusesRes] = await Promise.all([
-            fetchWithTimeout(`${API_BASE}/api/users`),
-            fetchWithTimeout(`${API_BASE}/api/groups?user=${encodeURIComponent(me)}`),
-            fetchWithTimeout(`${API_BASE}/api/last-messages?user=${encodeURIComponent(me)}`),
-            fetchWithTimeout(`${API_BASE}/api/statuses`)
-        ]);
-
-        if (Array.isArray(usersRes)) {
+    // 1. Fetch users immediately and render contacts
+    fetchWithTimeout(`${API_BASE}/api/users`, {}, 3000).then(usersRes => {
+        if (Array.isArray(usersRes) && usersRes.length > 0) {
             allUsers = usersRes;
+            try { localStorage.setItem("chatNutCachedUsers", JSON.stringify(usersRes)); } catch (e) {}
+
+            // Check if server has saved avatar for me
+            const myRecord = allUsers.find(u => (u.username || "").toLowerCase() === me.toLowerCase());
+            if (myRecord) {
+                const cleanAv = cleanAvatarString(myRecord.avatarUrl);
+                if (cleanAv && !myAvatar) {
+                    myAvatar = cleanAv;
+                    localStorage.setItem("chatNutAvatar_" + me, myAvatar);
+                    updateMyAvatarDisplay();
+                }
+                if (myRecord.bio) {
+                    myBio = myRecord.bio;
+                    localStorage.setItem("chatNutBio_" + me, myBio);
+                }
+            }
+
+            renderContacts();
+            filterUsers();
+
+            // Check if query param requests a specific contact
+            const params = new URLSearchParams(window.location.search);
+            const reqRecipient = params.get("recipient") || params.get("contact");
+            if (reqRecipient && !activeRecipientUsername) {
+                const matched = allUsers.find(u => (u.username || "").toLowerCase() === reqRecipient.toLowerCase() || (u.fullname && u.fullname.toLowerCase() === reqRecipient.toLowerCase()));
+                if (matched) {
+                    selectContact(matched.username, matched.fullname || matched.username, cleanAvatarString(matched.avatarUrl));
+                }
+            }
         }
-        if (Array.isArray(groupsRes)) {
-            allGroups = groupsRes;
-        }
-        if (lastMsgRes && typeof lastMsgRes === "object" && !Array.isArray(lastMsgRes)) {
-            lastMessagesMap = lastMsgRes;
-        }
+    }).catch(() => {});
+
+    // 2. Fetch saved database contacts for this user
+    if (me) {
+        fetchWithTimeout(`${API_BASE}/api/contacts?user=${encodeURIComponent(me)}`, {}, 3000).then(savedContacts => {
+            if (Array.isArray(savedContacts) && savedContacts.length > 0) {
+                savedContacts.forEach(sc => {
+                    if (!allUsers.some(u => u.username.toLowerCase() === sc.username.toLowerCase())) {
+                        allUsers.push(sc);
+                    }
+                });
+                renderContacts();
+            }
+        }).catch(() => {});
+    }
+
+    // 3. Fetch last messages map
+    if (me) {
+        fetchWithTimeout(`${API_BASE}/api/last-messages?user=${encodeURIComponent(me)}`, {}, 3000).then(lastMsgRes => {
+            if (lastMsgRes && typeof lastMsgRes === "object" && !Array.isArray(lastMsgRes)) {
+                lastMessagesMap = lastMsgRes;
+                renderContacts();
+            }
+        }).catch(() => {});
+    }
+
+    // 4. Fetch user groups
+    if (me) {
+        fetchWithTimeout(`${API_BASE}/api/groups?user=${encodeURIComponent(me)}`, {}, 3000).then(groupsRes => {
+            if (Array.isArray(groupsRes)) {
+                allGroups = groupsRes;
+                renderContacts();
+
+                const params = new URLSearchParams(window.location.search);
+                const reqGroup = params.get("group");
+                if (reqGroup && !activeGroupId) {
+                    const matchedG = allGroups.find(g => g.id === reqGroup || g.name.toLowerCase() === reqGroup.toLowerCase());
+                    if (matchedG) {
+                        selectGroup(matchedG);
+                    }
+                }
+            }
+        }).catch(() => {});
+    }
+
+    // 5. Fetch statuses
+    fetchWithTimeout(`${API_BASE}/api/statuses`, {}, 3000).then(statusesRes => {
         if (Array.isArray(statusesRes)) {
             allStatuses = statusesRes;
+            renderStatusSlider();
         }
-
-        // Check if server has saved avatar for me
-        const myRecord = allUsers.find(u => (u.username || "").toLowerCase() === me.toLowerCase());
-        if (myRecord) {
-            const cleanAv = cleanAvatarString(myRecord.avatarUrl);
-            if (cleanAv && !myAvatar) {
-                myAvatar = cleanAv;
-                localStorage.setItem("chatNutAvatar_" + me, myAvatar);
-                updateMyAvatarDisplay();
-            } else if (!cleanAv && myAvatar && (myAvatar.includes("default-avatar") || myAvatar.startsWith("/uploads/"))) {
-                myAvatar = null;
-                localStorage.removeItem("chatNutAvatar_" + me);
-                updateMyAvatarDisplay();
-            }
-            if (myRecord.bio) {
-                myBio = myRecord.bio;
-                localStorage.setItem("chatNutBio_" + me, myBio);
-            }
-        }
-
-        // Check if query param requests a specific contact or group
-        const params = new URLSearchParams(window.location.search);
-        const reqRecipient = params.get("recipient") || params.get("contact");
-        if (reqRecipient) {
-            const matched = allUsers.find(u => (u.username || "").toLowerCase() === reqRecipient.toLowerCase() || (u.fullname && u.fullname.toLowerCase() === reqRecipient.toLowerCase()));
-            if (matched) {
-                selectContact(matched.username, matched.fullname || matched.username, cleanAvatarString(matched.avatarUrl));
-            }
-        }
-        const reqGroup = params.get("group");
-        if (reqGroup) {
-            const matchedG = allGroups.find(g => g.id === reqGroup || g.name.toLowerCase() === reqGroup.toLowerCase());
-            if (matchedG) {
-                selectGroup(matchedG);
-            }
-        }
-    } catch (e) {
-        console.warn("Error loading data:", e);
-    } finally {
-        renderContacts();
-        renderStatusSlider();
-    }
+    }).catch(() => {});
 }
 
 // Render Left Panel Contacts List
@@ -1912,6 +1997,24 @@ function selectContact(targetUsername, targetDisplayName, targetAvatar) {
 
     // Join Socket Room with requesting user
     socket.emit("join room", { room: activeRoom, user: me });
+
+    // Simultaneous instant REST fetch so chat messages load with 0 waiting
+    const currentRequestedRoom = activeRoom;
+    fetch(`${API_BASE}/api/messages?room=${encodeURIComponent(currentRequestedRoom)}&user=${encodeURIComponent(me)}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(msgs => {
+            if (activeRoom === currentRequestedRoom && Array.isArray(msgs) && msgsContainer && msgsContainer.querySelector(".fa-spinner")) {
+                renderLoadedMessages(msgs, currentRequestedRoom);
+            }
+        })
+        .catch(() => {});
+
+    // Safety timeout: never stay stuck on spinner
+    setTimeout(() => {
+        if (activeRoom === currentRequestedRoom && msgsContainer && msgsContainer.querySelector(".fa-spinner")) {
+            renderLoadedMessages([], currentRequestedRoom);
+        }
+    }, 1200);
 
     // Focus input
     const input = document.getElementById("msgInput");
@@ -3604,24 +3707,39 @@ chatForm.addEventListener("submit", (e) => {
     }
 });
 
-// Load messages
-socket.on("load messages", (msgs) => {
-    messagesContainer.innerHTML = "";
+// Load messages helper
+function renderLoadedMessages(msgs, roomTarget) {
+    if (roomTarget && activeRoom && roomTarget !== activeRoom && roomTarget !== activeRoom.replace("--", "-") && roomTarget !== activeRoom.replace("-", "--")) {
+        return;
+    }
+    const container = document.getElementById("messagesContainer");
+    if (!container) return;
+    container.innerHTML = "";
     if (msgs && msgs.length > 0) {
         msgs.forEach(displayChatMessage);
     } else {
         const placeholder = document.createElement("div");
         placeholder.className = "chat-empty-placeholder";
         placeholder.style.cssText = "text-align: center; color: var(--text-secondary); font-size: 13px; margin: auto; padding: 18px 24px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); z-index: 1;";
-        placeholder.textContent = `No messages yet. Say hi to ${escapeHtml(activeRecipientDisplayName || 'your contact')}!`;
-        messagesContainer.appendChild(placeholder);
+        const targetName = activeRecipientDisplayName || (activeGroupObj ? activeGroupObj.name : 'your contact');
+        placeholder.textContent = `No messages yet. Say hi to ${escapeHtml(targetName)}!`;
+        container.appendChild(placeholder);
     }
     scrollToBottom();
+}
+
+// Load messages
+socket.on("load messages", (msgs) => {
+    renderLoadedMessages(msgs, activeRoom);
 });
 
 // Receive message
 socket.on("chat message", (data) => {
-    const isCurrentRoom = activeRoom && data.room === activeRoom;
+    const isCurrentRoom = activeRoom && (
+        data.room === activeRoom ||
+        (activeRoom.includes("--") && data.room === activeRoom.replace("--", "-")) ||
+        (activeRoom.includes("-") && data.room === activeRoom.replace("-", "--"))
+    );
     const isMe = data.username.toLowerCase() === me.toLowerCase();
 
     if (isCurrentRoom) {
@@ -3828,6 +3946,17 @@ function filterUsers() {
     if (!results) return;
     results.innerHTML = "";
 
+    if (!allUsers || allUsers.length === 0) {
+        results.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin" style="font-size: 20px; color: var(--primary-accent); margin-bottom: 8px; display: block;"></i>Loading contacts...</div>`;
+        fetchWithTimeout(`${API_BASE}/api/users`, {}, 2500).then(users => {
+            if (Array.isArray(users) && users.length > 0) {
+                allUsers = users;
+                filterUsers();
+            }
+        }).catch(() => {});
+        return;
+    }
+
     const matches = (allUsers || []).filter(u => 
         u && u.username && u.username.toLowerCase() !== me.toLowerCase() &&
         ((u.username || "").toLowerCase().includes(val) || 
@@ -3841,7 +3970,9 @@ function filterUsers() {
     }
 
     if (matches.length === 0) {
-        results.innerHTML = "<p style='padding: 16px; color: var(--text-secondary); text-align: center;'>No matching contacts found</p>";
+        results.innerHTML = val 
+            ? `<p style='padding: 16px; color: var(--text-secondary); text-align: center;'>No contacts matching "${escapeHtml(val)}"</p>`
+            : `<p style='padding: 16px; color: var(--text-secondary); text-align: center;'>No other registered users found.</p>`;
         return;
     }
 

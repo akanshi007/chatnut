@@ -44,6 +44,11 @@ const userSchema = new mongoose.Schema({
     bio: {
         type: String,
         default: "Hey there! I am using chatNut."
+    },
+
+    contacts: {
+        type: [String],
+        default: []
     }
 
 }, {

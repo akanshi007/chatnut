@@ -1018,6 +1018,7 @@ app.post("/api/contacts/add", async (req, res) => {
         if (isMongoConnected) {
             try {
                 const escapedTarget = cleanTarget.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                // 1. Try exact match first
                 const regexTarget = new RegExp(`^${escapedTarget}$`, 'i');
                 targetUser = await User.findOne({
                     $or: [
@@ -1025,7 +1026,27 @@ app.post("/api/contacts/add", async (req, res) => {
                         { email: { $regex: regexTarget } },
                         { fullname: { $regex: regexTarget } }
                     ]
-                }, "username fullname email avatarUrl bio createdAt").lean();
+                }, "username fullname email avatarUrl profilePic bio createdAt").lean();
+
+                // 2. If not found, try partial match
+                if (!targetUser) {
+                    const partialRegex = new RegExp(escapedTarget, 'i');
+                    targetUser = await User.findOne({
+                        $or: [
+                            { username: { $regex: partialRegex } },
+                            { email: { $regex: partialRegex } },
+                            { fullname: { $regex: partialRegex } }
+                        ]
+                    }, "username fullname email avatarUrl profilePic bio createdAt").lean();
+                }
+
+                // 3. Save contact to current user's document
+                if (targetUser) {
+                    await User.updateOne(
+                        { username: new RegExp(`^${cleanUser}$`, 'i') },
+                        { $addToSet: { contacts: targetUser.username } }
+                    );
+                }
             } catch (e) {
                 console.warn("MongoDB findOne in /api/contacts/add error:", e.message);
             }
@@ -1035,6 +1056,10 @@ app.post("/api/contacts/add", async (req, res) => {
                 (u.username || "").toLowerCase() === cleanTarget || 
                 (u.email || "").toLowerCase() === cleanTarget || 
                 (u.fullname || "").toLowerCase() === cleanTarget
+            ) || memoryUsers.find(u =>
+                (u.username || "").toLowerCase().includes(cleanTarget) || 
+                (u.email || "").toLowerCase().includes(cleanTarget) || 
+                (u.fullname || "").toLowerCase().includes(cleanTarget)
             );
         }
 
@@ -1056,6 +1081,27 @@ app.post("/api/contacts/add", async (req, res) => {
     } catch (err) {
         console.error("Add contact error:", err);
         res.status(500).json({ success: false, message: "Server error adding contact." });
+    }
+});
+
+// Get user saved contacts API
+app.get("/api/contacts", async (req, res) => {
+    try {
+        const currentUser = (req.query.user || "").trim().toLowerCase();
+        if (!currentUser) return res.json([]);
+        if (isMongoConnected) {
+            const u = await User.findOne({ username: new RegExp(`^${currentUser}$`, 'i') }, 'contacts').lean();
+            if (u && Array.isArray(u.contacts) && u.contacts.length > 0) {
+                const contactUsers = await User.find({ username: { $in: u.contacts } }, 'username fullname email avatarUrl profilePic bio createdAt').lean();
+                return res.json(contactUsers.map(c => ({
+                    ...c,
+                    avatarUrl: getCleanAvatarUrl(c)
+                })));
+            }
+        }
+        res.json([]);
+    } catch (e) {
+        res.json([]);
     }
 });
 
@@ -1200,17 +1246,33 @@ io.on("connection", (socket) => {
             if (!room) return;
             socket.join(room);
 
+            // Support both room separators: double dash "--" and single dash "-"
+            let roomQuery = { room };
+            if (room.includes("--")) {
+                const alt = room.replace("--", "-");
+                socket.join(alt);
+                roomQuery = { $or: [{ room }, { room: alt }] };
+            } else if (room.includes("-")) {
+                const alt = room.replace("-", "--");
+                socket.join(alt);
+                roomQuery = { $or: [{ room }, { room: alt }] };
+            }
+
             if (isMongoConnected) {
-                const messages = await Message.find({ room }).sort({ time: 1 });
+                const messages = await Message.find(roomQuery).sort({ time: 1 }).lean();
                 // Filter out messages deleted for requestingUser
                 const filtered = messages.filter(m => !m.deletedFor || !m.deletedFor.includes(requestingUser));
-                socket.emit("load messages", filtered);
+                socket.emit("load messages", filtered || []);
             } else {
-                const messages = memoryMessages.filter(m => m.room === room && (!m.deletedFor || !m.deletedFor.includes(requestingUser)));
-                socket.emit("load messages", messages);
+                const messages = memoryMessages.filter(m => {
+                    const matches = m.room === room || (roomQuery.$or && roomQuery.$or.some(r => r.room === m.room));
+                    return matches && (!m.deletedFor || !m.deletedFor.includes(requestingUser));
+                });
+                socket.emit("load messages", messages || []);
             }
         } catch (err) {
             console.error("Error loading messages for room:", err);
+            socket.emit("load messages", []);
         }
     });
 
@@ -1244,13 +1306,18 @@ io.on("connection", (socket) => {
                 saveLocalJson("messages.json", memoryMessages);
             }
 
-            // 1. Deliver to all clients currently inside this chat room
+            // 1. Deliver to all clients currently inside this chat room (and alternate representation)
             io.to(data.room).emit("chat message", outMessage);
+            if (data.room.includes("--")) {
+                io.to(data.room.replace("--", "-")).emit("chat message", outMessage);
+            } else if (data.room.includes("-") && !data.room.startsWith("group-")) {
+                io.to(data.room.replace("-", "--")).emit("chat message", outMessage);
+            }
 
             // 2. Also deliver to recipient's personal user room so they receive real-time notifications anywhere in the app
             const roomStr = data.room || "";
-            if (roomStr.includes("--")) {
-                const parts = roomStr.split("--");
+            if (!roomStr.startsWith("group-") && (roomStr.includes("--") || roomStr.includes("-"))) {
+                const parts = roomStr.includes("--") ? roomStr.split("--") : roomStr.split("-");
                 parts.forEach(u => {
                     const cleanU = (u || "").trim().toLowerCase();
                     if (cleanU && cleanU !== data.username.toLowerCase()) {
