@@ -298,3 +298,53 @@ body {
 .fp-close-btn:hover {
   color: #222;
 }
+
+/* ---------------- MOBILE RESPONSIVE OVERRIDES ---------------- */
+@media (max-width: 480px) {
+  body {
+    padding: 14px 10px;
+    align-items: flex-start;
+  }
+
+  .signup-hero {
+    gap: 14px;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .signup-hero h1 {
+    font-size: 26px;
+  }
+
+  .signup-hero p {
+    font-size: 14px;
+  }
+
+  .signup-wrapper {
+    padding: 22px 16px;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  .input-card {
+    padding: 12px 14px;
+    border-radius: 12px;
+  }
+
+  .input-card input {
+    font-size: 16px !important; /* Prevents iOS auto-zoom on focus */
+    padding: 10px;
+  }
+
+  .signup-btn {
+    padding: 13px;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+
+  .fp-modal-content {
+    padding: 20px 16px;
+    border-radius: 16px;
+    max-width: 95vw;
+  }
+}

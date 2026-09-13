@@ -2,22 +2,195 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>chatNut</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="signup.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>chatNut - Connect With The World</title>
+  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="stylesheet" href="signup.css?v=3">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    // If user is already logged in on this device, immediately forward to messenger
+    (function() {
+      try {
+        let user = localStorage.getItem("chatUser");
+        if (user) {
+          if (typeof user === "string" && user.trim().startsWith("{")) {
+            user = JSON.parse(user).username || user;
+          }
+          if (user) {
+            window.location.replace("aftersignup.html");
+          }
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    body {
+      min-height: 100dvh;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0b141a 0%, #111b21 50%, #075e54 100%);
+      color: #e9edef;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-x: hidden;
+    }
+    .landing-card {
+      width: 100%;
+      max-width: 440px;
+      background: rgba(17, 27, 33, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 24px;
+      padding: 36px 28px;
+      text-align: center;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    .brand-badge {
+      width: 68px;
+      height: 68px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #00a884, #059669);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      color: #ffffff;
+      box-shadow: 0 8px 24px rgba(0, 168, 132, 0.35);
+    }
+    .brand-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #ffffff;
+      margin: 0;
+      letter-spacing: -0.5px;
+    }
+    .brand-accent {
+      color: #00a884;
+    }
+    .brand-tagline {
+      font-size: 14.5px;
+      color: #8696a0;
+      line-height: 1.5;
+      margin: 0;
+    }
+    .btn-group {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .btn-primary-chat {
+      width: 100%;
+      padding: 14px 20px;
+      background: #00a884;
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 15px;
+      border-radius: 12px;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+      box-sizing: border-box;
+      box-shadow: 0 4px 14px rgba(0, 168, 132, 0.3);
+    }
+    .btn-primary-chat:hover, .btn-primary-chat:active {
+      background: #069c7b;
+      transform: translateY(-1px);
+    }
+    .btn-secondary-chat {
+      width: 100%;
+      padding: 14px 20px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #e9edef;
+      font-weight: 600;
+      font-size: 15px;
+      border-radius: 12px;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+      box-sizing: border-box;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .btn-secondary-chat:hover, .btn-secondary-chat:active {
+      background: rgba(255, 255, 255, 0.14);
+      transform: translateY(-1px);
+    }
+    .brand-features {
+      display: flex;
+      gap: 18px;
+      justify-content: center;
+      font-size: 12px;
+      color: #8696a0;
+      margin-top: 6px;
+    }
+    .brand-features span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .brand-features i {
+      color: #00a884;
+    }
+    @media (max-width: 480px) {
+      body {
+        padding: 16px;
+      }
+      .landing-card {
+        padding: 28px 20px;
+        border-radius: 20px;
+      }
+      .brand-title {
+        font-size: 24px;
+      }
+    }
+  </style>
 </head>
 <body>
- 
-    <section class="hero">
-      <h1>Connect With The World</h1>
-      <p>join and make connections with people around the globe</p>
-      <a href="signup.html" class="hero-btn">Sign Up</a>
-    </section>
+
+  <div class="landing-card">
+    <div class="brand-badge">
+      <i class="fa-solid fa-comment-dots"></i>
+    </div>
+
+    <div>
+      <h1 class="brand-title">chat<span class="brand-accent">Nut</span></h1>
+      <p class="brand-tagline">Real-time conversations, group messaging, and instant status updates.</p>
+    </div>
+
+    <div class="btn-group">
+      <a href="login.html" class="btn-primary-chat">
+        <i class="fa-solid fa-right-to-bracket"></i>
+        <span>Log In</span>
+      </a>
+      <a href="signup.html" class="btn-secondary-chat">
+        <i class="fa-solid fa-user-plus"></i>
+        <span>Create New Account</span>
+      </a>
+    </div>
+
+    <div class="brand-features">
+      <span><i class="fa-solid fa-shield-halved"></i> Realtime</span>
+      <span><i class="fa-solid fa-bolt"></i> Fast</span>
+      <span><i class="fa-solid fa-mobile-screen"></i> Responsive</span>
+    </div>
+  </div>
 
 </body>
 </html>

@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Log In | chatNut</title>
-  <link rel="stylesheet" href="signup.css?v=2">
+  <link rel="stylesheet" href="signup.css?v=3">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -117,7 +117,7 @@
   </div>
 
   <script>
-    const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:8000' : '';
+    const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:3000' : '';
 
     // Auto-redirect or switch account
     const urlParams = new URLSearchParams(window.location.search);
@@ -208,7 +208,7 @@
         }
       } catch (err) {
         console.error("Login fetch error:", err);
-        showAlert("Failed to connect to server. Please verify the server is running on port 8000.");
+        showAlert("Failed to connect to server. Please verify the server is running on port 3000.");
         submitBtn.classList.remove("btn-disabled");
         submitBtn.textContent = "Log In";
       }
